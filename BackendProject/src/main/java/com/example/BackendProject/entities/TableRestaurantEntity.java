@@ -1,0 +1,79 @@
+package com.example.BackendProject.entities;
+
+import jakarta.persistence.*;
+
+import java.util.Objects;
+
+@Entity
+@Table(name = "table_restaurant", schema = "restaurant", catalog = "")
+public class TableRestaurantEntity {
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @Column(name = "id", nullable = false)
+    private Long id;
+    @Basic
+    @Column(name = "zone_id", nullable = true)
+    private Long zoneId;
+    @Basic
+    @Column(name = "numero", nullable = false, length = 20)
+    private String numero;
+    @Basic
+    @Column(name = "capacite", nullable = true)
+    private Integer capacite;
+    @Basic
+    @Column(name = "statut", nullable = true)
+    private Object statut;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getNumero() {
+        return numero;
+    }
+
+    public void setNumero(String numero) {
+        this.numero = numero;
+    }
+
+    public Integer getCapacite() {
+        return capacite;
+    }
+
+    public void setCapacite(Integer capacite) {
+        this.capacite = capacite;
+    }
+
+    public Object getStatut() {
+        return statut;
+    }
+
+    public void setStatut(Object statut) {
+        this.statut = statut;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TableRestaurantEntity that = (TableRestaurantEntity) o;
+        return Objects.equals(id, that.id) && Objects.equals(zoneId, that.zoneId) && Objects.equals(numero, that.numero) && Objects.equals(capacite, that.capacite) && Objects.equals(statut, that.statut);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, zoneId, numero, capacite, statut);
+    }
+}
