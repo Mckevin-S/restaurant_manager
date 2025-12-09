@@ -1,34 +1,26 @@
 package com.example.BackendProject.entities;
 
 import jakarta.persistence.*;
-
 import java.util.Objects;
 
 @Entity
+@Table(name = "caissier")
 public class Caissier {
-    private Long userId;
 
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
-    @Column(name = "user_id", nullable = false)
-    public Long getUserId() {
-        return userId;
-    }
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
+    // Lien avec l'utilisateur
+    @OneToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Caissier caissier = (Caissier) o;
-        return Objects.equals(userId, caissier.userId);
-    }
+    // Getters & Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(userId);
-    }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+
 }

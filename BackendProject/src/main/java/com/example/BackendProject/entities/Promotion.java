@@ -1,23 +1,40 @@
 package com.example.BackendProject.entities;
 
+import com.example.BackendProject.utils.TypePromotion;
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.Objects;
 
 @Entity
+@Table(name = "promotion")
 public class Promotion {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
+
+    @Column(name = "nom", nullable = false, length = 100)
     private String nom;
-    private Object type;
+
+    // ENUM('Pourcentage', 'Montant fixe')
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type")
+    private TypePromotion type;
+
+    @Column(name = "valeur", precision = 2)
     private BigDecimal valeur;
-    private Byte actif;
+
+    @Column(name = "actif")
+    private Boolean actif;
+
+    @Column(name = "date_expiration")
     private Date dateExpiration;
 
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Id
-    @Column(name = "id", nullable = false)
+    // ---------------------------------------------------
+    // Getters / Setters
+    // ---------------------------------------------------
     public Long getId() {
         return id;
     }
@@ -26,8 +43,6 @@ public class Promotion {
         this.id = id;
     }
 
-    @Basic
-    @Column(name = "nom", nullable = false, length = 100)
     public String getNom() {
         return nom;
     }
@@ -36,18 +51,14 @@ public class Promotion {
         this.nom = nom;
     }
 
-    @Basic
-    @Column(name = "type", nullable = true)
-    public Object getType() {
+    public TypePromotion getType() {
         return type;
     }
 
-    public void setType(Object type) {
+    public void setType(TypePromotion type) {
         this.type = type;
     }
 
-    @Basic
-    @Column(name = "valeur", nullable = true, precision = 2)
     public BigDecimal getValeur() {
         return valeur;
     }
@@ -56,18 +67,14 @@ public class Promotion {
         this.valeur = valeur;
     }
 
-    @Basic
-    @Column(name = "actif", nullable = true)
-    public Byte getActif() {
+    public Boolean getActif() {
         return actif;
     }
 
-    public void setActif(Byte actif) {
+    public void setActif(Boolean actif) {
         this.actif = actif;
     }
 
-    @Basic
-    @Column(name = "date_expiration", nullable = true)
     public Date getDateExpiration() {
         return dateExpiration;
     }
@@ -76,16 +83,4 @@ public class Promotion {
         this.dateExpiration = dateExpiration;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Promotion promotion = (Promotion) o;
-        return Objects.equals(id, promotion.id) && Objects.equals(nom, promotion.nom) && Objects.equals(type, promotion.type) && Objects.equals(valeur, promotion.valeur) && Objects.equals(actif, promotion.actif) && Objects.equals(dateExpiration, promotion.dateExpiration);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, nom, type, valeur, actif, dateExpiration);
-    }
 }

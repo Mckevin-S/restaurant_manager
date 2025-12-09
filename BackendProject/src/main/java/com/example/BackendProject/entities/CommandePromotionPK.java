@@ -1,49 +1,38 @@
 package com.example.BackendProject.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-
 import java.io.Serializable;
 import java.util.Objects;
 
 public class CommandePromotionPK implements Serializable {
+
     private Long commandeId;
     private Long promotionId;
 
-    @Column(name = "commande_id", nullable = false)
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long getCommandeId() {
-        return commandeId;
-    }
+    public CommandePromotionPK() {}
 
-    public void setCommandeId(Long commandeId) {
+    public CommandePromotionPK(Long commandeId, Long promotionId) {
         this.commandeId = commandeId;
-    }
-
-    @Column(name = "promotion_id", nullable = false)
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long getPromotionId() {
-        return promotionId;
-    }
-
-    public void setPromotionId(Long promotionId) {
         this.promotionId = promotionId;
     }
 
+    // equals & hashCode
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof CommandePromotionPK)) return false;
         CommandePromotionPK that = (CommandePromotionPK) o;
-        return Objects.equals(commandeId, that.commandeId) && Objects.equals(promotionId, that.promotionId);
+        return Objects.equals(commandeId, that.commandeId) &&
+                Objects.equals(promotionId, that.promotionId);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(commandeId, promotionId);
     }
+
+    // Getters & Setters
+    public Long getCommandeId() { return commandeId; }
+    public void setCommandeId(Long commandeId) { this.commandeId = commandeId; }
+    public Long getPromotionId() { return promotionId; }
+    public void setPromotionId(Long promotionId) { this.promotionId = promotionId; }
 }

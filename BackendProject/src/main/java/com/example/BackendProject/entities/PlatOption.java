@@ -1,19 +1,36 @@
 package com.example.BackendProject.entities;
 
 import jakarta.persistence.*;
-
+import java.io.Serializable;
 import java.util.Objects;
 
 @Entity
-@Table(name = "plat_option", schema = "restaurant", catalog = "")
+@Table(name = "plat_option")
 @IdClass(PlatOptionPK.class)
 public class PlatOption {
-    private Long platId;
-    private Long optionId;
 
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "plat_id", nullable = false)
+    private Long platId;
+
+    @Id
+    @Column(name = "option_id", nullable = false)
+    private Long optionId;
+
+    // ---------------------------------------------------
+    // 🔗 Relations ManyToOne vers Plat et OptionItem
+    // ---------------------------------------------------
+    @ManyToOne
+    @JoinColumn(name = "plat_id", insertable = false, updatable = false)
+    private Plat plat;
+
+    @ManyToOne
+    @JoinColumn(name = "option_id", insertable = false, updatable = false)
+    private OptionItem option;
+
+    // ---------------------------------------------------
+    // Getters / Setters
+    // ---------------------------------------------------
     public Long getPlatId() {
         return platId;
     }
@@ -22,9 +39,6 @@ public class PlatOption {
         this.platId = platId;
     }
 
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Id
-    @Column(name = "option_id", nullable = false)
     public Long getOptionId() {
         return optionId;
     }
@@ -33,16 +47,20 @@ public class PlatOption {
         this.optionId = optionId;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        PlatOption that = (PlatOption) o;
-        return Objects.equals(platId, that.platId) && Objects.equals(optionId, that.optionId);
+    public Plat getPlat() {
+        return plat;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(platId, optionId);
+    public void setPlat(Plat plat) {
+        this.plat = plat;
+    }
+
+    public OptionItem getOption() {
+        return option;
+    }
+
+    public void setOption(OptionItem option) {
+        this.option = option;
     }
 }
+

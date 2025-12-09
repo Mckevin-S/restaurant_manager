@@ -1,34 +1,48 @@
 package com.example.BackendProject.entities;
 
 import jakarta.persistence.*;
-
-import java.util.Objects;
+import java.util.List;
 
 @Entity
+@Table(name = "cuisinier")
 public class Cuisinier {
-    private Long userId;
 
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
-    @Column(name = "user_id", nullable = false)
-    public Long getUserId() {
-        return userId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // Lien avec l'utilisateur
+    @OneToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    // Un cuisinier peut avoir plusieurs recettes
+    @OneToMany(mappedBy = "cuisinier", cascade = CascadeType.ALL)
+    private List<Recette> recettes;
+
+    // Getters & Setters
+    public Long getId() {
+        return id;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Cuisinier cuisinier = (Cuisinier) o;
-        return Objects.equals(userId, cuisinier.userId);
+    public User getUser() {
+        return user;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(userId);
+    public void setUser(User user) {
+        this.user = user;
     }
+
+    public List<Recette> getRecettes() {
+        return recettes;
+    }
+
+    public void setRecettes(List<Recette> recettes) {
+        this.recettes = recettes;
+    }
+
 }
