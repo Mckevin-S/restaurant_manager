@@ -5,7 +5,6 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "commande_promation") // correspond à ton script SQL
-@IdClass(CommandePromotionPK.class)
 public class CommandePromotion {
 
     @Id
@@ -15,14 +14,14 @@ public class CommandePromotion {
 
     @Id
     @ManyToOne
-    @JoinColumn(name = "promation_id", nullable = false)
+    @JoinColumn(name = "promotion_id", nullable = false)
     private Promotion promotion;
 
 
     // Getters & Setters
-    public Commande getOrder() { return commande; }
-    public void setOrder(Commande commande) { this.commande = commande; }
+    public Commande getCommande() { return commande; }
+    public void setCommande(Commande commande) { this.commande = commande; }
 
-    public Promotion getDiscount() { return promotion; }
-    public void setDiscount(Promotion discount) { this.promotion = discount; }
+    public Promotion getPromotion() { return promotion; }
+    public void setPromotion(Promotion promotion) { this.promotion = promotion; }
 }

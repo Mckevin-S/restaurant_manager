@@ -15,21 +15,6 @@ public class CommandePromotionPK implements Serializable {
         this.promotionId = promotionId;
     }
 
-    // equals & hashCode
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof CommandePromotionPK)) return false;
-        CommandePromotionPK that = (CommandePromotionPK) o;
-        return Objects.equals(commandeId, that.commandeId) &&
-                Objects.equals(promotionId, that.promotionId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(commandeId, promotionId);
-    }
-
     // Getters & Setters
     public Long getCommandeId() { return commandeId; }
     public void setCommandeId(Long commandeId) { this.commandeId = commandeId; }
