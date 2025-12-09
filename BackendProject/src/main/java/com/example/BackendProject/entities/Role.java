@@ -5,19 +5,14 @@ import jakarta.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "role", schema = "restaurant", catalog = "")
-public class RoleEntity {
+public class Role {
+    private Long id;
+    private String nom;
+    private String permissions;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;
-    @Basic
-    @Column(name = "nom", nullable = false, length = 50)
-    private String nom;
-    @Basic
-    @Column(name = "permissions", nullable = true, length = -1)
-    private String permissions;
-
     public Long getId() {
         return id;
     }
@@ -26,6 +21,8 @@ public class RoleEntity {
         this.id = id;
     }
 
+    @Basic
+    @Column(name = "nom", nullable = false, length = 50)
     public String getNom() {
         return nom;
     }
@@ -34,6 +31,8 @@ public class RoleEntity {
         this.nom = nom;
     }
 
+    @Basic
+    @Column(name = "permissions", nullable = true, length = -1)
     public String getPermissions() {
         return permissions;
     }
@@ -46,8 +45,8 @@ public class RoleEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        RoleEntity that = (RoleEntity) o;
-        return Objects.equals(id, that.id) && Objects.equals(nom, that.nom) && Objects.equals(permissions, that.permissions);
+        Role role = (Role) o;
+        return Objects.equals(id, role.id) && Objects.equals(nom, role.nom) && Objects.equals(permissions, role.permissions);
     }
 
     @Override

@@ -5,19 +5,14 @@ import jakarta.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "recette", schema = "restaurant", catalog = "")
-public class RecetteEntity {
+public class Recette {
+    private Long id;
+    private Long platId;
+    private String nom;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;
-    @Basic
-    @Column(name = "plat_id", nullable = true)
-    private Long platId;
-    @Basic
-    @Column(name = "nom", nullable = true, length = 100)
-    private String nom;
-
     public Long getId() {
         return id;
     }
@@ -26,6 +21,8 @@ public class RecetteEntity {
         this.id = id;
     }
 
+    @Basic
+    @Column(name = "plat_id", nullable = true)
     public Long getPlatId() {
         return platId;
     }
@@ -34,6 +31,8 @@ public class RecetteEntity {
         this.platId = platId;
     }
 
+    @Basic
+    @Column(name = "nom", nullable = true, length = 100)
     public String getNom() {
         return nom;
     }
@@ -46,8 +45,8 @@ public class RecetteEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        RecetteEntity that = (RecetteEntity) o;
-        return Objects.equals(id, that.id) && Objects.equals(platId, that.platId) && Objects.equals(nom, that.nom);
+        Recette recette = (Recette) o;
+        return Objects.equals(id, recette.id) && Objects.equals(platId, recette.platId) && Objects.equals(nom, recette.nom);
     }
 
     @Override

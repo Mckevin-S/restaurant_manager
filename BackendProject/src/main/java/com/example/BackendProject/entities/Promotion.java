@@ -7,28 +7,17 @@ import java.sql.Date;
 import java.util.Objects;
 
 @Entity
-@Table(name = "promotion", schema = "restaurant", catalog = "")
-public class PromotionEntity {
+public class Promotion {
+    private Long id;
+    private String nom;
+    private Object type;
+    private BigDecimal valeur;
+    private Byte actif;
+    private Date dateExpiration;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;
-    @Basic
-    @Column(name = "nom", nullable = false, length = 100)
-    private String nom;
-    @Basic
-    @Column(name = "type", nullable = true)
-    private Object type;
-    @Basic
-    @Column(name = "valeur", nullable = true, precision = 2)
-    private BigDecimal valeur;
-    @Basic
-    @Column(name = "actif", nullable = true)
-    private Byte actif;
-    @Basic
-    @Column(name = "date_expiration", nullable = true)
-    private Date dateExpiration;
-
     public Long getId() {
         return id;
     }
@@ -37,6 +26,8 @@ public class PromotionEntity {
         this.id = id;
     }
 
+    @Basic
+    @Column(name = "nom", nullable = false, length = 100)
     public String getNom() {
         return nom;
     }
@@ -45,6 +36,8 @@ public class PromotionEntity {
         this.nom = nom;
     }
 
+    @Basic
+    @Column(name = "type", nullable = true)
     public Object getType() {
         return type;
     }
@@ -53,6 +46,8 @@ public class PromotionEntity {
         this.type = type;
     }
 
+    @Basic
+    @Column(name = "valeur", nullable = true, precision = 2)
     public BigDecimal getValeur() {
         return valeur;
     }
@@ -61,6 +56,8 @@ public class PromotionEntity {
         this.valeur = valeur;
     }
 
+    @Basic
+    @Column(name = "actif", nullable = true)
     public Byte getActif() {
         return actif;
     }
@@ -69,6 +66,8 @@ public class PromotionEntity {
         this.actif = actif;
     }
 
+    @Basic
+    @Column(name = "date_expiration", nullable = true)
     public Date getDateExpiration() {
         return dateExpiration;
     }
@@ -81,8 +80,8 @@ public class PromotionEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        PromotionEntity that = (PromotionEntity) o;
-        return Objects.equals(id, that.id) && Objects.equals(nom, that.nom) && Objects.equals(type, that.type) && Objects.equals(valeur, that.valeur) && Objects.equals(actif, that.actif) && Objects.equals(dateExpiration, that.dateExpiration);
+        Promotion promotion = (Promotion) o;
+        return Objects.equals(id, promotion.id) && Objects.equals(nom, promotion.nom) && Objects.equals(type, promotion.type) && Objects.equals(valeur, promotion.valeur) && Objects.equals(actif, promotion.actif) && Objects.equals(dateExpiration, promotion.dateExpiration);
     }
 
     @Override

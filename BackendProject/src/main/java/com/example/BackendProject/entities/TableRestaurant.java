@@ -6,24 +6,16 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "table_restaurant", schema = "restaurant", catalog = "")
-public class TableRestaurantEntity {
+public class TableRestaurant {
+    private Long id;
+    private Long zoneId;
+    private String numero;
+    private Integer capacite;
+    private Object statut;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;
-    @Basic
-    @Column(name = "zone_id", nullable = true)
-    private Long zoneId;
-    @Basic
-    @Column(name = "numero", nullable = false, length = 20)
-    private String numero;
-    @Basic
-    @Column(name = "capacite", nullable = true)
-    private Integer capacite;
-    @Basic
-    @Column(name = "statut", nullable = true)
-    private Object statut;
-
     public Long getId() {
         return id;
     }
@@ -32,6 +24,8 @@ public class TableRestaurantEntity {
         this.id = id;
     }
 
+    @Basic
+    @Column(name = "zone_id", nullable = true)
     public Long getZoneId() {
         return zoneId;
     }
@@ -40,6 +34,8 @@ public class TableRestaurantEntity {
         this.zoneId = zoneId;
     }
 
+    @Basic
+    @Column(name = "numero", nullable = false, length = 20)
     public String getNumero() {
         return numero;
     }
@@ -48,6 +44,8 @@ public class TableRestaurantEntity {
         this.numero = numero;
     }
 
+    @Basic
+    @Column(name = "capacite", nullable = true)
     public Integer getCapacite() {
         return capacite;
     }
@@ -56,6 +54,8 @@ public class TableRestaurantEntity {
         this.capacite = capacite;
     }
 
+    @Basic
+    @Column(name = "statut", nullable = true)
     public Object getStatut() {
         return statut;
     }
@@ -68,7 +68,7 @@ public class TableRestaurantEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        TableRestaurantEntity that = (TableRestaurantEntity) o;
+        TableRestaurant that = (TableRestaurant) o;
         return Objects.equals(id, that.id) && Objects.equals(zoneId, that.zoneId) && Objects.equals(numero, that.numero) && Objects.equals(capacite, that.capacite) && Objects.equals(statut, that.statut);
     }
 

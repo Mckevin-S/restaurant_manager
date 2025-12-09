@@ -5,19 +5,14 @@ import jakarta.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "menu", schema = "restaurant", catalog = "")
-public class MenuEntity {
+public class Menu {
+    private Long id;
+    private String nom;
+    private Byte actif;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;
-    @Basic
-    @Column(name = "nom", nullable = false, length = 100)
-    private String nom;
-    @Basic
-    @Column(name = "actif", nullable = true)
-    private Byte actif;
-
     public Long getId() {
         return id;
     }
@@ -26,6 +21,8 @@ public class MenuEntity {
         this.id = id;
     }
 
+    @Basic
+    @Column(name = "nom", nullable = false, length = 100)
     public String getNom() {
         return nom;
     }
@@ -34,6 +31,8 @@ public class MenuEntity {
         this.nom = nom;
     }
 
+    @Basic
+    @Column(name = "actif", nullable = true)
     public Byte getActif() {
         return actif;
     }
@@ -46,8 +45,8 @@ public class MenuEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        MenuEntity that = (MenuEntity) o;
-        return Objects.equals(id, that.id) && Objects.equals(nom, that.nom) && Objects.equals(actif, that.actif);
+        Menu menu = (Menu) o;
+        return Objects.equals(id, menu.id) && Objects.equals(nom, menu.nom) && Objects.equals(actif, menu.actif);
     }
 
     @Override

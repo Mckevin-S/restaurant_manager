@@ -5,22 +5,15 @@ import jakarta.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "zone", schema = "restaurant", catalog = "")
-public class ZoneEntity {
+public class Zone {
+    private Long id;
+    private Long restaurantId;
+    private String nom;
+    private String description;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;
-    @Basic
-    @Column(name = "restaurant_id", nullable = true)
-    private Long restaurantId;
-    @Basic
-    @Column(name = "nom", nullable = false, length = 100)
-    private String nom;
-    @Basic
-    @Column(name = "description", nullable = true, length = -1)
-    private String description;
-
     public Long getId() {
         return id;
     }
@@ -29,6 +22,8 @@ public class ZoneEntity {
         this.id = id;
     }
 
+    @Basic
+    @Column(name = "restaurant_id", nullable = true)
     public Long getRestaurantId() {
         return restaurantId;
     }
@@ -37,6 +32,8 @@ public class ZoneEntity {
         this.restaurantId = restaurantId;
     }
 
+    @Basic
+    @Column(name = "nom", nullable = false, length = 100)
     public String getNom() {
         return nom;
     }
@@ -45,6 +42,8 @@ public class ZoneEntity {
         this.nom = nom;
     }
 
+    @Basic
+    @Column(name = "description", nullable = true, length = -1)
     public String getDescription() {
         return description;
     }
@@ -57,8 +56,8 @@ public class ZoneEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ZoneEntity that = (ZoneEntity) o;
-        return Objects.equals(id, that.id) && Objects.equals(restaurantId, that.restaurantId) && Objects.equals(nom, that.nom) && Objects.equals(description, that.description);
+        Zone zone = (Zone) o;
+        return Objects.equals(id, zone.id) && Objects.equals(restaurantId, zone.restaurantId) && Objects.equals(nom, zone.nom) && Objects.equals(description, zone.description);
     }
 
     @Override

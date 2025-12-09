@@ -6,31 +6,18 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 @Entity
-@Table(name = "plat", schema = "restaurant", catalog = "")
-public class PlatEntity {
+public class Plat {
+    private Long id;
+    private Long categoryId;
+    private String nom;
+    private String description;
+    private BigDecimal prix;
+    private String photoUrl;
+    private Byte disponibilite;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;
-    @Basic
-    @Column(name = "category_id", nullable = true)
-    private Long categoryId;
-    @Basic
-    @Column(name = "nom", nullable = false, length = 100)
-    private String nom;
-    @Basic
-    @Column(name = "description", nullable = true, length = -1)
-    private String description;
-    @Basic
-    @Column(name = "prix", nullable = false, precision = 2)
-    private BigDecimal prix;
-    @Basic
-    @Column(name = "photo_url", nullable = true, length = 255)
-    private String photoUrl;
-    @Basic
-    @Column(name = "disponibilite", nullable = true)
-    private Byte disponibilite;
-
     public Long getId() {
         return id;
     }
@@ -39,6 +26,8 @@ public class PlatEntity {
         this.id = id;
     }
 
+    @Basic
+    @Column(name = "category_id", nullable = true)
     public Long getCategoryId() {
         return categoryId;
     }
@@ -47,6 +36,8 @@ public class PlatEntity {
         this.categoryId = categoryId;
     }
 
+    @Basic
+    @Column(name = "nom", nullable = false, length = 100)
     public String getNom() {
         return nom;
     }
@@ -55,6 +46,8 @@ public class PlatEntity {
         this.nom = nom;
     }
 
+    @Basic
+    @Column(name = "description", nullable = true, length = -1)
     public String getDescription() {
         return description;
     }
@@ -63,6 +56,8 @@ public class PlatEntity {
         this.description = description;
     }
 
+    @Basic
+    @Column(name = "prix", nullable = false, precision = 2)
     public BigDecimal getPrix() {
         return prix;
     }
@@ -71,6 +66,8 @@ public class PlatEntity {
         this.prix = prix;
     }
 
+    @Basic
+    @Column(name = "photo_url", nullable = true, length = 255)
     public String getPhotoUrl() {
         return photoUrl;
     }
@@ -79,6 +76,8 @@ public class PlatEntity {
         this.photoUrl = photoUrl;
     }
 
+    @Basic
+    @Column(name = "disponibilite", nullable = true)
     public Byte getDisponibilite() {
         return disponibilite;
     }
@@ -91,8 +90,8 @@ public class PlatEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        PlatEntity that = (PlatEntity) o;
-        return Objects.equals(id, that.id) && Objects.equals(categoryId, that.categoryId) && Objects.equals(nom, that.nom) && Objects.equals(description, that.description) && Objects.equals(prix, that.prix) && Objects.equals(photoUrl, that.photoUrl) && Objects.equals(disponibilite, that.disponibilite);
+        Plat plat = (Plat) o;
+        return Objects.equals(id, plat.id) && Objects.equals(categoryId, plat.categoryId) && Objects.equals(nom, plat.nom) && Objects.equals(description, plat.description) && Objects.equals(prix, plat.prix) && Objects.equals(photoUrl, plat.photoUrl) && Objects.equals(disponibilite, plat.disponibilite);
     }
 
     @Override

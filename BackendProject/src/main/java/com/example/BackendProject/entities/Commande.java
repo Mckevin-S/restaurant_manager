@@ -7,34 +7,19 @@ import java.sql.Timestamp;
 import java.util.Objects;
 
 @Entity
-@Table(name = "commande", schema = "restaurant", catalog = "")
-public class CommandeEntity {
+public class Commande {
+    private Long id;
+    private Long tableId;
+    private Long serveurId;
+    private Timestamp dateHeureCommande;
+    private Object statut;
+    private Object typeCommande;
+    private BigDecimal totalHt;
+    private BigDecimal totalTtc;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;
-    @Basic
-    @Column(name = "table_id", nullable = true)
-    private Long tableId;
-    @Basic
-    @Column(name = "serveur_id", nullable = true)
-    private Long serveurId;
-    @Basic
-    @Column(name = "date_heure_commande", nullable = true)
-    private Timestamp dateHeureCommande;
-    @Basic
-    @Column(name = "statut", nullable = true)
-    private Object statut;
-    @Basic
-    @Column(name = "type_commande", nullable = true)
-    private Object typeCommande;
-    @Basic
-    @Column(name = "total_ht", nullable = true, precision = 2)
-    private BigDecimal totalHt;
-    @Basic
-    @Column(name = "total_ttc", nullable = true, precision = 2)
-    private BigDecimal totalTtc;
-
     public Long getId() {
         return id;
     }
@@ -43,6 +28,8 @@ public class CommandeEntity {
         this.id = id;
     }
 
+    @Basic
+    @Column(name = "table_id", nullable = true)
     public Long getTableId() {
         return tableId;
     }
@@ -51,6 +38,8 @@ public class CommandeEntity {
         this.tableId = tableId;
     }
 
+    @Basic
+    @Column(name = "serveur_id", nullable = true)
     public Long getServeurId() {
         return serveurId;
     }
@@ -59,6 +48,8 @@ public class CommandeEntity {
         this.serveurId = serveurId;
     }
 
+    @Basic
+    @Column(name = "date_heure_commande", nullable = true)
     public Timestamp getDateHeureCommande() {
         return dateHeureCommande;
     }
@@ -67,6 +58,8 @@ public class CommandeEntity {
         this.dateHeureCommande = dateHeureCommande;
     }
 
+    @Basic
+    @Column(name = "statut", nullable = true)
     public Object getStatut() {
         return statut;
     }
@@ -75,6 +68,8 @@ public class CommandeEntity {
         this.statut = statut;
     }
 
+    @Basic
+    @Column(name = "type_commande", nullable = true)
     public Object getTypeCommande() {
         return typeCommande;
     }
@@ -83,6 +78,8 @@ public class CommandeEntity {
         this.typeCommande = typeCommande;
     }
 
+    @Basic
+    @Column(name = "total_ht", nullable = true, precision = 2)
     public BigDecimal getTotalHt() {
         return totalHt;
     }
@@ -91,6 +88,8 @@ public class CommandeEntity {
         this.totalHt = totalHt;
     }
 
+    @Basic
+    @Column(name = "total_ttc", nullable = true, precision = 2)
     public BigDecimal getTotalTtc() {
         return totalTtc;
     }
@@ -103,8 +102,8 @@ public class CommandeEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        CommandeEntity that = (CommandeEntity) o;
-        return Objects.equals(id, that.id) && Objects.equals(tableId, that.tableId) && Objects.equals(serveurId, that.serveurId) && Objects.equals(dateHeureCommande, that.dateHeureCommande) && Objects.equals(statut, that.statut) && Objects.equals(typeCommande, that.typeCommande) && Objects.equals(totalHt, that.totalHt) && Objects.equals(totalTtc, that.totalTtc);
+        Commande commande = (Commande) o;
+        return Objects.equals(id, commande.id) && Objects.equals(tableId, commande.tableId) && Objects.equals(serveurId, commande.serveurId) && Objects.equals(dateHeureCommande, commande.dateHeureCommande) && Objects.equals(statut, commande.statut) && Objects.equals(typeCommande, commande.typeCommande) && Objects.equals(totalHt, commande.totalHt) && Objects.equals(totalTtc, commande.totalTtc);
     }
 
     @Override

@@ -7,28 +7,17 @@ import java.sql.Timestamp;
 import java.util.Objects;
 
 @Entity
-@Table(name = "paiement", schema = "restaurant", catalog = "")
-public class PaiementEntity {
+public class Paiement {
+    private Long id;
+    private Long commandeId;
+    private BigDecimal montant;
+    private Object typePaiement;
+    private Timestamp datePaiement;
+    private String referenceTransaction;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;
-    @Basic
-    @Column(name = "commande_id", nullable = true)
-    private Long commandeId;
-    @Basic
-    @Column(name = "montant", nullable = false, precision = 2)
-    private BigDecimal montant;
-    @Basic
-    @Column(name = "type_paiement", nullable = false)
-    private Object typePaiement;
-    @Basic
-    @Column(name = "date_paiement", nullable = true)
-    private Timestamp datePaiement;
-    @Basic
-    @Column(name = "reference_transaction", nullable = true, length = 100)
-    private String referenceTransaction;
-
     public Long getId() {
         return id;
     }
@@ -37,6 +26,8 @@ public class PaiementEntity {
         this.id = id;
     }
 
+    @Basic
+    @Column(name = "commande_id", nullable = true)
     public Long getCommandeId() {
         return commandeId;
     }
@@ -45,6 +36,8 @@ public class PaiementEntity {
         this.commandeId = commandeId;
     }
 
+    @Basic
+    @Column(name = "montant", nullable = false, precision = 2)
     public BigDecimal getMontant() {
         return montant;
     }
@@ -53,6 +46,8 @@ public class PaiementEntity {
         this.montant = montant;
     }
 
+    @Basic
+    @Column(name = "type_paiement", nullable = false)
     public Object getTypePaiement() {
         return typePaiement;
     }
@@ -61,6 +56,8 @@ public class PaiementEntity {
         this.typePaiement = typePaiement;
     }
 
+    @Basic
+    @Column(name = "date_paiement", nullable = true)
     public Timestamp getDatePaiement() {
         return datePaiement;
     }
@@ -69,6 +66,8 @@ public class PaiementEntity {
         this.datePaiement = datePaiement;
     }
 
+    @Basic
+    @Column(name = "reference_transaction", nullable = true, length = 100)
     public String getReferenceTransaction() {
         return referenceTransaction;
     }
@@ -81,8 +80,8 @@ public class PaiementEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        PaiementEntity that = (PaiementEntity) o;
-        return Objects.equals(id, that.id) && Objects.equals(commandeId, that.commandeId) && Objects.equals(montant, that.montant) && Objects.equals(typePaiement, that.typePaiement) && Objects.equals(datePaiement, that.datePaiement) && Objects.equals(referenceTransaction, that.referenceTransaction);
+        Paiement paiement = (Paiement) o;
+        return Objects.equals(id, paiement.id) && Objects.equals(commandeId, paiement.commandeId) && Objects.equals(montant, paiement.montant) && Objects.equals(typePaiement, paiement.typePaiement) && Objects.equals(datePaiement, paiement.datePaiement) && Objects.equals(referenceTransaction, paiement.referenceTransaction);
     }
 
     @Override

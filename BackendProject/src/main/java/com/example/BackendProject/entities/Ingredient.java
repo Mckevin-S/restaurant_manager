@@ -6,25 +6,16 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 @Entity
-@Table(name = "ingredient", schema = "restaurant", catalog = "")
-public class IngredientEntity {
+public class Ingredient {
+    private Long id;
+    private String nom;
+    private BigDecimal quantiteActuelle;
+    private String uniteMesure;
+    private BigDecimal seuilAlerte;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;
-    @Basic
-    @Column(name = "nom", nullable = false, length = 100)
-    private String nom;
-    @Basic
-    @Column(name = "quantite_actuelle", nullable = true, precision = 2)
-    private BigDecimal quantiteActuelle;
-    @Basic
-    @Column(name = "unite_mesure", nullable = true, length = 20)
-    private String uniteMesure;
-    @Basic
-    @Column(name = "seuil_alerte", nullable = true, precision = 2)
-    private BigDecimal seuilAlerte;
-
     public Long getId() {
         return id;
     }
@@ -33,6 +24,8 @@ public class IngredientEntity {
         this.id = id;
     }
 
+    @Basic
+    @Column(name = "nom", nullable = false, length = 100)
     public String getNom() {
         return nom;
     }
@@ -41,6 +34,8 @@ public class IngredientEntity {
         this.nom = nom;
     }
 
+    @Basic
+    @Column(name = "quantite_actuelle", nullable = true, precision = 2)
     public BigDecimal getQuantiteActuelle() {
         return quantiteActuelle;
     }
@@ -49,6 +44,8 @@ public class IngredientEntity {
         this.quantiteActuelle = quantiteActuelle;
     }
 
+    @Basic
+    @Column(name = "unite_mesure", nullable = true, length = 20)
     public String getUniteMesure() {
         return uniteMesure;
     }
@@ -57,6 +54,8 @@ public class IngredientEntity {
         this.uniteMesure = uniteMesure;
     }
 
+    @Basic
+    @Column(name = "seuil_alerte", nullable = true, precision = 2)
     public BigDecimal getSeuilAlerte() {
         return seuilAlerte;
     }
@@ -69,7 +68,7 @@ public class IngredientEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        IngredientEntity that = (IngredientEntity) o;
+        Ingredient that = (Ingredient) o;
         return Objects.equals(id, that.id) && Objects.equals(nom, that.nom) && Objects.equals(quantiteActuelle, that.quantiteActuelle) && Objects.equals(uniteMesure, that.uniteMesure) && Objects.equals(seuilAlerte, that.seuilAlerte);
     }
 

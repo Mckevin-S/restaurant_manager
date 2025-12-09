@@ -1,22 +1,20 @@
 package com.example.BackendProject.entities;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-@Entity
-@Table(name = "commande_promotion", schema = "restaurant", catalog = "")
-@IdClass(CommandePromotionEntityPK.class)
-public class CommandePromotionEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Id
-    @Column(name = "commande_id", nullable = false)
+public class CommandePromotionPK implements Serializable {
     private Long commandeId;
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Id
-    @Column(name = "promotion_id", nullable = false)
     private Long promotionId;
 
+    @Column(name = "commande_id", nullable = false)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long getCommandeId() {
         return commandeId;
     }
@@ -25,6 +23,9 @@ public class CommandePromotionEntity {
         this.commandeId = commandeId;
     }
 
+    @Column(name = "promotion_id", nullable = false)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long getPromotionId() {
         return promotionId;
     }
@@ -37,7 +38,7 @@ public class CommandePromotionEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        CommandePromotionEntity that = (CommandePromotionEntity) o;
+        CommandePromotionPK that = (CommandePromotionPK) o;
         return Objects.equals(commandeId, that.commandeId) && Objects.equals(promotionId, that.promotionId);
     }
 

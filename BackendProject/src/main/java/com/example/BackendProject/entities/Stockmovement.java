@@ -7,28 +7,17 @@ import java.sql.Timestamp;
 import java.util.Objects;
 
 @Entity
-@Table(name = "stockmovement", schema = "restaurant", catalog = "")
-public class StockmovementEntity {
+public class Stockmovement {
+    private Long id;
+    private Long ingredientId;
+    private Object typeMouvement;
+    private BigDecimal quantite;
+    private Timestamp dateMouvement;
+    private String raison;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;
-    @Basic
-    @Column(name = "ingredient_id", nullable = true)
-    private Long ingredientId;
-    @Basic
-    @Column(name = "type_mouvement", nullable = true)
-    private Object typeMouvement;
-    @Basic
-    @Column(name = "quantite", nullable = false, precision = 2)
-    private BigDecimal quantite;
-    @Basic
-    @Column(name = "date_mouvement", nullable = true)
-    private Timestamp dateMouvement;
-    @Basic
-    @Column(name = "raison", nullable = true, length = -1)
-    private String raison;
-
     public Long getId() {
         return id;
     }
@@ -37,6 +26,8 @@ public class StockmovementEntity {
         this.id = id;
     }
 
+    @Basic
+    @Column(name = "ingredient_id", nullable = true)
     public Long getIngredientId() {
         return ingredientId;
     }
@@ -45,6 +36,8 @@ public class StockmovementEntity {
         this.ingredientId = ingredientId;
     }
 
+    @Basic
+    @Column(name = "type_mouvement", nullable = true)
     public Object getTypeMouvement() {
         return typeMouvement;
     }
@@ -53,6 +46,8 @@ public class StockmovementEntity {
         this.typeMouvement = typeMouvement;
     }
 
+    @Basic
+    @Column(name = "quantite", nullable = false, precision = 2)
     public BigDecimal getQuantite() {
         return quantite;
     }
@@ -61,6 +56,8 @@ public class StockmovementEntity {
         this.quantite = quantite;
     }
 
+    @Basic
+    @Column(name = "date_mouvement", nullable = true)
     public Timestamp getDateMouvement() {
         return dateMouvement;
     }
@@ -69,6 +66,8 @@ public class StockmovementEntity {
         this.dateMouvement = dateMouvement;
     }
 
+    @Basic
+    @Column(name = "raison", nullable = true, length = -1)
     public String getRaison() {
         return raison;
     }
@@ -81,7 +80,7 @@ public class StockmovementEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        StockmovementEntity that = (StockmovementEntity) o;
+        Stockmovement that = (Stockmovement) o;
         return Objects.equals(id, that.id) && Objects.equals(ingredientId, that.ingredientId) && Objects.equals(typeMouvement, that.typeMouvement) && Objects.equals(quantite, that.quantite) && Objects.equals(dateMouvement, that.dateMouvement) && Objects.equals(raison, that.raison);
     }
 

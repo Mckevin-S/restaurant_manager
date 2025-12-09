@@ -5,13 +5,12 @@ import jakarta.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "caissier", schema = "restaurant", catalog = "")
-public class CaissierEntity {
+public class Caissier {
+    private Long userId;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "user_id", nullable = false)
-    private Long userId;
-
     public Long getUserId() {
         return userId;
     }
@@ -24,8 +23,8 @@ public class CaissierEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        CaissierEntity that = (CaissierEntity) o;
-        return Objects.equals(userId, that.userId);
+        Caissier caissier = (Caissier) o;
+        return Objects.equals(userId, caissier.userId);
     }
 
     @Override

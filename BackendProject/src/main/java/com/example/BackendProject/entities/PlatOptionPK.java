@@ -1,22 +1,20 @@
 package com.example.BackendProject.entities;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-@Entity
-@Table(name = "plat_option", schema = "restaurant", catalog = "")
-@IdClass(PlatOptionEntityPK.class)
-public class PlatOptionEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Id
-    @Column(name = "plat_id", nullable = false)
+public class PlatOptionPK implements Serializable {
     private Long platId;
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Id
-    @Column(name = "option_id", nullable = false)
     private Long optionId;
 
+    @Column(name = "plat_id", nullable = false)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long getPlatId() {
         return platId;
     }
@@ -25,6 +23,9 @@ public class PlatOptionEntity {
         this.platId = platId;
     }
 
+    @Column(name = "option_id", nullable = false)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long getOptionId() {
         return optionId;
     }
@@ -37,7 +38,7 @@ public class PlatOptionEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        PlatOptionEntity that = (PlatOptionEntity) o;
+        PlatOptionPK that = (PlatOptionPK) o;
         return Objects.equals(platId, that.platId) && Objects.equals(optionId, that.optionId);
     }
 

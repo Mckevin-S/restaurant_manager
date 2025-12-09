@@ -6,40 +6,21 @@ import java.sql.Date;
 import java.util.Objects;
 
 @Entity
-@Table(name = "user", schema = "restaurant", catalog = "")
-public class UserEntity {
+public class User {
+    private Long id;
+    private Long restaurantId;
+    private Long roleId;
+    private String nom;
+    private String prenom;
+    private String email;
+    private String motDePasse;
+    private String telephone;
+    private Date dateEmbauche;
+    private Byte actif;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;
-    @Basic
-    @Column(name = "restaurant_id", nullable = true)
-    private Long restaurantId;
-    @Basic
-    @Column(name = "role_id", nullable = true)
-    private Long roleId;
-    @Basic
-    @Column(name = "nom", nullable = false, length = 100)
-    private String nom;
-    @Basic
-    @Column(name = "prenom", nullable = true, length = 100)
-    private String prenom;
-    @Basic
-    @Column(name = "email", nullable = false, length = 120)
-    private String email;
-    @Basic
-    @Column(name = "mot_de_passe", nullable = false, length = 255)
-    private String motDePasse;
-    @Basic
-    @Column(name = "telephone", nullable = true, length = 30)
-    private String telephone;
-    @Basic
-    @Column(name = "date_embauche", nullable = true)
-    private Date dateEmbauche;
-    @Basic
-    @Column(name = "actif", nullable = true)
-    private Byte actif;
-
     public Long getId() {
         return id;
     }
@@ -48,6 +29,8 @@ public class UserEntity {
         this.id = id;
     }
 
+    @Basic
+    @Column(name = "restaurant_id", nullable = true)
     public Long getRestaurantId() {
         return restaurantId;
     }
@@ -56,6 +39,8 @@ public class UserEntity {
         this.restaurantId = restaurantId;
     }
 
+    @Basic
+    @Column(name = "role_id", nullable = true)
     public Long getRoleId() {
         return roleId;
     }
@@ -64,6 +49,8 @@ public class UserEntity {
         this.roleId = roleId;
     }
 
+    @Basic
+    @Column(name = "nom", nullable = false, length = 100)
     public String getNom() {
         return nom;
     }
@@ -72,6 +59,8 @@ public class UserEntity {
         this.nom = nom;
     }
 
+    @Basic
+    @Column(name = "prenom", nullable = true, length = 100)
     public String getPrenom() {
         return prenom;
     }
@@ -80,6 +69,8 @@ public class UserEntity {
         this.prenom = prenom;
     }
 
+    @Basic
+    @Column(name = "email", nullable = false, length = 120)
     public String getEmail() {
         return email;
     }
@@ -88,6 +79,8 @@ public class UserEntity {
         this.email = email;
     }
 
+    @Basic
+    @Column(name = "mot_de_passe", nullable = false, length = 255)
     public String getMotDePasse() {
         return motDePasse;
     }
@@ -96,6 +89,8 @@ public class UserEntity {
         this.motDePasse = motDePasse;
     }
 
+    @Basic
+    @Column(name = "telephone", nullable = true, length = 30)
     public String getTelephone() {
         return telephone;
     }
@@ -104,6 +99,8 @@ public class UserEntity {
         this.telephone = telephone;
     }
 
+    @Basic
+    @Column(name = "date_embauche", nullable = true)
     public Date getDateEmbauche() {
         return dateEmbauche;
     }
@@ -112,6 +109,8 @@ public class UserEntity {
         this.dateEmbauche = dateEmbauche;
     }
 
+    @Basic
+    @Column(name = "actif", nullable = true)
     public Byte getActif() {
         return actif;
     }
@@ -124,8 +123,8 @@ public class UserEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        UserEntity that = (UserEntity) o;
-        return Objects.equals(id, that.id) && Objects.equals(restaurantId, that.restaurantId) && Objects.equals(roleId, that.roleId) && Objects.equals(nom, that.nom) && Objects.equals(prenom, that.prenom) && Objects.equals(email, that.email) && Objects.equals(motDePasse, that.motDePasse) && Objects.equals(telephone, that.telephone) && Objects.equals(dateEmbauche, that.dateEmbauche) && Objects.equals(actif, that.actif);
+        User user = (User) o;
+        return Objects.equals(id, user.id) && Objects.equals(restaurantId, user.restaurantId) && Objects.equals(roleId, user.roleId) && Objects.equals(nom, user.nom) && Objects.equals(prenom, user.prenom) && Objects.equals(email, user.email) && Objects.equals(motDePasse, user.motDePasse) && Objects.equals(telephone, user.telephone) && Objects.equals(dateEmbauche, user.dateEmbauche) && Objects.equals(actif, user.actif);
     }
 
     @Override

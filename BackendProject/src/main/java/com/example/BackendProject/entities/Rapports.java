@@ -7,28 +7,17 @@ import java.sql.Date;
 import java.util.Objects;
 
 @Entity
-@Table(name = "rapports", schema = "restaurant", catalog = "")
-public class RapportsEntity {
+public class Rapports {
+    private Long id;
+    private Date dateDebut;
+    private Date dateFin;
+    private BigDecimal chiffreAffaires;
+    private Integer platsVendus;
+    private String performanceServeurs;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;
-    @Basic
-    @Column(name = "date_debut", nullable = true)
-    private Date dateDebut;
-    @Basic
-    @Column(name = "date_fin", nullable = true)
-    private Date dateFin;
-    @Basic
-    @Column(name = "chiffre_affaires", nullable = true, precision = 2)
-    private BigDecimal chiffreAffaires;
-    @Basic
-    @Column(name = "plats_vendus", nullable = true)
-    private Integer platsVendus;
-    @Basic
-    @Column(name = "performance_serveurs", nullable = true, length = -1)
-    private String performanceServeurs;
-
     public Long getId() {
         return id;
     }
@@ -37,6 +26,8 @@ public class RapportsEntity {
         this.id = id;
     }
 
+    @Basic
+    @Column(name = "date_debut", nullable = true)
     public Date getDateDebut() {
         return dateDebut;
     }
@@ -45,6 +36,8 @@ public class RapportsEntity {
         this.dateDebut = dateDebut;
     }
 
+    @Basic
+    @Column(name = "date_fin", nullable = true)
     public Date getDateFin() {
         return dateFin;
     }
@@ -53,6 +46,8 @@ public class RapportsEntity {
         this.dateFin = dateFin;
     }
 
+    @Basic
+    @Column(name = "chiffre_affaires", nullable = true, precision = 2)
     public BigDecimal getChiffreAffaires() {
         return chiffreAffaires;
     }
@@ -61,6 +56,8 @@ public class RapportsEntity {
         this.chiffreAffaires = chiffreAffaires;
     }
 
+    @Basic
+    @Column(name = "plats_vendus", nullable = true)
     public Integer getPlatsVendus() {
         return platsVendus;
     }
@@ -69,6 +66,8 @@ public class RapportsEntity {
         this.platsVendus = platsVendus;
     }
 
+    @Basic
+    @Column(name = "performance_serveurs", nullable = true, length = -1)
     public String getPerformanceServeurs() {
         return performanceServeurs;
     }
@@ -81,8 +80,8 @@ public class RapportsEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        RapportsEntity that = (RapportsEntity) o;
-        return Objects.equals(id, that.id) && Objects.equals(dateDebut, that.dateDebut) && Objects.equals(dateFin, that.dateFin) && Objects.equals(chiffreAffaires, that.chiffreAffaires) && Objects.equals(platsVendus, that.platsVendus) && Objects.equals(performanceServeurs, that.performanceServeurs);
+        Rapports rapports = (Rapports) o;
+        return Objects.equals(id, rapports.id) && Objects.equals(dateDebut, rapports.dateDebut) && Objects.equals(dateFin, rapports.dateFin) && Objects.equals(chiffreAffaires, rapports.chiffreAffaires) && Objects.equals(platsVendus, rapports.platsVendus) && Objects.equals(performanceServeurs, rapports.performanceServeurs);
     }
 
     @Override

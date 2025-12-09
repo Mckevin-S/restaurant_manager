@@ -7,27 +7,17 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "ligne_commande", schema = "restaurant", catalog = "")
-public class LigneCommandeEntity {
+public class LigneCommande {
+    private Long id;
+    private Long commandeId;
+    private Long platId;
+    private Integer quantite;
+    private BigDecimal prixUnitaire;
+    private String notesCuisine;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;
-    @Basic
-    @Column(name = "commande_id", nullable = true)
-    private Long commandeId;
-    @Basic
-    @Column(name = "plat_id", nullable = true)
-    private Long platId;
-    @Basic
-    @Column(name = "quantite", nullable = true)
-    private Integer quantite;
-    @Basic
-    @Column(name = "prix_unitaire", nullable = false, precision = 2)
-    private BigDecimal prixUnitaire;
-    @Basic
-    @Column(name = "notes_cuisine", nullable = true, length = -1)
-    private String notesCuisine;
-
     public Long getId() {
         return id;
     }
@@ -36,6 +26,8 @@ public class LigneCommandeEntity {
         this.id = id;
     }
 
+    @Basic
+    @Column(name = "commande_id", nullable = true)
     public Long getCommandeId() {
         return commandeId;
     }
@@ -44,6 +36,8 @@ public class LigneCommandeEntity {
         this.commandeId = commandeId;
     }
 
+    @Basic
+    @Column(name = "plat_id", nullable = true)
     public Long getPlatId() {
         return platId;
     }
@@ -52,6 +46,8 @@ public class LigneCommandeEntity {
         this.platId = platId;
     }
 
+    @Basic
+    @Column(name = "quantite", nullable = true)
     public Integer getQuantite() {
         return quantite;
     }
@@ -60,6 +56,8 @@ public class LigneCommandeEntity {
         this.quantite = quantite;
     }
 
+    @Basic
+    @Column(name = "prix_unitaire", nullable = false, precision = 2)
     public BigDecimal getPrixUnitaire() {
         return prixUnitaire;
     }
@@ -68,6 +66,8 @@ public class LigneCommandeEntity {
         this.prixUnitaire = prixUnitaire;
     }
 
+    @Basic
+    @Column(name = "notes_cuisine", nullable = true, length = -1)
     public String getNotesCuisine() {
         return notesCuisine;
     }
@@ -80,7 +80,7 @@ public class LigneCommandeEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        LigneCommandeEntity that = (LigneCommandeEntity) o;
+        LigneCommande that = (LigneCommande) o;
         return Objects.equals(id, that.id) && Objects.equals(commandeId, that.commandeId) && Objects.equals(platId, that.platId) && Objects.equals(quantite, that.quantite) && Objects.equals(prixUnitaire, that.prixUnitaire) && Objects.equals(notesCuisine, that.notesCuisine);
     }
 

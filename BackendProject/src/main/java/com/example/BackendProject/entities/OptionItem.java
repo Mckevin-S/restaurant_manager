@@ -7,18 +7,14 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "option_item", schema = "restaurant", catalog = "")
-public class OptionItemEntity {
+public class OptionItem {
+    private Long id;
+    private String nom;
+    private BigDecimal prixSupplementaire;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;
-    @Basic
-    @Column(name = "nom", nullable = false, length = 100)
-    private String nom;
-    @Basic
-    @Column(name = "prix_supplementaire", nullable = true, precision = 2)
-    private BigDecimal prixSupplementaire;
-
     public Long getId() {
         return id;
     }
@@ -27,6 +23,8 @@ public class OptionItemEntity {
         this.id = id;
     }
 
+    @Basic
+    @Column(name = "nom", nullable = false, length = 100)
     public String getNom() {
         return nom;
     }
@@ -35,6 +33,8 @@ public class OptionItemEntity {
         this.nom = nom;
     }
 
+    @Basic
+    @Column(name = "prix_supplementaire", nullable = true, precision = 2)
     public BigDecimal getPrixSupplementaire() {
         return prixSupplementaire;
     }
@@ -47,7 +47,7 @@ public class OptionItemEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        OptionItemEntity that = (OptionItemEntity) o;
+        OptionItem that = (OptionItem) o;
         return Objects.equals(id, that.id) && Objects.equals(nom, that.nom) && Objects.equals(prixSupplementaire, that.prixSupplementaire);
     }
 

@@ -5,25 +5,16 @@ import jakarta.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "category", schema = "restaurant", catalog = "")
-public class CategoryEntity {
+public class Category {
+    private Long id;
+    private Long menuId;
+    private String nom;
+    private String description;
+    private Integer ordreAffichage;
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;
-    @Basic
-    @Column(name = "menu_id", nullable = true)
-    private Long menuId;
-    @Basic
-    @Column(name = "nom", nullable = false, length = 100)
-    private String nom;
-    @Basic
-    @Column(name = "description", nullable = true, length = -1)
-    private String description;
-    @Basic
-    @Column(name = "ordre_affichage", nullable = true)
-    private Integer ordreAffichage;
-
     public Long getId() {
         return id;
     }
@@ -32,6 +23,8 @@ public class CategoryEntity {
         this.id = id;
     }
 
+    @Basic
+    @Column(name = "menu_id", nullable = true)
     public Long getMenuId() {
         return menuId;
     }
@@ -40,6 +33,8 @@ public class CategoryEntity {
         this.menuId = menuId;
     }
 
+    @Basic
+    @Column(name = "nom", nullable = false, length = 100)
     public String getNom() {
         return nom;
     }
@@ -48,6 +43,8 @@ public class CategoryEntity {
         this.nom = nom;
     }
 
+    @Basic
+    @Column(name = "description", nullable = true, length = -1)
     public String getDescription() {
         return description;
     }
@@ -56,6 +53,8 @@ public class CategoryEntity {
         this.description = description;
     }
 
+    @Basic
+    @Column(name = "ordre_affichage", nullable = true)
     public Integer getOrdreAffichage() {
         return ordreAffichage;
     }
@@ -68,8 +67,8 @@ public class CategoryEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        CategoryEntity that = (CategoryEntity) o;
-        return Objects.equals(id, that.id) && Objects.equals(menuId, that.menuId) && Objects.equals(nom, that.nom) && Objects.equals(description, that.description) && Objects.equals(ordreAffichage, that.ordreAffichage);
+        Category category = (Category) o;
+        return Objects.equals(id, category.id) && Objects.equals(menuId, category.menuId) && Objects.equals(nom, category.nom) && Objects.equals(description, category.description) && Objects.equals(ordreAffichage, category.ordreAffichage);
     }
 
     @Override
