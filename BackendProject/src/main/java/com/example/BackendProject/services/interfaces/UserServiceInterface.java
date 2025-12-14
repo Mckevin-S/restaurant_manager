@@ -12,7 +12,7 @@ public interface UserServiceInterface {
 
     List<UserDto> getAll();
 
-    UserDto getById(String  userDto);
+    UserDto getById(Long  id);
 
     UserDto update(Long id, UserDto userDto);
 
@@ -20,7 +20,7 @@ public interface UserServiceInterface {
 
     List<UserDto> findByRoleType(RoleType role);
 
-    List<UserDto> search(String nom);
+    List<UserDto> search(String keyword);
 
     void changePassword(Long id, String oldPassword, String newPassword);
 
