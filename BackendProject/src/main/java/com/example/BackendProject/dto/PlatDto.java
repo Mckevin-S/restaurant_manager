@@ -9,9 +9,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 
 
-@AllArgsConstructor
-@Getter
-@Setter
+
 public class PlatDto {
 
     private Long id;
@@ -22,4 +20,69 @@ public class PlatDto {
     private String photoUrl;
     private Recette recette;
 
+    public PlatDto(Long id, Category category, String nom, String description, BigDecimal prix, String photoUrl, Recette recette) {
+        this.id = id;
+        this.category = category;
+        this.nom = nom;
+        this.description = description;
+        this.prix = prix;
+        this.photoUrl = photoUrl;
+        this.recette = recette;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
+    }
+
+    public String getNom() {
+        return nom;
+    }
+
+    public void setNom(String nom) {
+        this.nom = nom;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public BigDecimal getPrix() {
+        return prix;
+    }
+
+    public void setPrix(BigDecimal prix) {
+        this.prix = prix;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
+    }
+
+    public Recette getRecette() {
+        return recette;
+    }
+
+    public void setRecette(Recette recette) {
+        this.recette = recette;
+    }
 }

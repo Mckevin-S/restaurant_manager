@@ -25,4 +25,64 @@ public class TableRestaurant {
 
     @OneToMany(mappedBy = "table")
     private List<Commande> commandes;
+
+    public TableRestaurant(Long id, Zone zone, String numero, Integer capacite, StatutTable statut, List<Commande> commandes) {
+        this.id = id;
+        this.zone = zone;
+        this.numero = numero;
+        this.capacite = capacite;
+        this.statut = statut;
+        this.commandes = commandes;
+    }
+
+    public TableRestaurant() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Zone getZone() {
+        return zone;
+    }
+
+    public void setZone(Zone zone) {
+        this.zone = zone;
+    }
+
+    public String getNumero() {
+        return numero;
+    }
+
+    public void setNumero(String numero) {
+        this.numero = numero;
+    }
+
+    public Integer getCapacite() {
+        return capacite;
+    }
+
+    public void setCapacite(Integer capacite) {
+        this.capacite = capacite;
+    }
+
+    public StatutTable getStatut() {
+        return statut;
+    }
+
+    public void setStatut(StatutTable statut) {
+        this.statut = statut;
+    }
+
+    public List<Commande> getCommandes() {
+        return commandes;
+    }
+
+    public void setCommandes(List<Commande> commandes) {
+        this.commandes = commandes;
+    }
 }

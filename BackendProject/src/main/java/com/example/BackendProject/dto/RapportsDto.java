@@ -8,9 +8,7 @@ import java.math.BigDecimal;
 import java.sql.Date;
 
 
-@AllArgsConstructor
-@Getter
-@Setter
+
 public class RapportsDto {
 
     private Long id;
@@ -20,4 +18,60 @@ public class RapportsDto {
     private Integer platsVendus;
     private String performanceServeurs;
 
+    public RapportsDto(Long id, Date dateDebut, Date dateFin, BigDecimal chiffreAffaires, Integer platsVendus, String performanceServeurs) {
+        this.id = id;
+        this.dateDebut = dateDebut;
+        this.dateFin = dateFin;
+        this.chiffreAffaires = chiffreAffaires;
+        this.platsVendus = platsVendus;
+        this.performanceServeurs = performanceServeurs;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Date getDateDebut() {
+        return dateDebut;
+    }
+
+    public void setDateDebut(Date dateDebut) {
+        this.dateDebut = dateDebut;
+    }
+
+    public Date getDateFin() {
+        return dateFin;
+    }
+
+    public void setDateFin(Date dateFin) {
+        this.dateFin = dateFin;
+    }
+
+    public BigDecimal getChiffreAffaires() {
+        return chiffreAffaires;
+    }
+
+    public void setChiffreAffaires(BigDecimal chiffreAffaires) {
+        this.chiffreAffaires = chiffreAffaires;
+    }
+
+    public Integer getPlatsVendus() {
+        return platsVendus;
+    }
+
+    public void setPlatsVendus(Integer platsVendus) {
+        this.platsVendus = platsVendus;
+    }
+
+    public String getPerformanceServeurs() {
+        return performanceServeurs;
+    }
+
+    public void setPerformanceServeurs(String performanceServeurs) {
+        this.performanceServeurs = performanceServeurs;
+    }
 }

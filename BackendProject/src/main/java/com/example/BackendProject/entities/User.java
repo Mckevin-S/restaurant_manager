@@ -148,4 +148,20 @@ public class User {
         return commandes;
     }
 
+    public User(Long id, Restaurant restaurant, RoleType role, String nom, String prenom, String email, String motDePasse, String telephone, LocalDate dateEmbauche, Boolean actif, List<Commande> commandes) {
+        this.id = id;
+        this.restaurant = restaurant;
+        this.role = role;
+        this.nom = nom;
+        this.prenom = prenom;
+        this.email = email;
+        this.motDePasse = motDePasse;
+        this.telephone = telephone;
+        this.dateEmbauche = dateEmbauche;
+        this.actif = actif;
+        this.commandes = commandes;
+    }
+
+    public User() {
+    }
 }

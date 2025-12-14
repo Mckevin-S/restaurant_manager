@@ -2,6 +2,11 @@ package com.example.BackendProject.entities;
 
 import com.example.BackendProject.utils.TypePromotion;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.Objects;
@@ -31,6 +36,18 @@ public class Promotion {
 
     @Column(name = "date_expiration")
     private Date dateExpiration;
+
+    public Promotion(Long id, String nom, TypePromotion type, BigDecimal valeur, Boolean actif, Date dateExpiration) {
+        this.id = id;
+        this.nom = nom;
+        this.type = type;
+        this.valeur = valeur;
+        this.actif = actif;
+        this.dateExpiration = dateExpiration;
+    }
+
+    public Promotion() {
+    }
 
     // ---------------------------------------------------
     // Getters / Setters

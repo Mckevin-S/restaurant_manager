@@ -1,6 +1,11 @@
 package com.example.BackendProject.entities;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.util.Objects;
 
 @Entity
@@ -17,6 +22,13 @@ public class CommandePromotion {
     @JoinColumn(name = "promotion_id", nullable = false)
     private Promotion promotion;
 
+    public CommandePromotion(Commande commande, Promotion promotion) {
+        this.commande = commande;
+        this.promotion = promotion;
+    }
+
+    public CommandePromotion() {
+    }
 
     // Getters & Setters
     public Commande getCommande() { return commande; }

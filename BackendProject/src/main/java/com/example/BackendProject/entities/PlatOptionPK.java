@@ -24,5 +24,11 @@ public class PlatOptionPK implements Serializable {
         this.optionId = optionId;
     }
 
+    public PlatOptionPK(Long platId, Long optionId) {
+        this.platId = platId;
+        this.optionId = optionId;
+    }
 
+    public PlatOptionPK() {
+    }
 }

@@ -26,4 +26,91 @@ public class Restaurant {
 
     @OneToMany(mappedBy = "restaurant")
     private List<Zone> zones;
+
+    public Restaurant(Long id, String nom, String adresse, String telephone, BigDecimal tauxTva, String devise, Timestamp dateCreation, List<User> users, List<Zone> zones) {
+        this.id = id;
+        this.nom = nom;
+        this.adresse = adresse;
+        this.telephone = telephone;
+        this.tauxTva = tauxTva;
+        this.devise = devise;
+        this.dateCreation = dateCreation;
+        this.users = users;
+        this.zones = zones;
+    }
+
+    public Restaurant() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getNom() {
+        return nom;
+    }
+
+    public void setNom(String nom) {
+        this.nom = nom;
+    }
+
+    public String getAdresse() {
+        return adresse;
+    }
+
+    public void setAdresse(String adresse) {
+        this.adresse = adresse;
+    }
+
+    public String getTelephone() {
+        return telephone;
+    }
+
+    public void setTelephone(String telephone) {
+        this.telephone = telephone;
+    }
+
+    public BigDecimal getTauxTva() {
+        return tauxTva;
+    }
+
+    public void setTauxTva(BigDecimal tauxTva) {
+        this.tauxTva = tauxTva;
+    }
+
+    public String getDevise() {
+        return devise;
+    }
+
+    public void setDevise(String devise) {
+        this.devise = devise;
+    }
+
+    public Timestamp getDateCreation() {
+        return dateCreation;
+    }
+
+    public void setDateCreation(Timestamp dateCreation) {
+        this.dateCreation = dateCreation;
+    }
+
+    public List<User> getUsers() {
+        return users;
+    }
+
+    public void setUsers(List<User> users) {
+        this.users = users;
+    }
+
+    public List<Zone> getZones() {
+        return zones;
+    }
+
+    public void setZones(List<Zone> zones) {
+        this.zones = zones;
+    }
 }

@@ -62,5 +62,15 @@ public class PlatOption {
     public void setOption(OptionItem option) {
         this.option = option;
     }
+
+    public PlatOption(Long platId, Long optionId, Plat plat, OptionItem option) {
+        this.platId = platId;
+        this.optionId = optionId;
+        this.plat = plat;
+        this.option = option;
+    }
+
+    public PlatOption() {
+    }
 }
 
