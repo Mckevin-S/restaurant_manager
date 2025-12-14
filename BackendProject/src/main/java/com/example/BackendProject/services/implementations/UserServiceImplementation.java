@@ -8,30 +8,27 @@ import com.example.BackendProject.services.interfaces.UserServiceInterface;
 import com.example.BackendProject.utils.CodeGenerator;
 import com.example.BackendProject.utils.RoleType;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service
 public class UserServiceImplementation implements UserServiceInterface {
-
     private final UserMapper userMapper;
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
     public final CodeGenerator codeGenerator;
 
-    public UserServiceImplementation(UserMapper userMapper, UserRepository userRepository, PasswordEncoder passwordEncoder, CodeGenerator codeGenerator) {
+
+    public UserServiceImplementation(UserMapper userMapper, UserRepository userRepository, CodeGenerator codeGenerator) {
         this.userMapper = userMapper;
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
         this.codeGenerator = codeGenerator;
     }
 
     @Override
     public UserDto save(UserDto userDto) {
 
-        User user = userMapper.toEntity(userDto);
+            User user = userMapper.toEntity(userDto);
 
         // Chiffrement du mot de passe
         if (user.getMotDePasse() != null && !user.getMotDePasse().isBlank()) {
@@ -39,7 +36,7 @@ public class UserServiceImplementation implements UserServiceInterface {
                     passwordEncoder.encode(user.getMotDePasse())
             );
         }
-         // Génération de l'identifiant de l'utilisateur
+        // Génération de l'identifiant de l'utilisateur
         userDto.setId(codeGenerator.genarate(userDto.getRole().name()));
 
         // Sauvergarde de l'utilisateur
@@ -77,60 +74,60 @@ public class UserServiceImplementation implements UserServiceInterface {
 
     @Override
     public UserDto update(Long id, UserDto userDto) {
-            User user = userRepository.findById(id)
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID : " + id));
 
-            // Mise à jour des champs (sauf le mot de passe pour l'instant)
-            if (userDto.getNom() != null && !userDto.getNom().isEmpty()) {
-                user.setNom(userDto.getNom());
+        // Mise à jour des champs (sauf le mot de passe pour l'instant)
+        if (userDto.getNom() != null && !userDto.getNom().isEmpty()) {
+            user.setNom(userDto.getNom());
+        }
+
+        if (userDto.getPrenom() != null && !userDto.getPrenom().isEmpty()) {
+            user.setPrenom(userDto.getPrenom());
+        }
+
+        if (userDto.getEmail() != null && !userDto.getEmail().isEmpty()) {
+            user.setEmail(userDto.getEmail());
+        }
+
+        if (userDto.getTelephone() != null && !userDto.getTelephone().isEmpty()) {
+            user.setTelephone(userDto.getTelephone());
+        }
+
+        // MISE À JOUR DU MOT DE PASSE : encoder seulement si un nouveau mot de passe est fourni
+        if (userDto.getMotDePasse() != null && !userDto.getMotDePasse().isEmpty()) {
+            // Vérifier que ce n'est pas déjà un hash BCrypt
+            if (!userDto.getMotDePasse().startsWith("$2a$") &&
+                    !userDto.getMotDePasse().startsWith("$2b$")) {
+                String encodedPassword = passwordEncoder.encode(userDto.getMotDePasse());
+                user.setMotDePasse(encodedPassword);
+            } else {
+                // Si c'est déjà un hash, le garder tel quel
+                user.setMotDePasse(userDto.getMotDePasse());
             }
+        }
+        // Sinon, on garde l'ancien mot de passe (pas de modification)
 
-            if (userDto.getPrenom() != null && !userDto.getPrenom().isEmpty()) {
-                user.setPrenom(userDto.getPrenom());
-            }
+        // Mise à jour des autres champs si présents
+        if (userDto.getRestaurant() != null) {
+            user.setRestaurant(userDto.getRestaurant());
+        }
 
-            if (userDto.getEmail() != null && !userDto.getEmail().isEmpty()) {
-                user.setEmail(userDto.getEmail());
-            }
+        if (userDto.getRole() != null) {
+            user.setRole(userDto.getRole());
+        }
 
-            if (userDto.getTelephone() != null && !userDto.getTelephone().isEmpty()) {
-                user.setTelephone(userDto.getTelephone());
-            }
+        if (userDto.getDateEmbauche() != null) {
+            user.setDateEmbauche(userDto.getDateEmbauche());
+        }
 
-            // MISE À JOUR DU MOT DE PASSE : encoder seulement si un nouveau mot de passe est fourni
-            if (userDto.getMotDePasse() != null && !userDto.getMotDePasse().isEmpty()) {
-                // Vérifier que ce n'est pas déjà un hash BCrypt
-                if (!userDto.getMotDePasse().startsWith("$2a$") &&
-                        !userDto.getMotDePasse().startsWith("$2b$")) {
-                    String encodedPassword = passwordEncoder.encode(userDto.getMotDePasse());
-                    user.setMotDePasse(encodedPassword);
-                } else {
-                    // Si c'est déjà un hash, le garder tel quel
-                    user.setMotDePasse(userDto.getMotDePasse());
-                }
-            }
-            // Sinon, on garde l'ancien mot de passe (pas de modification)
+        // Sauvegarde
+        User updatedUser = userRepository.save(user);
 
-            // Mise à jour des autres champs si présents
-            if (userDto.getRestaurant() != null) {
-                user.setRestaurant(userDto.getRestaurant());
-            }
+        UserDto resultDto = userMapper.toDto(updatedUser);
+        resultDto.setMotDePasse(null); // Ne jamais renvoyer le mot de passe
 
-            if (userDto.getRole() != null) {
-                user.setRole(userDto.getRole());
-            }
-
-            if (userDto.getDateEmbauche() != null) {
-                user.setDateEmbauche(userDto.getDateEmbauche());
-            }
-
-            // Sauvegarde
-            User updatedUser = userRepository.save(user);
-
-            UserDto resultDto = userMapper.toDto(updatedUser);
-            resultDto.setMotDePasse(null); // Ne jamais renvoyer le mot de passe
-
-            return resultDto;
+        return resultDto;
     }
 
     @Override
@@ -203,4 +200,8 @@ public class UserServiceImplementation implements UserServiceInterface {
 
         userRepository.save(user);
     }
+
+
+
+
 }

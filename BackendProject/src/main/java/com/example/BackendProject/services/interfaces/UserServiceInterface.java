@@ -6,9 +6,7 @@ import com.example.BackendProject.utils.RoleType;
 import java.util.List;
 
 public interface UserServiceInterface {
-
-
-   UserDto save(UserDto userDto);
+    UserDto save(UserDto userDto);
 
     List<UserDto> getAll();
 
@@ -25,6 +23,5 @@ public interface UserServiceInterface {
     void changePassword(Long id, String oldPassword, String newPassword);
 
     public void resetPassword(Long id, String newPassword);
-    
-    
+
 }

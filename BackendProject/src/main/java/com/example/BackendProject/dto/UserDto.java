@@ -2,22 +2,41 @@ package com.example.BackendProject.dto;
 
 import com.example.BackendProject.entities.Restaurant;
 import com.example.BackendProject.utils.RoleType;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
 
+@Schema(description = "DTO représentant un utilisateur du système")
 public class UserDto {
 
+    @Schema(description = "Identifiant unique de l'utilisateur", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
     private Long id;
+
+    @Schema(description = "Restaurant associé à l'utilisateur")
     private Restaurant restaurant;
+
+    @Schema(description = "Rôle de l'utilisateur", example = "SERVEUR", required = true)
     private RoleType role;
+
+    @Schema(description = "Nom de famille de l'utilisateur", example = "Dupont", required = true)
     private String nom;
+
+    @Schema(description = "Prénom de l'utilisateur", example = "Jean", required = true)
     private String prenom;
+
+    @Schema(description = "Adresse email de l'utilisateur", example = "jean.dupont@restaurant.com", required = true)
     private String email;
+
+    @Schema(description = "Mot de passe de l'utilisateur (non retourné dans les réponses)", example = "password123", accessMode = Schema.AccessMode.WRITE_ONLY)
     private String motDePasse;
+
+    @Schema(description = "Numéro de téléphone", example = "+237123456789")
     private String telephone;
+
+    @Schema(description = "Date d'embauche de l'utilisateur", example = "2024-01-15")
     private LocalDate dateEmbauche;
 
     public UserDto(Long id, Restaurant restaurant, RoleType role, String nom, String prenom, String email, String motDePasse, String telephone, LocalDate dateEmbauche) {
