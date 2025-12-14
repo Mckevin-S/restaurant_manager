@@ -1,47 +1,151 @@
 package com.example.BackendProject.entities;
 
+
+import com.example.BackendProject.utils.RoleType;
 import jakarta.persistence.*;
 
-import java.sql.Date;
+import java.time.LocalDate;
+
 import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "user")
+@Table(name = "user", schema = "restaurant")
 public class User {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // -----------------------------
+    // 🔗 RESTAURANT
+    // -----------------------------
     @ManyToOne
     @JoinColumn(name = "restaurant_id")
     private Restaurant restaurant;
 
-    @ManyToOne
-    @JoinColumn(name = "role_id")
-    private Role role;
+    // -----------------------------
+    // 🔐 ROLE
+    // -----------------------------
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false, length = 20)
+    private RoleType role;
 
+    // -----------------------------
+    // INFOS USER
+    // -----------------------------
+    @Column(nullable = false, length = 100)
     private String nom;
+
+    @Column(length = 100)
     private String prenom;
+
+    @Column(nullable = false, unique = true, length = 120)
     private String email;
+
+    @Column(name = "mot_de_passe", nullable = false)
     private String motDePasse;
+
+    @Column(length = 30)
     private String telephone;
 
-    private Date dateEmbauche;
+    @Column(name = "date_embauche")
+    private LocalDate dateEmbauche;
+
+    @Column
     private Boolean actif = true;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    private Serveur serveur;
-
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    private Manager manager;
-
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    private Caissier caissier;
-
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    private Cuisinier cuisinier;
-
+    // -----------------------------
+    // 🔗 COMMANDES (serveur)
+    // -----------------------------
     @OneToMany(mappedBy = "serveur")
     private List<Commande> commandes;
+
+    // -----------------------------
+    // GETTERS / SETTERS
+    // -----------------------------
+    public Long getId() {
+        return id;
+    }
+
+    public Restaurant getRestaurant() {
+        return restaurant;
+    }
+
+    public void setRestaurant(Restaurant restaurant) {
+        this.restaurant = restaurant;
+    }
+
+    public RoleType getRole() {
+        return role;
+    }
+
+    public void setRole(RoleType role) {
+        this.role = role;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getNom() {
+        return nom;
+    }
+
+    public void setNom(String nom) {
+        this.nom = nom;
+    }
+
+    public String getPrenom() {
+        return prenom;
+    }
+
+    public void setPrenom(String prenom) {
+        this.prenom = prenom;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getMotDePasse() {
+        return motDePasse;
+    }
+
+    public void setMotDePasse(String motDePasse) {
+        this.motDePasse = motDePasse;
+    }
+
+    public String getTelephone() {
+        return telephone;
+    }
+
+    public void setTelephone(String telephone) {
+        this.telephone = telephone;
+    }
+
+    public LocalDate getDateEmbauche() {
+        return dateEmbauche;
+    }
+
+    public void setDateEmbauche(LocalDate dateEmbauche) {
+        this.dateEmbauche = dateEmbauche;
+    }
+
+    public Boolean getActif() {
+        return actif;
+    }
+
+    public void setActif(Boolean actif) {
+        this.actif = actif;
+    }
+
+    public List<Commande> getCommandes() {
+        return commandes;
+    }
+
 }

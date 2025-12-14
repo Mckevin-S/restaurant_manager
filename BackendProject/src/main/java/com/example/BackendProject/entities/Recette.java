@@ -21,8 +21,6 @@ public class Recette {
     @OneToMany(mappedBy = "recette")
     private List<RecetteItem> items;
 
-    @ManyToOne
-    @JoinColumn(name = "cuisinier_id")
-    private Cuisinier cuisinier;
+
 
 }
