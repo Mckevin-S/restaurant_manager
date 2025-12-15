@@ -4,7 +4,6 @@ import com.example.BackendProject.dto.ChangePasswordRequest;
 import com.example.BackendProject.dto.ResetPasswordRequest;
 import com.example.BackendProject.dto.UserDto;
 import com.example.BackendProject.services.implementations.UserServiceImplementation;
-import com.example.BackendProject.services.interfaces.UserServiceInterface;
 import com.example.BackendProject.utils.RoleType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

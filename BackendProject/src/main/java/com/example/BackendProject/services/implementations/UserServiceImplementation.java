@@ -152,7 +152,7 @@ public class UserServiceImplementation implements UserServiceInterface {
 
     @Override
     public List<UserDto> search(String keyword) {
-        return userRepository.findByNomContainingIgnoreCaseOrPrenomContainingIgnoreCase(keyword)
+        return userRepository.findByNomContainingIgnoreCaseOrPrenomContainingIgnoreCase(keyword, keyword)
                 .stream()
                 .map(personnel -> {
                     UserDto dto = userMapper.toDto(personnel);

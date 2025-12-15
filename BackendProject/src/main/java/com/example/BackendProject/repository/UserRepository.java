@@ -11,5 +11,5 @@ import java.util.List;
 public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByRole(RoleType role);
     List<User> searchByNom(String nom);
-    List<User> findByNomContainingIgnoreCaseOrPrenomContainingIgnoreCase(String keyword);
+    List<User> findByNomContainingIgnoreCaseOrPrenomContainingIgnoreCase(String nom, String prenom);
 }
