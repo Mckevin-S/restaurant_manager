@@ -1,12 +1,9 @@
 package com.example.BackendProject.dto;
 
 import com.example.BackendProject.entities.TableRestaurant;
-import com.example.BackendProject.entities.User;
+import com.example.BackendProject.entities.Utilisateur;
 import com.example.BackendProject.utils.StatutCommande;
 import com.example.BackendProject.utils.TypeCommande;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -17,14 +14,14 @@ public class CommandeDto {
 
     private Long id;
     private TableRestaurant table;
-    private User serveur;
+    private Utilisateur serveur;
     private Timestamp dateHeureCommande;
     private StatutCommande statut;
     private TypeCommande typeCommande;
     private BigDecimal totalHt;
     private BigDecimal totalTtc;
 
-    public CommandeDto(Long id, TableRestaurant table, User serveur, Timestamp dateHeureCommande, StatutCommande statut, TypeCommande typeCommande, BigDecimal totalHt, BigDecimal totalTtc) {
+    public CommandeDto(Long id, TableRestaurant table, Utilisateur serveur, Timestamp dateHeureCommande, StatutCommande statut, TypeCommande typeCommande, BigDecimal totalHt, BigDecimal totalTtc) {
         this.id = id;
         this.table = table;
         this.serveur = serveur;
@@ -51,11 +48,11 @@ public class CommandeDto {
         this.table = table;
     }
 
-    public User getServeur() {
+    public Utilisateur getServeur() {
         return serveur;
     }
 
-    public void setServeur(User serveur) {
+    public void setServeur(Utilisateur serveur) {
         this.serveur = serveur;
     }
 

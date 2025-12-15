@@ -1,7 +1,7 @@
 package com.example.BackendProject.utils;
 
 
-import com.example.BackendProject.repository.UserRepository;
+import com.example.BackendProject.repository.UtilisateurRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -10,10 +10,10 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class CodeGenerator {
 
-    private UserRepository userRepository;
+    private UtilisateurRepository utilisateurRepository;
 
-    public CodeGenerator(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public CodeGenerator(UtilisateurRepository utilisateurRepository) {
+        this.utilisateurRepository = utilisateurRepository;
     }
 
     public long genarate(String role){
@@ -27,7 +27,7 @@ public class CodeGenerator {
         long randomNumber = ThreadLocalRandom.current().nextInt(1000,10000);
         int year = LocalDate.now().getYear();
         long code = Long.parseLong(prefix + year+randomNumber);
-        if(userRepository.existsById(code))
+        if(utilisateurRepository.existsById(code))
             return genarate(role);
         else
             return code;

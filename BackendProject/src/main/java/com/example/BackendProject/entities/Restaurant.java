@@ -22,12 +22,12 @@ public class Restaurant {
     private Timestamp dateCreation;
 
     @OneToMany(mappedBy = "restaurant")
-    private List<User> users;
+    private List<Utilisateur> utilisateurs;
 
     @OneToMany(mappedBy = "restaurant")
     private List<Zone> zones;
 
-    public Restaurant(Long id, String nom, String adresse, String telephone, BigDecimal tauxTva, String devise, Timestamp dateCreation, List<User> users, List<Zone> zones) {
+    public Restaurant(Long id, String nom, String adresse, String telephone, BigDecimal tauxTva, String devise, Timestamp dateCreation, List<Utilisateur> utilisateurs, List<Zone> zones) {
         this.id = id;
         this.nom = nom;
         this.adresse = adresse;
@@ -35,7 +35,7 @@ public class Restaurant {
         this.tauxTva = tauxTva;
         this.devise = devise;
         this.dateCreation = dateCreation;
-        this.users = users;
+        this.utilisateurs = utilisateurs;
         this.zones = zones;
     }
 
@@ -98,12 +98,12 @@ public class Restaurant {
         this.dateCreation = dateCreation;
     }
 
-    public List<User> getUsers() {
-        return users;
+    public List<Utilisateur> getUsers() {
+        return utilisateurs;
     }
 
-    public void setUsers(List<User> users) {
-        this.users = users;
+    public void setUsers(List<Utilisateur> utilisateurs) {
+        this.utilisateurs = utilisateurs;
     }
 
     public List<Zone> getZones() {

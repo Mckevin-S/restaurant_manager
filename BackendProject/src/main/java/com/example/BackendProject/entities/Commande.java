@@ -3,15 +3,10 @@ package com.example.BackendProject.entities;
 import com.example.BackendProject.utils.StatutCommande;
 import com.example.BackendProject.utils.TypeCommande;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.Objects;
 
 @Entity
 @Table(name = "commande")
@@ -26,7 +21,7 @@ public class Commande {
 
     @ManyToOne
     @JoinColumn(name = "serveur_id")
-    private User serveur;
+    private Utilisateur serveur;
 
     private Timestamp dateHeureCommande;
 
@@ -53,7 +48,7 @@ public class Commande {
     )
     private List<Promotion> promotions;
 
-    public Commande(Long id, TableRestaurant table, User serveur, Timestamp dateHeureCommande, StatutCommande statut, TypeCommande typeCommande, BigDecimal totalHt, BigDecimal totalTtc, List<LigneCommande> lignes, List<Paiement> paiements, List<Promotion> promotions) {
+    public Commande(Long id, TableRestaurant table, Utilisateur serveur, Timestamp dateHeureCommande, StatutCommande statut, TypeCommande typeCommande, BigDecimal totalHt, BigDecimal totalTtc, List<LigneCommande> lignes, List<Paiement> paiements, List<Promotion> promotions) {
         this.id = id;
         this.table = table;
         this.serveur = serveur;
@@ -86,11 +81,11 @@ public class Commande {
         this.table = table;
     }
 
-    public User getServeur() {
+    public Utilisateur getServeur() {
         return serveur;
     }
 
-    public void setServeur(User serveur) {
+    public void setServeur(Utilisateur serveur) {
         this.serveur = serveur;
     }
 

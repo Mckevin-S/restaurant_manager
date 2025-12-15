@@ -3,14 +3,11 @@ package com.example.BackendProject.dto;
 import com.example.BackendProject.entities.Restaurant;
 import com.example.BackendProject.utils.RoleType;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDate;
 
 @Schema(description = "DTO représentant un utilisateur du système")
-public class UserDto {
+public class UtilisateurDto {
 
     @Schema(description = "Identifiant unique de l'utilisateur", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
     private Long id;
@@ -39,7 +36,7 @@ public class UserDto {
     @Schema(description = "Date d'embauche de l'utilisateur", example = "2024-01-15")
     private LocalDate dateEmbauche;
 
-    public UserDto(Long id, Restaurant restaurant, RoleType role, String nom, String prenom, String email, String motDePasse, String telephone, LocalDate dateEmbauche) {
+    public UtilisateurDto(Long id, Restaurant restaurant, RoleType role, String nom, String prenom, String email, String motDePasse, String telephone, LocalDate dateEmbauche) {
         this.id = id;
         this.restaurant = restaurant;
         this.role = role;

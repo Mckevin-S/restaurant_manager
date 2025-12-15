@@ -2,8 +2,8 @@ package com.example.BackendProject.controllers;
 
 import com.example.BackendProject.dto.ChangePasswordRequest;
 import com.example.BackendProject.dto.ResetPasswordRequest;
-import com.example.BackendProject.dto.UserDto;
-import com.example.BackendProject.services.implementations.UserServiceImplementation;
+import com.example.BackendProject.dto.UtilisateurDto;
+import com.example.BackendProject.services.implementations.UtilisateurServiceImplementation;
 import com.example.BackendProject.utils.RoleType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,7 +16,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -27,11 +26,13 @@ import java.util.Map;
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "*")
 @Tag(name = "Gestion des Utilisateurs", description = "API pour la gestion des utilisateurs du restaurant")
-public class UserController {
+public class UtilisateurController {
 
-    private UserServiceImplementation userServiceImplementation;
+    private final UtilisateurServiceImplementation utilisateurServiceImplementation;
 
-
+    public UtilisateurController(UtilisateurServiceImplementation utilisateurServiceImplementation) {
+        this.utilisateurServiceImplementation = utilisateurServiceImplementation;
+    }
 
     /**
      * Créer un nouvel utilisateur
@@ -47,7 +48,7 @@ public class UserController {
                     description = "Utilisateur créé avec succès",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = UserDto.class)
+                            schema = @Schema(implementation = UtilisateurDto.class)
                     )
             ),
             @ApiResponse(
@@ -55,15 +56,15 @@ public class UserController {
                     description = "Données invalides"
             )
     })
-    public ResponseEntity<UserDto> createUser(
+    public ResponseEntity<UtilisateurDto> createUser(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Informations de l'utilisateur à créer",
                     required = true,
-                    content = @Content(schema = @Schema(implementation = UserDto.class))
+                    content = @Content(schema = @Schema(implementation = UtilisateurDto.class))
             )
-            @RequestBody UserDto userDto) {
+            @RequestBody UtilisateurDto utilisateurDto) {
         try {
-            UserDto savedUser = userServiceImplementation.save(userDto);
+            UtilisateurDto savedUser = utilisateurServiceImplementation.save(utilisateurDto);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
@@ -83,11 +84,11 @@ public class UserController {
             description = "Liste des utilisateurs récupérée avec succès",
             content = @Content(
                     mediaType = "application/json",
-                    array = @ArraySchema(schema = @Schema(implementation = UserDto.class))
+                    array = @ArraySchema(schema = @Schema(implementation = UtilisateurDto.class))
             )
     )
-    public ResponseEntity<List<UserDto>> getAllUsers() {
-        List<UserDto> users = userServiceImplementation.getAll();
+    public ResponseEntity<List<UtilisateurDto>> getAllUsers() {
+        List<UtilisateurDto> users = utilisateurServiceImplementation.getAll();
         return ResponseEntity.ok(users);
     }
 
@@ -105,7 +106,7 @@ public class UserController {
                     description = "Utilisateur trouvé",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = UserDto.class)
+                            schema = @Schema(implementation = UtilisateurDto.class)
                     )
             ),
             @ApiResponse(
@@ -113,11 +114,11 @@ public class UserController {
                     description = "Utilisateur non trouvé"
             )
     })
-    public ResponseEntity<UserDto> getUserById(
+    public ResponseEntity<UtilisateurDto> getUserById(
             @Parameter(description = "ID de l'utilisateur", required = true, example = "1")
             @PathVariable Long id) {
         try {
-            UserDto user = userServiceImplementation.getById(id);
+            UtilisateurDto user = utilisateurServiceImplementation.getById(id);
             return ResponseEntity.ok(user);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -138,7 +139,7 @@ public class UserController {
                     description = "Utilisateur mis à jour avec succès",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = UserDto.class)
+                            schema = @Schema(implementation = UtilisateurDto.class)
                     )
             ),
             @ApiResponse(
@@ -146,16 +147,16 @@ public class UserController {
                     description = "Utilisateur non trouvé"
             )
     })
-    public ResponseEntity<UserDto> updateUser(
+    public ResponseEntity<UtilisateurDto> updateUser(
             @Parameter(description = "ID de l'utilisateur à modifier", required = true, example = "1")
             @PathVariable Long id,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Nouvelles informations de l'utilisateur",
                     required = true
             )
-            @RequestBody UserDto userDto) {
+            @RequestBody UtilisateurDto utilisateurDto) {
         try {
-            UserDto updatedUser = userServiceImplementation.update(id, userDto);
+            UtilisateurDto updatedUser = utilisateurServiceImplementation.update(id, utilisateurDto);
             return ResponseEntity.ok(updatedUser);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -184,7 +185,7 @@ public class UserController {
             @Parameter(description = "ID de l'utilisateur à supprimer", required = true, example = "1")
             @PathVariable Long id) {
         try {
-            userServiceImplementation.delete(id);
+            utilisateurServiceImplementation.delete(id);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -205,11 +206,11 @@ public class UserController {
                     description = "Liste des utilisateurs filtrée par rôle",
                     content = @Content(
                             mediaType = "application/json",
-                            array = @ArraySchema(schema = @Schema(implementation = UserDto.class))
+                            array = @ArraySchema(schema = @Schema(implementation = UtilisateurDto.class))
                     )
             )
     })
-    public ResponseEntity<List<UserDto>> getUsersByRole(
+    public ResponseEntity<List<UtilisateurDto>> getUsersByRole(
             @Parameter(
                     description = "Type de rôle à rechercher",
                     required = true,
@@ -217,7 +218,7 @@ public class UserController {
                     schema = @Schema(implementation = RoleType.class)
             )
             @PathVariable RoleType roleType) {
-        List<UserDto> users = userServiceImplementation.findByRoleType(roleType);
+        List<UtilisateurDto> users = utilisateurServiceImplementation.findByRoleType(roleType);
         return ResponseEntity.ok(users);
     }
 
@@ -234,17 +235,17 @@ public class UserController {
             description = "Résultats de la recherche",
             content = @Content(
                     mediaType = "application/json",
-                    array = @ArraySchema(schema = @Schema(implementation = UserDto.class))
+                    array = @ArraySchema(schema = @Schema(implementation = UtilisateurDto.class))
             )
     )
-    public ResponseEntity<List<UserDto>> searchUsers(
+    public ResponseEntity<List<UtilisateurDto>> searchUsers(
             @Parameter(
                     description = "Mot-clé de recherche (nom ou prénom)",
                     required = true,
                     example = "Jean"
             )
             @RequestParam String keyword) {
-        List<UserDto> users = userServiceImplementation.search(keyword);
+        List<UtilisateurDto> users = utilisateurServiceImplementation.search(keyword);
         return ResponseEntity.ok(users);
     }
 
@@ -289,7 +290,7 @@ public class UserController {
             )
             @RequestBody ChangePasswordRequest request) {
         try {
-            userServiceImplementation.changePassword(id, request.getOldPassword(), request.getNewPassword());
+            utilisateurServiceImplementation.changePassword(id, request.getOldPassword(), request.getNewPassword());
             Map<String, String> response = new HashMap<>();
             response.put("message", "Mot de passe modifié avec succès");
             return ResponseEntity.ok(response);
@@ -341,7 +342,7 @@ public class UserController {
             )
             @RequestBody ResetPasswordRequest request) {
         try {
-            userServiceImplementation.resetPassword(id, request.getNewPassword());
+            utilisateurServiceImplementation.resetPassword(id, request.getNewPassword());
             Map<String, String> response = new HashMap<>();
             response.put("message", "Mot de passe réinitialisé avec succès");
             return ResponseEntity.ok(response);

@@ -7,11 +7,10 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 import java.util.List;
-import java.util.Objects;
 
 @Entity
 @Table(name = "user", schema = "restaurant")
-public class User {
+public class Utilisateur {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -148,7 +147,7 @@ public class User {
         return commandes;
     }
 
-    public User(Long id, Restaurant restaurant, RoleType role, String nom, String prenom, String email, String motDePasse, String telephone, LocalDate dateEmbauche, Boolean actif, List<Commande> commandes) {
+    public Utilisateur(Long id, Restaurant restaurant, RoleType role, String nom, String prenom, String email, String motDePasse, String telephone, LocalDate dateEmbauche, Boolean actif, List<Commande> commandes) {
         this.id = id;
         this.restaurant = restaurant;
         this.role = role;
@@ -162,6 +161,6 @@ public class User {
         this.commandes = commandes;
     }
 
-    public User() {
+    public Utilisateur() {
     }
 }
