@@ -42,6 +42,7 @@ public class SecurityConfig {
                         // ✅ Endpoints publics (sans token)
                         .requestMatchers("/api/auth/login",
                                 "/api/users",
+                                "/api/categories",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html").permitAll()

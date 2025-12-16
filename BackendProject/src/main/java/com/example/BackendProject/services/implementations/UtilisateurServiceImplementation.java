@@ -7,7 +7,6 @@ import com.example.BackendProject.repository.UtilisateurRepository;
 import com.example.BackendProject.services.interfaces.UtilisateurServiceInterface;
 import com.example.BackendProject.utils.CodeGenerator;
 import com.example.BackendProject.utils.RoleType;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 

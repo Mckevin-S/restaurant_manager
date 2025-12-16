@@ -1,5 +1,6 @@
 package com.example.BackendProject.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,6 +17,7 @@ public class RestaurantDto {
     private String telephone;
     private BigDecimal tauxTva;
     private String devise;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private Timestamp dateCreation;
 
 
