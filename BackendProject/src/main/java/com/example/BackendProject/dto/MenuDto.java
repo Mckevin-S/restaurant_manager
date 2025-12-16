@@ -1,11 +1,5 @@
 package com.example.BackendProject.dto;
 
-
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-
-
 public class MenuDto {
 
     private Long id;
@@ -31,4 +25,6 @@ public class MenuDto {
     public void setNom(String nom) {
         this.nom = nom;
     }
+
+
 }

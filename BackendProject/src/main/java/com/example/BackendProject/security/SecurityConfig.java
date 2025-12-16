@@ -41,8 +41,9 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
                         // ✅ Endpoints publics (sans token)
                         .requestMatchers("/api/auth/login",
-                                "/api/users",
-                                "/api/categories",
+                                "/api/users/**",
+                                "/api/categories/**",
+                                "/api/menus/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html").permitAll()
