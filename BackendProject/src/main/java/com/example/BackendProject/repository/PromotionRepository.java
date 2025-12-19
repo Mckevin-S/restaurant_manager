@@ -4,6 +4,12 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.example.BackendProject.entities.Promotion;
 
+import java.util.List;
+
 @Repository
 public interface PromotionRepository extends JpaRepository<Promotion, Long> {
+
+    // Exemple : trouver toutes les promotions actives
+    List<Promotion> findByActifTrue();
+
 }

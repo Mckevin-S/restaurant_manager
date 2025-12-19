@@ -47,6 +47,7 @@ public class SecurityConfig {
                                 "/api/recettes/**",
                                 "/api/menus/**",
                                 "/api/plats/**",
+                                "/api/promotions**",
                                 "/api/commandes/**",
                                 "/api/recette-items/**",
                                 "/v3/api-docs/**",
