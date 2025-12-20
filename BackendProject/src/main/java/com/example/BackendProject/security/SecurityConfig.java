@@ -40,18 +40,14 @@ public class SecurityConfig {
 
         http.authorizeHttpRequests(auth -> auth
                         // ✅ Endpoints publics (sans token)
-                        .requestMatchers("/api/auth/login",
+                        .requestMatchers("/api/auth/login","/restaurants/**",
                                 "/api/users/**",
                                 "/api/categories/**",
-                                "/api/ingredients/**",
-                                "/api/recettes/**",
                                 "/api/menus/**",
-                                "/api/plats/**",
-                                "/api/promotions**",
-                                "/api/commandes/**",
-                                "/api/recette-items/**",
+                                 "/tables/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
+                                "/zones/**",
                                 "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/test/**").permitAll() // Pour les tests
 
