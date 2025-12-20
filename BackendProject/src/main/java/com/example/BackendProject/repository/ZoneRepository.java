@@ -9,7 +9,11 @@ import java.util.List;
 
 @Repository
 public interface ZoneRepository extends JpaRepository<Zone, Long> {
+<<<<<<< HEAD
     List<Zone> findByNom(String name);
+=======
+    List<Zone> findByName(String name);
+>>>>>>> 689ba581af429fb5c070ecceb76d174729a2ecd8
     @Query("SELECT z FROM Zone z WHERE z.restaurant.id = :idRestaurant")
     List<Zone> findZonesByRestaurantId(Long idRestaurant);
     Zone getZonesById(Long id);

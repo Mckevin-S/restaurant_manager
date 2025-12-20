@@ -1,5 +1,6 @@
 package com.example.BackendProject.services.interfaces;
 
+<<<<<<< HEAD
 import com.example.BackendProject.dto.RestaurantDto;
 
 import java.util.List;
@@ -18,4 +19,7 @@ public interface RestaurantServiceInterface {
     RestaurantDto getRestaurantById(Long id);
 
     List<RestaurantDto> getAllRestaurants();
+=======
+public interface RestaurantServiceInterface {
+>>>>>>> 689ba581af429fb5c070ecceb76d174729a2ecd8
 }

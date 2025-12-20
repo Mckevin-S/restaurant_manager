@@ -1,5 +1,6 @@
 package com.example.BackendProject.controllers;
 
+<<<<<<< HEAD
 import com.example.BackendProject.dto.RestaurantDto;
 import com.example.BackendProject.services.implementations.RestaurantServiceImplementation;
 import io.swagger.v3.oas.annotations.Operation;
@@ -167,3 +168,7 @@ public class RestaurantController {
         }
     }
 }
+=======
+public class RestaurantController {
+}
+>>>>>>> 689ba581af429fb5c070ecceb76d174729a2ecd8

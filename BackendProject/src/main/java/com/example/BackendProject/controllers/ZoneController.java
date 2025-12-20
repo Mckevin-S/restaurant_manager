@@ -2,6 +2,7 @@ package com.example.BackendProject.controllers;
 
 import com.example.BackendProject.dto.ZoneDto;
 import com.example.BackendProject.services.implementations.ZoneServiceImplementation;
+<<<<<<< HEAD
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -10,10 +11,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+=======
+>>>>>>> 689ba581af429fb5c070ecceb76d174729a2ecd8
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+<<<<<<< HEAD
 import java.util.List;
 
 @RestController
@@ -23,10 +27,17 @@ import java.util.List;
 public class ZoneController {
 
     private final ZoneServiceImplementation zoneService;
+=======
+@RestController
+@RequestMapping({"/zones"})
+public class ZoneController {
+    private ZoneServiceImplementation zoneService;
+>>>>>>> 689ba581af429fb5c070ecceb76d174729a2ecd8
 
     public ZoneController(ZoneServiceImplementation zoneService) {
         this.zoneService = zoneService;
     }
+<<<<<<< HEAD
 
     /**
      * Créer une nouvelle zone
@@ -46,10 +57,15 @@ public class ZoneController {
                     content = @Content(schema = @Schema(implementation = ZoneDto.class))
             )
             @RequestBody ZoneDto zoneDto) {
+=======
+    @PostMapping
+    public ResponseEntity<?> createZone(ZoneDto zoneDto) {
+>>>>>>> 689ba581af429fb5c070ecceb76d174729a2ecd8
         try {
             ZoneDto createdZone = zoneService.addZone(zoneDto);
             return new ResponseEntity<>(createdZone, HttpStatus.CREATED);
         } catch (Exception e) {
+<<<<<<< HEAD
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
@@ -69,10 +85,19 @@ public class ZoneController {
             @Parameter(description = "ID de la zone", required = true, example = "1")
             @PathVariable Long id,
             @RequestBody ZoneDto zoneDto) {
+=======
+            return ResponseEntity.status(500).body("Error creating zone: " + e.getMessage());
+        }
+
+    }
+    @PutMapping
+    public ResponseEntity<?> updateZone(Long id, ZoneDto zoneDto) {
+>>>>>>> 689ba581af429fb5c070ecceb76d174729a2ecd8
         try {
             ZoneDto updatedZone = zoneService.updateZone(id, zoneDto);
             return new ResponseEntity<>(updatedZone, HttpStatus.OK);
         } catch (Exception e) {
+<<<<<<< HEAD
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Zone non trouvée: " + e.getMessage());
         }
     }
@@ -107,10 +132,27 @@ public class ZoneController {
     public ResponseEntity<ZoneDto> getZoneById(
             @Parameter(description = "ID de la zone", required = true, example = "1")
             @PathVariable Long id) {
+=======
+            return ResponseEntity.status(500).body("Error updating zone: " + e.getMessage());
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getAllZones() {
+        try {
+            return new ResponseEntity<>(zoneService.getAllZones(), HttpStatus.OK);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error retrieving zones: " + e.getMessage());
+        }
+    }
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getZoneById(@PathVariable Long id) {
+>>>>>>> 689ba581af429fb5c070ecceb76d174729a2ecd8
         try {
             ZoneDto zone = zoneService.getZoneById(id);
             return new ResponseEntity<>(zone, HttpStatus.OK);
         } catch (Exception e) {
+<<<<<<< HEAD
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
@@ -127,14 +169,30 @@ public class ZoneController {
     public ResponseEntity<Void> deleteZone(
             @Parameter(description = "ID de la zone", required = true, example = "1")
             @PathVariable Long id) {
+=======
+            return ResponseEntity.status(500).body("Error retrieving zone: " + e.getMessage());
+        }
+    }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteZone(@PathVariable Long id) {
+>>>>>>> 689ba581af429fb5c070ecceb76d174729a2ecd8
         try {
             zoneService.deleteZone(id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
+<<<<<<< HEAD
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
     }
 
 
+=======
+            return ResponseEntity.status(500).body("Error deleting zone: " + e.getMessage());
+        }
+    }
+
+
+
+>>>>>>> 689ba581af429fb5c070ecceb76d174729a2ecd8
 }
