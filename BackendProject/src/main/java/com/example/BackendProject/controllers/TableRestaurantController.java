@@ -1,6 +1,5 @@
 package com.example.BackendProject.controllers;
 
-<<<<<<< HEAD
 import com.example.BackendProject.dto.TableRestaurantDto;
 import com.example.BackendProject.services.implementations.TableRestaurantServiceImplementation;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/tables")
+@RequestMapping("api/tables")
 @CrossOrigin(origins = "*")
 @Tag(name = "Gestion des Tables", description = "API pour la gestion des tables du restaurant")
 public class TableRestaurantController {
@@ -144,7 +143,4 @@ public class TableRestaurantController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-=======
-public class TableRestaurantController {
->>>>>>> 689ba581af429fb5c070ecceb76d174729a2ecd8
 }

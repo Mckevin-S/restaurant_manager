@@ -93,11 +93,7 @@ public class ZoneServiceImplementation implements ZoneServiceInterface {
 
     @Override
     public List<ZoneDto> searchZonesByName(String nom) {
-<<<<<<< HEAD
         return zoneRepository.findByNom(nom)
-=======
-        return zoneRepository.findByName(nom)
->>>>>>> 689ba581af429fb5c070ecceb76d174729a2ecd8
                 .stream()
                 .map(zoneMapper::toDto)
                 .collect(Collectors.toList());
