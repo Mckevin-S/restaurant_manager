@@ -14,9 +14,9 @@ import java.util.Objects;
 @Table(name = "option_item")
 public class OptionItem {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String nom;
     private BigDecimal prixSupplementaire;
 
