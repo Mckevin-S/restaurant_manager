@@ -18,6 +18,10 @@ public class CommandePromotionDto {
         this.promotion = promotion;
     }
 
+    public CommandePromotionDto() {
+
+    }
+
     public Commande getCommande() {
         return commande;
     }
