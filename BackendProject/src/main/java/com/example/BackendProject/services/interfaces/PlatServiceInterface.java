@@ -16,4 +16,9 @@ public interface PlatServiceInterface {
 
     PlatDto update(Long id, PlatDto platDto);
 
+//    PlatDto getMostSoldPlat();
+//
+//    List<PlatDto> getTopSoldPlats(int limit);
+
+
 }

@@ -2,6 +2,7 @@ package com.example.BackendProject.repository;
 
 
 import com.example.BackendProject.entities.LigneCommande;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -34,9 +35,9 @@ public interface LigneCommandeRepository extends JpaRepository<LigneCommande, Lo
     void deleteByCommandeId(@Param("commandeId") Long commandeId);
 
     // Trouver les plats les plus commandés
-    @Query("SELECT lc.plat.id, lc.plat.nom, SUM(lc.quantite) as total " +
+    @Query("SELECT lc.plat, SUM(lc.quantite) as totalVendu " +
             "FROM LigneCommande lc " +
-            "GROUP BY lc.plat.id, lc.plat.nom " +
-            "ORDER BY total DESC")
-    List<Object[]> findPlatsLesPlusCommandes();
+            "GROUP BY lc.plat " +
+            "ORDER BY totalVendu DESC")
+    List<Object[]> findTopSellingPlats(Pageable pageable);
 }

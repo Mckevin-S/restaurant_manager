@@ -12,9 +12,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/plats")
@@ -174,5 +176,12 @@ public class PlatController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
+    }
+
+    @GetMapping("/plus-vendus")
+//    @PreAuthorize("hasRole('MANAGER')")
+    @Operation(summary = "Obtenir le classement des plats les plus populaires")
+    public ResponseEntity<List<Map<String, Object>>> getTopPlats() {
+        return ResponseEntity.ok(platServiceImplementation.getStatistiquesPlatsVendus());
     }
 }
