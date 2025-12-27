@@ -49,6 +49,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/api/zones/**",
+                                "/api/paiements/**",
                                 "/api/order-item-options/**",
                                 "/api/options/**",
                                 "/api/commande-promotions/**",
