@@ -51,7 +51,7 @@ public class AuthController {
             );
 
             // Génération du token JWT
-            var userDetails = utilisateurDetailService.loadUserByUsername(request.getEmail());
+            var userDetails = utilisateurDetailService.loadUserByUsername(request.getNom());
             String token = jwtUtils.generateToken(userDetails);
 
             return ResponseEntity.ok(new LoginResponse(token));
@@ -59,10 +59,11 @@ public class AuthController {
         } catch (BadCredentialsException e) {
             // ✅ CORRIGÉ : Concaténation correcte pour le message d'erreur
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Identifiants incorrects pour l'utilisateur : " + request.getEmail());
+                    .body("Identifiants incorrects pour l'utilisateur : " + request.getMotDePasse());
         } catch (Exception e) {
+            e.printStackTrace(); // <--- Ajoutez ceci pour voir le détail dans votre terminal
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erreur lors de l'authentification");
+                    .body("Erreur technique : " + e.getMessage());
         }
     }
 

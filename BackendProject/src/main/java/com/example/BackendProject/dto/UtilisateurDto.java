@@ -1,6 +1,5 @@
 package com.example.BackendProject.dto;
 
-import com.example.BackendProject.entities.Restaurant;
 import com.example.BackendProject.utils.RoleType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -13,7 +12,7 @@ public class UtilisateurDto {
     private Long id;
 
     @Schema(description = "Restaurant associé à l'utilisateur")
-    private Restaurant restaurant;
+    private Long restaurantId;
 
     @Schema(description = "Rôle de l'utilisateur", example = "SERVEUR", required = true)
     private RoleType role;
@@ -36,9 +35,9 @@ public class UtilisateurDto {
     @Schema(description = "Date d'embauche de l'utilisateur", example = "2024-01-15")
     private LocalDate dateEmbauche;
 
-    public UtilisateurDto(Long id, Restaurant restaurant, RoleType role, String nom, String prenom, String email, String motDePasse, String telephone, LocalDate dateEmbauche) {
+    public UtilisateurDto(Long id, Long restaurantId, RoleType role, String nom, String prenom, String email, String motDePasse, String telephone, LocalDate dateEmbauche) {
         this.id = id;
-        this.restaurant = restaurant;
+        this.restaurantId = restaurantId;
         this.role = role;
         this.nom = nom;
         this.prenom = prenom;
@@ -56,12 +55,12 @@ public class UtilisateurDto {
         this.id = id;
     }
 
-    public Restaurant getRestaurant() {
-        return restaurant;
+    public Long getRestaurantId() {
+        return restaurantId;
     }
 
-    public void setRestaurant(Restaurant restaurant) {
-        this.restaurant = restaurant;
+    public void setRestaurantId(Long restaurantId) {
+        this.restaurantId = restaurantId;
     }
 
     public RoleType getRole() {

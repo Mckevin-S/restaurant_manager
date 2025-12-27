@@ -1,8 +1,10 @@
 package com.example.BackendProject.services.implementations;
 
 import com.example.BackendProject.dto.UtilisateurDto;
+import com.example.BackendProject.entities.Restaurant;
 import com.example.BackendProject.entities.Utilisateur;
 import com.example.BackendProject.mappers.UtilisateurMapper;
+import com.example.BackendProject.repository.RestaurantRepository;
 import com.example.BackendProject.repository.UtilisateurRepository;
 import com.example.BackendProject.services.interfaces.UtilisateurServiceInterface;
 import com.example.BackendProject.utils.CodeGenerator;
@@ -17,42 +19,80 @@ import java.util.stream.Collectors;
 public class UtilisateurServiceImplementation implements UtilisateurServiceInterface {
 
     private final UtilisateurMapper utilisateurMapper;
+    private final RestaurantRepository restaurantRepository;
 
     private final UtilisateurRepository utilisateurRepository;
     private PasswordEncoder passwordEncoder;
     public final CodeGenerator codeGenerator;
 
 
-    public UtilisateurServiceImplementation(UtilisateurMapper utilisateurMapper, UtilisateurRepository utilisateurRepository, CodeGenerator codeGenerator) {
+    public UtilisateurServiceImplementation(UtilisateurMapper utilisateurMapper, RestaurantRepository restaurantRepository, UtilisateurRepository utilisateurRepository, CodeGenerator codeGenerator, PasswordEncoder passwordEncoder) {
         this.utilisateurMapper = utilisateurMapper;
+        this.restaurantRepository = restaurantRepository;
         this.utilisateurRepository = utilisateurRepository;
         this.codeGenerator = codeGenerator;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public UtilisateurDto save(UtilisateurDto utilisateurDto) {
+        // 1. Mapper le DTO vers l'Entité
+        Utilisateur utilisateur = utilisateurMapper.toEntity(utilisateurDto);
 
-            Utilisateur utilisateur = utilisateurMapper.toEntity(utilisateurDto);
-
-        // Chiffrement du mot de passe
-        if (utilisateur.getMotDePasse() != null && !utilisateur.getMotDePasse().isBlank()) {
-            utilisateur.setMotDePasse(
-                    passwordEncoder.encode(utilisateur.getMotDePasse())
-            );
+        // 2. Chiffrer le mot de passe (Utilisation du passwordEncoder injecté)
+        if (utilisateurDto.getMotDePasse() != null && !utilisateurDto.getMotDePasse().isBlank()) {
+            utilisateur.setMotDePasse(passwordEncoder.encode(utilisateurDto.getMotDePasse()));
         }
-        // Génération de l'identifiant de l'utilisateur
-        utilisateurDto.setId(codeGenerator.genarate(utilisateurDto.getRole().name()));
 
-        // Sauvergarde de l'utilisateur
-        Utilisateur savedUtilisateur = utilisateurRepository.save(utilisateurMapper.toEntity(utilisateurDto));
+        // 3. Associer le restaurant
+        if (utilisateurDto.getRestaurantId() != null) {
+            Restaurant restaurant = restaurantRepository.findById(utilisateurDto.getRestaurantId())
+                    .orElseThrow(() -> new RuntimeException("Restaurant non trouvé avec l'ID : " + utilisateurDto.getRestaurantId()));
+            utilisateur.setRestaurant(restaurant);
+        }
 
-        // Retourné l'utilisateur stocker sans exposer mot de passe
-        UtilisateurDto resultUser = utilisateurMapper.toDto(savedUtilisateur);
-        resultUser.setMotDePasse(null);
+        // 4. Générer l'ID technique/métier si nécessaire
+        // Note: Si votre entité utilise un Long auto-généré, ignorez cette étape ou adaptez-la
+        // utilisateur.setId(codeGenerator.generate(utilisateurDto.getRole().name()));
 
-        return resultUser;
+        // 5. Sauvegarder l'entité
+        Utilisateur savedUtilisateur = utilisateurRepository.save(utilisateur);
 
+        // 6. Retourner le DTO sans le mot de passe
+        UtilisateurDto result = utilisateurMapper.toDto(savedUtilisateur);
+        result.setMotDePasse(null);
+        return result;
     }
+
+//    @Override
+//    public UtilisateurDto update(Long id, UtilisateurDto utilisateurDto) {
+//        Utilisateur utilisateur = utilisateurRepository.findById(id)
+//                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID : " + id));
+//
+//        // Mise à jour des champs basiques
+//        if (utilisateurDto.getNom() != null) utilisateur.setNom(utilisateurDto.getNom());
+//        if (utilisateurDto.getPrenom() != null) utilisateur.setPrenom(utilisateurDto.getPrenom());
+//        if (utilisateurDto.getEmail() != null) utilisateur.setEmail(utilisateurDto.getEmail());
+//        if (utilisateurDto.getTelephone() != null) utilisateur.setTelephone(utilisateurDto.getTelephone());
+//        if (utilisateurDto.getRole() != null) utilisateur.setRole(utilisateurDto.getRole());
+//
+//        // Mise à jour sécurisée du mot de passe
+//        if (utilisateurDto.getMotDePasse() != null && !utilisateurDto.getMotDePasse().isEmpty()) {
+//            utilisateur.setMotDePasse(passwordEncoder.encode(utilisateurDto.getMotDePasse()));
+//        }
+//
+//        // CORRECTION : Mise à jour du restaurant
+//        if (utilisateurDto.getRestaurantId() != null) {
+//            Restaurant restaurant = restaurantRepository.findById(utilisateurDto.getRestaurantId())
+//                    .orElseThrow(() -> new RuntimeException("Restaurant introuvable"));
+//            utilisateur.setRestaurant(restaurant); // <--- LIGNE ESSENTIELLE
+//        }
+//
+//        Utilisateur updated = utilisateurRepository.save(utilisateur);
+//        UtilisateurDto result = utilisateurMapper.toDto(updated);
+//        result.setMotDePasse(null);
+//        return result;
+//    }
 
     @Override
     public List<UtilisateurDto> getAll() {
@@ -113,8 +153,10 @@ public class UtilisateurServiceImplementation implements UtilisateurServiceInter
         // Sinon, on garde l'ancien mot de passe (pas de modification)
 
         // Mise à jour des autres champs si présents
-        if (utilisateurDto.getRestaurant() != null) {
-            utilisateur.setRestaurant(utilisateurDto.getRestaurant());
+        if (utilisateurDto.getRestaurantId() != null) {
+            // 1. On va chercher l'OBJET Restaurant complet en base de données via son ID
+            Restaurant restaurant = restaurantRepository.findById(utilisateurDto.getRestaurantId())
+                    .orElseThrow(() -> new RuntimeException("Restaurant introuvable avec l'ID : " + utilisateurDto.getRestaurantId()));
         }
 
         if (utilisateurDto.getRole() != null) {

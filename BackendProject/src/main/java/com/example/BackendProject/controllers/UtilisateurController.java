@@ -38,38 +38,43 @@ public class UtilisateurController {
      * Créer un nouvel utilisateur
      */
     @PostMapping
-    @Operation(
-            summary = "Créer un nouvel utilisateur",
-            description = "Permet de créer un nouvel utilisateur avec encodage automatique du mot de passe"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "Utilisateur créé avec succès",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = UtilisateurDto.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Données invalides"
-            )
-    })
-    public ResponseEntity<UtilisateurDto> createUser(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Informations de l'utilisateur à créer",
-                    required = true,
-                    content = @Content(schema = @Schema(implementation = UtilisateurDto.class))
-            )
-            @RequestBody UtilisateurDto utilisateurDto) {
-        try {
-            UtilisateurDto savedUser = utilisateurServiceImplementation.save(utilisateurDto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
+    @Operation(summary = "Créer un utilisateur")
+    public ResponseEntity<UtilisateurDto> create(@RequestBody UtilisateurDto dto) {
+        return new ResponseEntity<>(utilisateurServiceImplementation.save(dto), HttpStatus.CREATED);
     }
+//    @PostMapping
+//    @Operation(
+//            summary = "Créer un nouvel utilisateur",
+//            description = "Permet de créer un nouvel utilisateur avec encodage automatique du mot de passe"
+//    )
+//    @ApiResponses(value = {
+//            @ApiResponse(
+//                    responseCode = "201",
+//                    description = "Utilisateur créé avec succès",
+//                    content = @Content(
+//                            mediaType = "application/json",
+//                            schema = @Schema(implementation = UtilisateurDto.class)
+//                    )
+//            ),
+//            @ApiResponse(
+//                    responseCode = "400",
+//                    description = "Données invalides"
+//            )
+//    })
+//    public ResponseEntity<UtilisateurDto> createUser(
+//            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+//                    description = "Informations de l'utilisateur à créer",
+//                    required = true,
+//                    content = @Content(schema = @Schema(implementation = UtilisateurDto.class))
+//            )
+//            @RequestBody UtilisateurDto utilisateurDto) {
+//        try {
+//            UtilisateurDto savedUser = utilisateurServiceImplementation.save(utilisateurDto);
+//            return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+//        }
+//    }
 
     /**
      * Récupérer tous les utilisateurs

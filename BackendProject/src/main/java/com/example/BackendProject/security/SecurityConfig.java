@@ -40,7 +40,8 @@ public class SecurityConfig {
 
         http.authorizeHttpRequests(auth -> auth
                         // ✅ Endpoints publics (sans token)
-                        .requestMatchers("/api/auth/login","/api/restaurants/**",
+                        .requestMatchers("/api/Auth/**",
+                                "/api/restaurants/**",
                                 "/api/users/**",
                                 "/api/categories/**",
                                 "/api/menus/**",
