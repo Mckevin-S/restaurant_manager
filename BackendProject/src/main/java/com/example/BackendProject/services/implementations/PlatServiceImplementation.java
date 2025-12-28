@@ -121,4 +121,23 @@ public class PlatServiceImplementation implements PlatServiceInterface {
             return stats;
         }).collect(Collectors.toList());
     }
+
+    // 1. Pour les clients/serveurs : Ne voir que ce qui est prêt à être servi
+    @Override
+    public List<PlatDto> getMenuActif() {
+        return platRepository.findByDisponibiliteTrue().stream()
+                .map(platMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    // 2. Pour la cuisine/gestion : Changer l'état d'un plat
+    @Override
+    public PlatDto modifierDisponibilite(Long id, boolean estDisponible) {
+        Plat plat = platRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Plat introuvable"));
+
+        plat.setDisponibilite(estDisponible);
+        Plat updated = platRepository.save(plat);
+        return platMapper.toDto(updated);
+    }
 }

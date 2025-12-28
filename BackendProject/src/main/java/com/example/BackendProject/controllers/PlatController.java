@@ -114,8 +114,6 @@ public class PlatController {
     }
 
 
-
-
     /**
      * Récupérer un plat par son ID
      */
@@ -184,4 +182,20 @@ public class PlatController {
     public ResponseEntity<List<Map<String, Object>>> getTopPlats() {
         return ResponseEntity.ok(platServiceImplementation.getStatistiquesPlatsVendus());
     }
+
+    @GetMapping("/disponibles")
+    @Operation(summary = "Récupérer la carte du restaurant (Plats disponibles uniquement)")
+    public ResponseEntity<List<PlatDto>> getMenu() {
+        return ResponseEntity.ok(platServiceImplementation.getMenuActif());
+    }
+
+    @PatchMapping("/{id}/statut-disponibilite")
+    @PreAuthorize("hasAnyRole('MANAGER', 'CUISINIER')")
+    @Operation(summary = "Marquer un plat comme disponible ou indisponible")
+    public ResponseEntity<PlatDto> updateStatus(
+            @PathVariable Long id,
+            @RequestParam boolean disponible) {
+        return ResponseEntity.ok(platServiceImplementation.modifierDisponibilite(id, disponible));
+    }
+
 }

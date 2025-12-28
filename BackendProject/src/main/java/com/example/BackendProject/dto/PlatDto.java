@@ -19,8 +19,9 @@ public class PlatDto {
     private BigDecimal prix;
     private String photoUrl;
     private Recette recette;
+    private boolean disponibilite;
 
-    public PlatDto(Long id, Category category, String nom, String description, BigDecimal prix, String photoUrl, Recette recette) {
+    public PlatDto(Long id, Category category, String nom, String description, BigDecimal prix, String photoUrl, Recette recette, boolean disponibilite) {
         this.id = id;
         this.category = category;
         this.nom = nom;
@@ -28,6 +29,7 @@ public class PlatDto {
         this.prix = prix;
         this.photoUrl = photoUrl;
         this.recette = recette;
+        this.disponibilite = disponibilite;
     }
 
     public Long getId() {
@@ -84,5 +86,13 @@ public class PlatDto {
 
     public void setRecette(Recette recette) {
         this.recette = recette;
+    }
+
+    public boolean isDisponibilite() {
+        return disponibilite;
+    }
+
+    public void setDisponibilite(boolean disponibilite) {
+        this.disponibilite = disponibilite;
     }
 }

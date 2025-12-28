@@ -16,6 +16,10 @@ public interface PlatServiceInterface {
 
     PlatDto update(Long id, PlatDto platDto);
 
+    PlatDto modifierDisponibilite(Long id, boolean estDisponible);
+
+    List<PlatDto> getMenuActif();
+
 //    PlatDto getMostSoldPlat();
 //
 //    List<PlatDto> getTopSoldPlats(int limit);

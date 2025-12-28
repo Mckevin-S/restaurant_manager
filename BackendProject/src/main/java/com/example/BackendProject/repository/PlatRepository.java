@@ -34,4 +34,10 @@ public interface PlatRepository extends JpaRepository<Plat, Long> {
             "ORDER BY totalVendu DESC LIMIT 5", nativeQuery = true)
     List<Object[]> findTop5SellingPlats();
 
+    // Pour afficher uniquement les plats disponibles sur la carte
+    List<Plat> findByDisponibiliteTrue();
+
+    // Pour filtrer par catégorie et disponibilité
+//    List<Plat> findByCategorieIdAndDisponibiliteTrue(Long categorieId);
+
 }
