@@ -11,10 +11,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -176,6 +179,10 @@ public class PlatController {
         }
     }
 
+    /**
+     * Retrouver le plat le plus vendu
+     */
+
     @GetMapping("/plus-vendus")
 //    @PreAuthorize("hasRole('MANAGER')")
     @Operation(summary = "Obtenir le classement des plats les plus populaires")
@@ -183,11 +190,19 @@ public class PlatController {
         return ResponseEntity.ok(platServiceImplementation.getStatistiquesPlatsVendus());
     }
 
+    /**
+     * Recuperer les plats disponibles uniquement (La carte)
+     */
+
     @GetMapping("/disponibles")
     @Operation(summary = "Récupérer la carte du restaurant (Plats disponibles uniquement)")
     public ResponseEntity<List<PlatDto>> getMenu() {
         return ResponseEntity.ok(platServiceImplementation.getMenuActif());
     }
+
+    /**
+     * Changer la disponibilité d'un plat
+     */
 
     @PatchMapping("/{id}/statut-disponibilite")
     @PreAuthorize("hasAnyRole('MANAGER', 'CUISINIER')")
@@ -196,6 +211,27 @@ public class PlatController {
             @PathVariable Long id,
             @RequestParam boolean disponible) {
         return ResponseEntity.ok(platServiceImplementation.modifierDisponibilite(id, disponible));
+    }
+
+    /**
+     * Upload l'image d'un plat
+     */
+
+    @PostMapping(value = "/{id}/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('MANAGER', 'CUISINIER')")
+    @Operation(summary = "Uploader et redimensionner la photo d'un plat")
+    public ResponseEntity<?> uploadImage(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            PlatDto updatedPlat = platServiceImplementation.uploadPlatImage(id, file);
+            return ResponseEntity.ok(updatedPlat);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur lors du traitement de l'image : " + e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
 }

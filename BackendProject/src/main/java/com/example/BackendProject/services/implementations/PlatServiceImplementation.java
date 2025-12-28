@@ -7,13 +7,17 @@ import com.example.BackendProject.repository.LigneCommandeRepository;
 import com.example.BackendProject.repository.PlatRepository;
 import com.example.BackendProject.repository.CategoryRepository;
 import com.example.BackendProject.services.interfaces.PlatServiceInterface;
-import org.springframework.data.domain.PageRequest;
+import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,25 +27,36 @@ public class PlatServiceImplementation implements PlatServiceInterface {
     private final PlatRepository platRepository;
     private final CategoryRepository categoryRepository;
     private final PlatMapper platMapper;
-    private final LigneCommandeRepository ligneCommandeRepository;
+//    private final LigneCommandeRepository ligneCommandeRepository;
 
-    public PlatServiceImplementation(PlatRepository platRepository, CategoryRepository categoryRepository, PlatMapper platMapper, LigneCommandeRepository ligneCommandeRepository) {
+    // Dossier racine pour le stockage des images
+    private final String UPLOAD_DIR = "uploads/plats/";
+
+    public PlatServiceImplementation(PlatRepository platRepository,
+                                     CategoryRepository categoryRepository,
+                                     PlatMapper platMapper,
+                                     LigneCommandeRepository ligneCommandeRepository) {
         this.platRepository = platRepository;
         this.categoryRepository = categoryRepository;
         this.platMapper = platMapper;
-        this.ligneCommandeRepository = ligneCommandeRepository;
+//        this.ligneCommandeRepository = ligneCommandeRepository;
     }
 
+    // --- CRUD DE BASE ---
+
+    @Override
     public PlatDto save(PlatDto platDto) {
         if (platDto.getCategory() != null) {
-//            if (!categoryRepository.existsById(platDto.getCategory())) {
-//                throw new RuntimeException("Catégorie non trouvée");
-//            }
+            categoryRepository.findById(platDto.getCategory().getId())
+                    .orElseThrow(() -> new RuntimeException("Catégorie non trouvée"));
         }
         Plat plat = platMapper.toEntity(platDto);
+        // Par défaut, un nouveau plat est disponible
+        plat.setDisponibilite(true);
         return platMapper.toDto(platRepository.save(plat));
     }
 
+    @Override
     @Transactional(readOnly = true)
     public List<PlatDto> getAll() {
         return platRepository.findAll().stream()
@@ -49,42 +64,40 @@ public class PlatServiceImplementation implements PlatServiceInterface {
                 .collect(Collectors.toList());
     }
 
+    @Override
     @Transactional(readOnly = true)
     public PlatDto getById(Long id) {
         Plat plat = platRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Plat non trouvé"));
+                .orElseThrow(() -> new RuntimeException("Plat non trouvé avec l'ID : " + id));
         return platMapper.toDto(plat);
     }
 
     @Override
     public PlatDto update(Long id, PlatDto platDto) {
-        // 1. Récupérer le plat existant ou lancer une erreur
         Plat existingPlat = platRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Impossible de mettre à jour : Plat non trouvé avec l'ID " + id));
 
-        // 2. Mettre à jour les champs simples
-        existingPlat.setCategory(platDto.getCategory());
         existingPlat.setNom(platDto.getNom());
         existingPlat.setDescription(platDto.getDescription());
         existingPlat.setPrix(platDto.getPrix());
-        existingPlat.setPhotoUrl(platDto.getPhotoUrl());
+//        existingPlat.setDisponibilite(platDto.isDisponible());
         existingPlat.setRecette(platDto.getRecette());
-        // existingPlat.setDisponible(platDto.isDisponible()); // Si vous avez ce champ
 
-        // 3. Gérer la mise à jour de la catégorie (si fournie)
+        // On ne met à jour l'URL photo ici que si elle est fournie explicitement (via texte)
+        if (platDto.getPhotoUrl() != null) {
+            existingPlat.setPhotoUrl(platDto.getPhotoUrl());
+        }
+
         if (platDto.getCategory() != null) {
-            // Ici, on part du principe que vous avez une méthode dans CategoryRepository
-            // pour récupérer l'entité Catégorie à partir de son ID contenu dans le DTO
             var category = categoryRepository.findById(platDto.getCategory().getId())
                     .orElseThrow(() -> new RuntimeException("Catégorie non trouvée"));
             existingPlat.setCategory(category);
         }
 
-        // 4. Sauvegarder les modifications et retourner le DTO
-        Plat updatedPlat = platRepository.save(existingPlat);
-        return platMapper.toDto(updatedPlat);
+        return platMapper.toDto(platRepository.save(existingPlat));
     }
 
+    @Override
     public void delete(Long id) {
         if (!platRepository.existsById(id)) {
             throw new RuntimeException("Plat non trouvé");
@@ -92,25 +105,59 @@ public class PlatServiceImplementation implements PlatServiceInterface {
         platRepository.deleteById(id);
     }
 
-//    @Override
-//    public PlatDto getMostSoldPlat() {
-//        List<Object[]> results = ligneCommandeRepository.findTopSellingPlats(PageRequest.of(0, 1));
-//        if (results.isEmpty()) {
-//            throw new RuntimeException("Aucune vente enregistrée pour le moment");
-//        }
-//        Plat plat = (Plat) results.get(0)[0];
-//        return platMapper.toDto(plat);
-//    }
-//
-//    @Override
-//    public List<PlatDto> getTopSoldPlats(int limit) {
-//        List<Object[]> results = ligneCommandeRepository.findTopSellingPlats(PageRequest.of(0, limit));
-//        return results.stream()
-//                .map(result -> platMapper.toDto((Plat) result[0]))
-//                .collect(Collectors.toList());
-//    }
+    // --- GESTION DE LA DISPONIBILITÉ ---
 
+    @Override
+    public List<PlatDto> getMenuActif() {
+        return platRepository.findByDisponibiliteTrue().stream()
+                .map(platMapper::toDto)
+                .collect(Collectors.toList());
+    }
 
+    @Override
+    public PlatDto modifierDisponibilite(Long id, boolean estDisponible) {
+        Plat plat = platRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Plat non trouvé"));
+        plat.setDisponibilite(estDisponible);
+        return platMapper.toDto(platRepository.save(plat));
+    }
+
+    // --- GESTION DE L'IMAGE (UPLOAD & RESIZE) ---
+
+    @Override
+    public PlatDto uploadPlatImage(Long id, MultipartFile file) throws IOException {
+        Plat plat = platRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Plat non trouvé"));
+
+        if (file.isEmpty()) throw new RuntimeException("Le fichier est vide");
+
+        // Création du dossier si inexistant
+        Path uploadPath = Paths.get(UPLOAD_DIR);
+        if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+
+        // Suppression de l'ancienne image si elle existe (pour économiser l'espace)
+        if (plat.getPhotoUrl() != null) {
+            Path oldPath = Paths.get(plat.getPhotoUrl().replace("/api/images/", UPLOAD_DIR));
+            Files.deleteIfExists(oldPath);
+        }
+
+        // Génération nom unique et redimensionnement
+        String fileName = UUID.randomUUID().toString() + ".jpg";
+        Path filePath = uploadPath.resolve(fileName);
+
+        Thumbnails.of(file.getInputStream())
+                .size(800, 600)
+                .outputFormat("jpg")
+                .outputQuality(0.75) // Compression à 75%
+                .toFile(filePath.toFile());
+
+        plat.setPhotoUrl("/api/images/" + fileName);
+        return platMapper.toDto(platRepository.save(plat));
+    }
+
+    // --- STATISTIQUES ---
+
+    @Override
     public List<Map<String, Object>> getStatistiquesPlatsVendus() {
         List<Object[]> results = platRepository.findTopSellingPlats();
 
@@ -120,24 +167,5 @@ public class PlatServiceImplementation implements PlatServiceInterface {
             stats.put("quantiteTotale", result[1]);
             return stats;
         }).collect(Collectors.toList());
-    }
-
-    // 1. Pour les clients/serveurs : Ne voir que ce qui est prêt à être servi
-    @Override
-    public List<PlatDto> getMenuActif() {
-        return platRepository.findByDisponibiliteTrue().stream()
-                .map(platMapper::toDto)
-                .collect(Collectors.toList());
-    }
-
-    // 2. Pour la cuisine/gestion : Changer l'état d'un plat
-    @Override
-    public PlatDto modifierDisponibilite(Long id, boolean estDisponible) {
-        Plat plat = platRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Plat introuvable"));
-
-        plat.setDisponibilite(estDisponible);
-        Plat updated = platRepository.save(plat);
-        return platMapper.toDto(updated);
     }
 }
