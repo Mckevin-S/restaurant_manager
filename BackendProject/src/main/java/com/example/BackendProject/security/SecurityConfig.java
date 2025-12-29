@@ -60,6 +60,7 @@ public class SecurityConfig implements WebMvcConfigurer { // Ajout de l'interfac
                 // ✅ Vos autres endpoints (Attention : en permitAll, les rôles ne sont pas vérifiés)
                 .requestMatchers("/api/restaurants/**",
                         "/api/users/**",
+                        "/api/cuisine/**",
                         "/api/categories/**",
                         "/api/plats/**",
                         "/api/paiements/**",
