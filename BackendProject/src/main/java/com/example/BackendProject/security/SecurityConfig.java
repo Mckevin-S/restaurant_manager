@@ -64,7 +64,7 @@ public class SecurityConfig implements WebMvcConfigurer { // Ajout de l'interfac
                         "/api/categories/**",
                         "/api/plats/**",
                         "/api/paiements/**",
-                        "/stock-movements/**",
+                        "/api/stock-movements/**",
                         "/api/ligne-commandes/**").permitAll()
 
                 .anyRequest().authenticated()

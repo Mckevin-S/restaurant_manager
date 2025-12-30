@@ -20,7 +20,7 @@ import java.sql.Timestamp;
 import java.util.List;
 
 @RestController
-@RequestMapping("/stock-movements")
+@RequestMapping("api/stock-movements")
 @CrossOrigin(origins = "*")
 @Tag(name = "Gestion des Mouvements de Stock", description = "API pour la gestion des mouvements de stock des ingrédients")
 public class StockMovementController {
