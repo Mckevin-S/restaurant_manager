@@ -50,4 +50,7 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
     // Compter les commandes en cours
     @Query("SELECT COUNT(c) FROM Commande c WHERE c.statut IN ('EN_ATTENTE', 'EN_PREPARATION')")
     Long countCommandesEnCours();
+
+    // Récupère les commandes à traiter en cuisine (Priorité aux plus anciennes)
+    List<Commande> findByStatutInOrderByDateHeureCommandeAsc(List<StatutCommande> statuts);
 }

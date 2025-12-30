@@ -2,23 +2,25 @@ package com.example.BackendProject.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.*;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer; // Import crucial
 
 @Configuration
-public class SecurityConfig {
+public class SecurityConfig implements WebMvcConfigurer { // Ajout de l'interface pour les images
+
+    private final JwtFilter jwtFilter;
 
     public SecurityConfig(JwtFilter jwtFilter) {
         this.jwtFilter = jwtFilter;
     }
-
-    private JwtFilter jwtFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -30,6 +32,13 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
+    // ✅ Configuration pour rendre les images accessibles via URL
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/api/images/**")
+                .addResourceLocations("file:uploads/plats/");
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
@@ -39,32 +48,25 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.authorizeHttpRequests(auth -> auth
-                        // ✅ Endpoints publics (sans token)
-                        .requestMatchers("/api/Auth/**",
-                                "/api/restaurants/**",
-                                "/api/users/**",
-                                "/api/categories/**",
-                                "/api/menus/**",
-                                 "/api/tables/**",
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/api/zones/**",
-                                "/api/plats/**",
-                                "/api/paiements/**",
-                                "/api/order-item-options/**",
-                                "/api/options/**",
-                                "/api/commande-promotions/**",
-                                "/api/ligne-commandes/**",
-                                "/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/test/**").permitAll() // Pour les tests
+                // ✅ Endpoints publics
+                .requestMatchers("/api/Auth/**",
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html").permitAll()
 
-                        // ✅ Endpoints protégés par rôle
-//                .requestMatchers("/api/personnel/**").hasAnyRole("ADMIN", "RESPONSSALE_ACCADEMIQUE")
-//                .requestMatchers("/api/cours/**").hasAnyRole("ADMIN", "ENSEIGNANT", "RESPONSSALE_ACCADEMIQUE")
-//                .requestMatchers("/api/salles/**").authenticated()
+                // ✅ Rendre les images publiques pour que le menu puisse les afficher
+                .requestMatchers("/api/images/**").permitAll()
 
-                        // ✅ Tous les autres endpoints nécessitent une authentification
-                        .anyRequest().authenticated()
+                // ✅ Vos autres endpoints (Attention : en permitAll, les rôles ne sont pas vérifiés)
+                .requestMatchers("/api/restaurants/**",
+                        "/api/users/**",
+                        "/api/cuisine/**",
+                        "/api/categories/**",
+                        "/api/plats/**",
+                        "/api/paiements/**",
+                        "/api/ligne-commandes/**").permitAll()
+
+                .anyRequest().authenticated()
         );
 
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
