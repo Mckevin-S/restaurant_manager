@@ -47,6 +47,10 @@ public class UtilisateurDto {
         this.dateEmbauche = dateEmbauche;
     }
 
+    public UtilisateurDto() {
+
+    }
+
     public Long getId() {
         return id;
     }

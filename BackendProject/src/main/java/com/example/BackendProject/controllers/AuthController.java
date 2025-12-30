@@ -5,7 +5,6 @@ import com.example.BackendProject.dto.UtilisateurDto;
 import com.example.BackendProject.repository.UtilisateurRepository;
 import com.example.BackendProject.security.JwtUtils;
 import com.example.BackendProject.services.implementations.UtilisateurDetailService;
-import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
