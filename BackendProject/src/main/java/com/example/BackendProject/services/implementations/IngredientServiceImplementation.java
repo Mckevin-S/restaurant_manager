@@ -1,16 +1,18 @@
 package com.example.BackendProject.services.implementations;
 
-
 import com.example.BackendProject.dto.IngredientDto;
 import com.example.BackendProject.entities.Ingredient;
 import com.example.BackendProject.mappers.IngredientMapper;
 import com.example.BackendProject.repository.IngredientRepository;
 import com.example.BackendProject.services.interfaces.IngredientServiceInterface;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,67 +21,60 @@ public class IngredientServiceImplementation implements IngredientServiceInterfa
 
     private final IngredientMapper ingredientMapper;
     private final IngredientRepository ingredientRepository;
+    private final SimpMessagingTemplate messagingTemplate; // Pour le temps réel
 
     public IngredientServiceImplementation(IngredientMapper ingredientMapper,
-                                           IngredientRepository ingredientRepository) {
+                                           IngredientRepository ingredientRepository,
+                                           SimpMessagingTemplate messagingTemplate) {
         this.ingredientMapper = ingredientMapper;
         this.ingredientRepository = ingredientRepository;
+        this.messagingTemplate = messagingTemplate;
+    }
+
+    /**
+     *  LOGIQUE TEMPS RÉEL : Vérifie le seuil et envoie une alerte WebSocket
+     */
+    private void verifierEtAlerter(Ingredient ingredient) {
+        // Si quantité actuelle <= seuil d'alerte
+        if (ingredient.getQuantiteActuelle().compareTo(ingredient.getSeuilAlerte()) <= 0) {
+
+            Map<String, Object> alerte = new HashMap<>();
+            alerte.put("id", ingredient.getId());
+            alerte.put("nom", ingredient.getNom());
+            alerte.put("quantite", ingredient.getQuantiteActuelle());
+            alerte.put("unite", ingredient.getUniteMesure());
+
+            String status = ingredient.getQuantiteActuelle().compareTo(BigDecimal.ZERO) <= 0 ? "RUPTURE" : "FAIBLE";
+            alerte.put("status", status);
+            alerte.put("message", "Attention : Stock " + status + " pour " + ingredient.getNom());
+
+            // ✅ SOLUTION : Forcer l'interprétation de la Map comme un Object
+            messagingTemplate.convertAndSend("/topic/stock/alertes", (Object) alerte);
+        }
     }
 
     @Override
     public IngredientDto save(IngredientDto ingredientDto) {
-        // Validation des champs obligatoires
         if (ingredientDto.getNom() == null || ingredientDto.getNom().trim().isEmpty()) {
             throw new RuntimeException("Le nom de l'ingrédient est obligatoire");
         }
-
         if (ingredientDto.getUniteMesure() == null || ingredientDto.getUniteMesure().trim().isEmpty()) {
             throw new RuntimeException("L'unité de mesure est obligatoire");
         }
-
-        // Vérifier qu'un ingrédient avec ce nom n'existe pas déjà
         if (ingredientRepository.existsByNomIgnoreCase(ingredientDto.getNom())) {
             throw new RuntimeException("Un ingrédient avec ce nom existe déjà");
         }
 
-        // Définir les valeurs par défaut
-        if (ingredientDto.getQuantiteActuelle() == null) {
-            ingredientDto.setQuantiteActuelle(BigDecimal.ZERO);
-        }
-
-        if (ingredientDto.getSeuilAlerte() == null) {
-            ingredientDto.setSeuilAlerte(BigDecimal.ZERO);
-        }
-
-        // Validation des quantités
-        if (ingredientDto.getQuantiteActuelle().compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("La quantité actuelle ne peut pas être négative");
-        }
-
-        if (ingredientDto.getSeuilAlerte().compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("Le seuil d'alerte ne peut pas être négatif");
-        }
+        if (ingredientDto.getQuantiteActuelle() == null) ingredientDto.setQuantiteActuelle(BigDecimal.ZERO);
+        if (ingredientDto.getSeuilAlerte() == null) ingredientDto.setSeuilAlerte(BigDecimal.ZERO);
 
         Ingredient ingredient = ingredientMapper.toEntity(ingredientDto);
         Ingredient savedIngredient = ingredientRepository.save(ingredient);
 
+        // Vérification immédiate après création
+        verifierEtAlerter(savedIngredient);
+
         return ingredientMapper.toDto(savedIngredient);
-    }
-
-    @Override
-    public List<IngredientDto> getAll() {
-        return ingredientRepository.findAll()
-                .stream()
-                .map(ingredientMapper::toDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public IngredientDto getById(Long id) {
-        Ingredient ingredient = ingredientRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ingrédient non trouvé avec l'ID : " + id));
-
-        return ingredientMapper.toDto(ingredient);
     }
 
     @Override
@@ -87,9 +82,7 @@ public class IngredientServiceImplementation implements IngredientServiceInterfa
         Ingredient ingredient = ingredientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ingrédient non trouvé avec l'ID : " + id));
 
-        // Mise à jour du nom
         if (ingredientDto.getNom() != null && !ingredientDto.getNom().trim().isEmpty()) {
-            // Vérifier que le nouveau nom n'est pas déjà utilisé par un autre ingrédient
             if (!ingredient.getNom().equalsIgnoreCase(ingredientDto.getNom()) &&
                     ingredientRepository.existsByNomIgnoreCase(ingredientDto.getNom())) {
                 throw new RuntimeException("Un autre ingrédient avec ce nom existe déjà");
@@ -97,7 +90,6 @@ public class IngredientServiceImplementation implements IngredientServiceInterfa
             ingredient.setNom(ingredientDto.getNom());
         }
 
-        // Mise à jour de la quantité actuelle
         if (ingredientDto.getQuantiteActuelle() != null) {
             if (ingredientDto.getQuantiteActuelle().compareTo(BigDecimal.ZERO) < 0) {
                 throw new RuntimeException("La quantité actuelle ne peut pas être négative");
@@ -105,12 +97,10 @@ public class IngredientServiceImplementation implements IngredientServiceInterfa
             ingredient.setQuantiteActuelle(ingredientDto.getQuantiteActuelle());
         }
 
-        // Mise à jour de l'unité de mesure
         if (ingredientDto.getUniteMesure() != null && !ingredientDto.getUniteMesure().trim().isEmpty()) {
             ingredient.setUniteMesure(ingredientDto.getUniteMesure());
         }
 
-        // Mise à jour du seuil d'alerte
         if (ingredientDto.getSeuilAlerte() != null) {
             if (ingredientDto.getSeuilAlerte().compareTo(BigDecimal.ZERO) < 0) {
                 throw new RuntimeException("Le seuil d'alerte ne peut pas être négatif");
@@ -118,55 +108,12 @@ public class IngredientServiceImplementation implements IngredientServiceInterfa
             ingredient.setSeuilAlerte(ingredientDto.getSeuilAlerte());
         }
 
-        // Sauvegarde
         Ingredient updatedIngredient = ingredientRepository.save(ingredient);
 
+        // Alerte en cas de mise à jour manuelle vers un stock bas
+        verifierEtAlerter(updatedIngredient);
+
         return ingredientMapper.toDto(updatedIngredient);
-    }
-
-    @Override
-    public void delete(Long id) {
-        Ingredient ingredient = ingredientRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ingrédient non trouvé avec l'ID : " + id));
-
-        // Vérifier si l'ingrédient est utilisé dans des recettes (optionnel)
-        // if (!ingredient.getRecetteItems().isEmpty()) {
-        //     throw new RuntimeException("Impossible de supprimer un ingrédient utilisé dans des recettes");
-        // }
-
-        ingredientRepository.delete(ingredient);
-    }
-
-    @Override
-    public List<IngredientDto> search(String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return getAll();
-        }
-
-        return ingredientRepository.findByNomContainingIgnoreCase(keyword)
-                .stream()
-                .map(ingredientMapper::toDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<IngredientDto> findIngredientsEnAlerte() {
-        return ingredientRepository.findIngredientsEnAlerte()
-                .stream()
-                .map(ingredientMapper::toDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<IngredientDto> findByUniteMesure(String uniteMesure) {
-        if (uniteMesure == null || uniteMesure.trim().isEmpty()) {
-            throw new RuntimeException("L'unité de mesure ne peut pas être vide");
-        }
-
-        return ingredientRepository.findByUniteMesure(uniteMesure)
-                .stream()
-                .map(ingredientMapper::toDto)
-                .collect(Collectors.toList());
     }
 
     @Override
@@ -178,10 +125,11 @@ public class IngredientServiceImplementation implements IngredientServiceInterfa
         Ingredient ingredient = ingredientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ingrédient non trouvé avec l'ID : " + id));
 
-        BigDecimal nouvelleQuantite = ingredient.getQuantiteActuelle().add(quantite);
-        ingredient.setQuantiteActuelle(nouvelleQuantite);
-
+        ingredient.setQuantiteActuelle(ingredient.getQuantiteActuelle().add(quantite));
         Ingredient updatedIngredient = ingredientRepository.save(ingredient);
+
+        // Pas forcément d'alerte ici (car le stock augmente), mais utile pour rafraîchir l'UI
+        verifierEtAlerter(updatedIngredient);
 
         return ingredientMapper.toDto(updatedIngredient);
     }
@@ -198,13 +146,14 @@ public class IngredientServiceImplementation implements IngredientServiceInterfa
         BigDecimal nouvelleQuantite = ingredient.getQuantiteActuelle().subtract(quantite);
 
         if (nouvelleQuantite.compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("Quantité insuffisante. Stock actuel : " +
-                    ingredient.getQuantiteActuelle() + " " + ingredient.getUniteMesure());
+            throw new RuntimeException("Stock insuffisant pour " + ingredient.getNom());
         }
 
         ingredient.setQuantiteActuelle(nouvelleQuantite);
-
         Ingredient updatedIngredient = ingredientRepository.save(ingredient);
+
+        // ✅ CRUCIAL : Alerte immédiate si le retrait fait passer sous le seuil
+        verifierEtAlerter(updatedIngredient);
 
         return ingredientMapper.toDto(updatedIngredient);
     }
@@ -219,9 +168,50 @@ public class IngredientServiceImplementation implements IngredientServiceInterfa
                 .orElseThrow(() -> new RuntimeException("Ingrédient non trouvé avec l'ID : " + id));
 
         ingredient.setSeuilAlerte(nouveauSeuil);
-
         Ingredient updatedIngredient = ingredientRepository.save(ingredient);
 
+        // Vérifier si le nouveau seuil déclenche une alerte immédiatement
+        verifierEtAlerter(updatedIngredient);
+
         return ingredientMapper.toDto(updatedIngredient);
+    }
+
+    // --- Méthodes de lecture (Lecture seule, pas besoin de temps réel ici) ---
+
+    @Override
+    public List<IngredientDto> getAll() {
+        return ingredientRepository.findAll().stream().map(ingredientMapper::toDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public IngredientDto getById(Long id) {
+        return ingredientRepository.findById(id).map(ingredientMapper::toDto)
+                .orElseThrow(() -> new RuntimeException("Ingrédient non trouvé"));
+    }
+
+    @Override
+    public void delete(Long id) {
+        if (!ingredientRepository.existsById(id)) {
+            throw new RuntimeException("Ingrédient non trouvé");
+        }
+        ingredientRepository.deleteById(id);
+    }
+
+    @Override
+    public List<IngredientDto> search(String keyword) {
+        return ingredientRepository.findByNomContainingIgnoreCase(keyword).stream()
+                .map(ingredientMapper::toDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<IngredientDto> findIngredientsEnAlerte() {
+        return ingredientRepository.findIngredientsEnAlerte().stream()
+                .map(ingredientMapper::toDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<IngredientDto> findByUniteMesure(String uniteMesure) {
+        return ingredientRepository.findByUniteMesure(uniteMesure).stream()
+                .map(ingredientMapper::toDto).collect(Collectors.toList());
     }
 }
