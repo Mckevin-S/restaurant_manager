@@ -1,14 +1,18 @@
 package com.example.BackendProject.services.implementations;
 
+import com.example.BackendProject.dto.CommandeDto;
 import com.example.BackendProject.dto.LigneCommandeDto;
+import com.example.BackendProject.dto.RestaurantDto;
 import com.example.BackendProject.entities.Commande;
 import com.example.BackendProject.entities.LigneCommande;
 import com.example.BackendProject.entities.Plat;
+import com.example.BackendProject.mappers.CommandeMapper;
 import com.example.BackendProject.mappers.LigneCommandeMapper;
 import com.example.BackendProject.repository.CommandeRepository;
 import com.example.BackendProject.repository.LigneCommandeRepository;
 import com.example.BackendProject.repository.PlatRepository;
 import com.example.BackendProject.services.interfaces.LigneCommandeServiceInterface;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,15 +28,22 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
     private final LigneCommandeRepository ligneCommandeRepository;
     private final CommandeRepository commandeRepository;
     private final PlatRepository platRepository;
+    private final CommandeMapper commandeMapper; // Ajouté
+    private final SimpMessagingTemplate messagingTemplate; // Ajouté
+    private RestaurantDto restaurantDto;
 
     public LigneCommandeServiceImplementation(LigneCommandeMapper ligneCommandeMapper,
                                               LigneCommandeRepository ligneCommandeRepository,
                                               CommandeRepository commandeRepository,
-                                              PlatRepository platRepository) {
+                                              PlatRepository platRepository,
+                                              CommandeMapper commandeMapper,
+                                              SimpMessagingTemplate messagingTemplate) {
         this.ligneCommandeMapper = ligneCommandeMapper;
         this.ligneCommandeRepository = ligneCommandeRepository;
         this.commandeRepository = commandeRepository;
         this.platRepository = platRepository;
+        this.commandeMapper = commandeMapper;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @Override
@@ -76,6 +87,9 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
         ligneCommande.setPlat(plat);
 
         LigneCommande saved = ligneCommandeRepository.save(ligneCommande);
+
+        // RECALCUL ICI
+        mettreAJourEtNotifierAddition(commandeId);
 
         return ligneCommandeMapper.toDto(saved);
     }
@@ -137,6 +151,9 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
         // Sauvegarde
         LigneCommande updated = ligneCommandeRepository.save(ligneCommande);
 
+        // RECALCUL ICI
+        mettreAJourEtNotifierAddition(updated.getCommande().getId());
+
         return ligneCommandeMapper.toDto(updated);
     }
 
@@ -146,6 +163,9 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
                 .orElseThrow(() -> new RuntimeException("Ligne de commande non trouvée avec l'ID : " + id));
 
         ligneCommandeRepository.delete(ligneCommande);
+
+        // RECALCUL ICI (Après la suppression)
+        mettreAJourEtNotifierAddition(id);
     }
 
     @Override
@@ -220,6 +240,9 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
 
         LigneCommande updated = ligneCommandeRepository.save(ligneCommande);
 
+        // RECALCUL ICI
+        mettreAJourEtNotifierAddition(updated.getCommande().getId());
+
         return ligneCommandeMapper.toDto(updated);
     }
 
@@ -242,5 +265,28 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
         }
 
         ligneCommandeRepository.deleteByCommandeId(commandeId);
+    }
+
+    private void mettreAJourEtNotifierAddition(Long commandeId) {
+        Commande commande = commandeRepository.findById(commandeId)
+                .orElseThrow(() -> new RuntimeException("Commande non trouvée"));
+
+        // Calcul du Total HT (Somme des lignes)
+        BigDecimal totalHt = commande.getLignes().stream()
+                .map(l -> l.getPrixUnitaire().multiply(new BigDecimal(l.getQuantite())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Calcul TTC (TVA 19.25% Cameroun)
+        BigDecimal tva = totalHt.multiply(new BigDecimal(String.valueOf(restaurantDto.getTauxTva())));
+        BigDecimal totalTtc = totalHt.add(tva);
+
+        commande.setTotalHt(totalHt);
+        commande.setTotalTtc(totalTtc);
+
+        commandeRepository.save(commande);
+
+        // Notification Temps Réel au serveur et à la caisse
+        CommandeDto commandeDto = commandeMapper.toDto(commande);
+        messagingTemplate.convertAndSend("/topic/serveurs/addition/" + commandeId, commandeDto);
     }
 }
