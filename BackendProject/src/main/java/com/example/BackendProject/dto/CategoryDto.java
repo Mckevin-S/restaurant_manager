@@ -22,6 +22,10 @@ public class CategoryDto {
         this.ordreAffichage = ordreAffichage;
     }
 
+    public CategoryDto() {
+
+    }
+
     public Long getId() {
         return id;
     }

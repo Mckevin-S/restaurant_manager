@@ -2,9 +2,6 @@ package com.example.BackendProject.dto;
 
 import com.example.BackendProject.entities.Commande;
 import com.example.BackendProject.utils.TypePaiement;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -13,13 +10,16 @@ import java.sql.Timestamp;
 public class PaiementDto {
 
     private Long id;
-    private Commande commande;
+    private Long commande;
     private BigDecimal montant;
     private TypePaiement typePaiement;
     private Timestamp datePaiement;
     private String referenceTransaction;
 
-    public PaiementDto(Long id, Commande commande, BigDecimal montant, TypePaiement typePaiement, Timestamp datePaiement, String referenceTransaction) {
+    public PaiementDto() {
+    }
+
+    public PaiementDto(Long id, Long commande, BigDecimal montant, TypePaiement typePaiement, Timestamp datePaiement, String referenceTransaction) {
         this.id = id;
         this.commande = commande;
         this.montant = montant;
@@ -36,11 +36,11 @@ public class PaiementDto {
         this.id = id;
     }
 
-    public Commande getCommande() {
+    public Long getCommande() {
         return commande;
     }
 
-    public void setCommande(Commande commande) {
+    public void setCommande(Long commande) {
         this.commande = commande;
     }
 

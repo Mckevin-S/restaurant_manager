@@ -24,6 +24,10 @@ public class IngredientDto {
         this.seuilAlerte = seuilAlerte;
     }
 
+    public IngredientDto() {
+
+    }
+
     public Long getId() {
         return id;
     }

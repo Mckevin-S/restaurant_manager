@@ -10,6 +10,10 @@ public class MenuDto {
         this.nom = nom;
     }
 
+    public MenuDto() {
+
+    }
+
     public Long getId() {
         return id;
     }

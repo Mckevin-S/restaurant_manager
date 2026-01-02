@@ -39,7 +39,7 @@ public class PaiementServiceImplementation implements PaiementServiceInterface {
     @Override
     public PaiementDto save(PaiementDto paiementDto) {
         // Validation des champs obligatoires
-        if (paiementDto.getCommande() == null || paiementDto.getCommande().getId() == null) {
+        if (paiementDto.getCommande() == null || paiementDto.getCommande() == null) {
             throw new RuntimeException("La commande est obligatoire");
         }
 
@@ -51,7 +51,7 @@ public class PaiementServiceImplementation implements PaiementServiceInterface {
             throw new RuntimeException("Le type de paiement est obligatoire");
         }
 
-        Long commandeId = paiementDto.getCommande().getId();
+        Long commandeId = paiementDto.getCommande();
 
         // Vérifier que la commande existe
         Commande commande = commandeRepository.findById(commandeId)

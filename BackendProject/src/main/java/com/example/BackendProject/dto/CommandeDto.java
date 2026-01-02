@@ -32,6 +32,10 @@ public class CommandeDto {
         this.totalTtc = totalTtc;
     }
 
+    public CommandeDto() {
+
+    }
+
     public Long getId() {
         return id;
     }

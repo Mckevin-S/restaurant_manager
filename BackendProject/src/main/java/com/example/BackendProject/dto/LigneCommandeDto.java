@@ -12,19 +12,24 @@ import java.math.BigDecimal;
 public class LigneCommandeDto {
 
     private Long id;
-    private Commande commande;
-    private Plat plat;
+    private Long commande;
+    private Long plat;
     private Integer quantite;
     private BigDecimal prixUnitaire;
     private String notesCuisine;
 
-    public LigneCommandeDto(Long id, Commande commande, Plat plat, Integer quantite, BigDecimal prixUnitaire, String notesCuisine) {
+
+    public LigneCommandeDto(Long id, Long commande, Long plat, Integer quantite, BigDecimal prixUnitaire, String notesCuisine) {
         this.id = id;
         this.commande = commande;
         this.plat = plat;
         this.quantite = quantite;
         this.prixUnitaire = prixUnitaire;
         this.notesCuisine = notesCuisine;
+    }
+
+    public LigneCommandeDto() {
+
     }
 
     public Long getId() {
@@ -35,19 +40,19 @@ public class LigneCommandeDto {
         this.id = id;
     }
 
-    public Commande getCommande() {
+    public Long getCommande() {
         return commande;
     }
 
-    public void setCommande(Commande commande) {
+    public void setCommande(Long commande) {
         this.commande = commande;
     }
 
-    public Plat getPlat() {
+    public Long getPlat() {
         return plat;
     }
 
-    public void setPlat(Plat plat) {
+    public void setPlat(Long plat) {
         this.plat = plat;
     }
 
