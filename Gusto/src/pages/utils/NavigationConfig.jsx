@@ -45,7 +45,7 @@ export const NAVIGATION = [
   },
   {
     title: 'Deconnexion',
-    path: '/logout',
+    path: '/login',
     icon: <Logout />,
     roles: ['admin', 'manager', 'serveur', 'cuisinier']
   },

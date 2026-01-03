@@ -19,7 +19,10 @@ const data = [
 ];
 
 const Dashboard = () => {
-  const user = { role: 'admin' };
+  const usr = localStorage.getItem('user')
+  console.log(usr)
+  const user = { role: usr };
+
 
   return (
     <Box sx={{ display: 'flex', bgcolor: '#F8F9FA', minHeight: '100vh', width: "100%" }}>

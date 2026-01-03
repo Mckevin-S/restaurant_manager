@@ -2,28 +2,38 @@ import { Route, Routes, Navigate } from 'react-router-dom';
 import Login from './pages/Auth/Login';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
-// import Users from './pages/Users'; // Assure-toi d'importer tes composants
-// import HomeStats from './pages/HomeStats'; // Composant contenant tes graphiques actuels
+import Confirmation from './pages/Auth/Confirmation';
+import PointOfSale from './pages/POS';
+import KitchenDashboard from './pages/kitchen/Kitchen';
+import ServeurPage from './pages/serveur/ServeurPage';
+import PaymentInterface from './pages/PaymentInterface';
 
 function App() {
   return (
     <Routes>
-      {/* Route publique */}
-      <Route path='/login' element={<Login />} />
-      
-      {/* Routes protégées (Dashboard) */}
-      <Route path='/dashboard' element={<Dashboard />}>
-        {/* Route par défaut quand on arrive sur /dashboard */}
-        <Route index element={<Dashboard />} /> 
-        
-        {/* Route pour /dashboard/users */}
-      </Route>
-        <Route path='/users' element={<Users />} />
+      {/* Route par défaut : Redirige vers Confirmation ou Login au démarrage */}
+      <Route path='/' element={<Navigate to="/POS" />} />
 
-      {/* Redirection automatique */}
-      <Route path='/' element={<Navigate to="/dashboard" />} />
+      {/* Routes d'authentification */}
+      <Route path='/login' element={<Login />} />
+      <Route path='/confirmation' element={<Confirmation />} />
+      <Route path="/POS" element={<PointOfSale/>}/>
+
+      {/* Routes principales */}
+      <Route path='/dashboard' element={<Dashboard />}>
+        {/* Ici, on ne remet pas Dashboard en element, on met le contenu de la page d'accueil du dashboard */}
+        <Route index element={<div>Bienvenue sur le Dashboard</div>} />
+        <Route path='users' element={<Users />} />
+      </Route>
+        <Route path='/kitchen' element={<KitchenDashboard/>}/>
+        <Route path='/server' element={<ServeurPage/>}/>
+        <Route path='/payment' element={<PaymentInterface/>}/>
+
+      {/* Fallback : si l'URL n'existe pas, retour à la confirmation */}
+      <Route path='*' element={<Navigate to="/confirmation" />} />
     </Routes>
   );
 }
 
 export default App;
+
