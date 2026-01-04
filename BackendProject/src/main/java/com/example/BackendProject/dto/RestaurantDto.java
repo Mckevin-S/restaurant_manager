@@ -31,6 +31,10 @@ public class RestaurantDto {
         this.dateCreation = dateCreation;
     }
 
+    public RestaurantDto() {
+
+    }
+
     public Long getId() {
         return id;
     }

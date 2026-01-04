@@ -21,6 +21,10 @@ public class TableRestaurantDto {
         this.capacite = capacite;
     }
 
+    public TableRestaurantDto() {
+
+    }
+
     public Long getId() {
         return id;
     }
