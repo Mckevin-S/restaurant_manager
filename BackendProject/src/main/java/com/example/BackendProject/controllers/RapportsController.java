@@ -2,7 +2,6 @@ package com.example.BackendProject.controllers;
 
 
 import com.example.BackendProject.dto.RapportsDto;
-import com.example.BackendProject.entities.Rapports;
 import com.example.BackendProject.services.interfaces.RapportServiceInterface;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,10 +13,10 @@ import java.util.List;
 @RequestMapping("/api/rapports")
 @CrossOrigin(origins = "*")
 
-public class RepportsController {
+public class RapportsController {
     private final RapportServiceInterface rapportService;
 
-    public RepportsController(RapportServiceInterface rapportService) {
+    public RapportsController(RapportServiceInterface rapportService) {
         this.rapportService = rapportService;
     }
 
