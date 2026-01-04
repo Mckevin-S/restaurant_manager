@@ -22,50 +22,48 @@ public class AuthController {
 
     private final AuthenticationManager authManager;
     private final UtilisateurDetailService utilisateurDetailService;
-    private final UtilisateurRepository utilisateurRepository;
     private final JwtUtils jwtUtils;
-    private final PasswordEncoder encoder;
 
-    public AuthController(AuthenticationManager authManager, UtilisateurDetailService utilisateurDetailService, UtilisateurRepository utilisateurRepository, JwtUtils jwtUtils, PasswordEncoder encoder) {
+    public AuthController(AuthenticationManager authManager,
+                          UtilisateurDetailService utilisateurDetailService,
+                          JwtUtils jwtUtils) {
         this.authManager = authManager;
         this.utilisateurDetailService = utilisateurDetailService;
-        this.utilisateurRepository = utilisateurRepository;
         this.jwtUtils = jwtUtils;
-        this.encoder = encoder;
     }
 
-    /**
-     * Endpoint de connexion.
-     * @return JWT token si authentification réussie
-     */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UtilisateurDto request) {
         try {
-            // Authentification via Spring Security
-            authManager.authenticate(
+            // 1. Authentification
+            var authentication = authManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getNom(),
                             request.getMotDePasse()
                     )
             );
 
-            // Génération du token JWT
-            var userDetails = utilisateurDetailService.loadUserByUsername(request.getNom());
+            // 2. Récupération des détails et du rôle
+            var userDetails = (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
+
+            // On récupère le rôle (ex: "ROLE_MANAGER")
+            String role = userDetails.getAuthorities().stream()
+                    .map(grantedAuthority -> grantedAuthority.getAuthority())
+                    .findFirst()
+                    .orElse("ROLE_USER");
+
+            // 3. Génération du token
             String token = jwtUtils.generateToken(userDetails);
 
-            return ResponseEntity.ok(new LoginResponse(token));
+            // 4. Retourne la réponse complète pour le Frontend
+            return ResponseEntity.ok(new LoginResponse(token, userDetails.getUsername(), role));
 
         } catch (BadCredentialsException e) {
-            // ✅ CORRIGÉ : Concaténation correcte pour le message d'erreur
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Identifiants incorrects pour l'utilisateur : " + request.getMotDePasse());
+                    .body("Nom d'utilisateur ou mot de passe incorrect.");
         } catch (Exception e) {
-            e.printStackTrace(); // <--- Ajoutez ceci pour voir le détail dans votre terminal
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erreur technique : " + e.getMessage());
+                    .body("Une erreur est survenue lors de la connexion.");
         }
     }
-
-
-
 }
