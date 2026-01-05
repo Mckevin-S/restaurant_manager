@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 
 import java.time.LocalDate;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -54,6 +55,12 @@ public class Utilisateur {
     @Column
     private Boolean actif = true;
 
+    @Column
+    private String verificationCode;
+
+    @Column
+    private LocalDateTime expiryCode;
+
     // -----------------------------
     // 🔗 COMMANDES (serveur)
     // -----------------------------
@@ -63,8 +70,22 @@ public class Utilisateur {
     // -----------------------------
     // GETTERS / SETTERS
     // -----------------------------
+
+
+    public String getTelephone() {
+        return telephone;
+    }
+
+    public void setTelephone(String telephone) {
+        this.telephone = telephone;
+    }
+
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Restaurant getRestaurant() {
@@ -81,10 +102,6 @@ public class Utilisateur {
 
     public void setRole(RoleType role) {
         this.role = role;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getNom() {
@@ -119,14 +136,6 @@ public class Utilisateur {
         this.motDePasse = motDePasse;
     }
 
-    public String getTelephone() {
-        return telephone;
-    }
-
-    public void setTelephone(String telephone) {
-        this.telephone = telephone;
-    }
-
     public LocalDate getDateEmbauche() {
         return dateEmbauche;
     }
@@ -143,11 +152,34 @@ public class Utilisateur {
         this.actif = actif;
     }
 
+    public String getVerificationCode() {
+        return verificationCode;
+    }
+
+    public void setVerificationCode(String verificationCode) {
+        this.verificationCode = verificationCode;
+    }
+
+    public LocalDateTime getExpiryCode() {
+        return expiryCode;
+    }
+
+    public void setExpiryCode(LocalDateTime expiryCode) {
+        this.expiryCode = expiryCode;
+    }
+
     public List<Commande> getCommandes() {
         return commandes;
     }
 
-    public Utilisateur(Long id, Restaurant restaurant, RoleType role, String nom, String prenom, String email, String motDePasse, String telephone, LocalDate dateEmbauche, Boolean actif, List<Commande> commandes) {
+    public void setCommandes(List<Commande> commandes) {
+        this.commandes = commandes;
+    }
+
+    public Utilisateur() {
+    }
+
+    public Utilisateur(Long id, Restaurant restaurant, RoleType role, String nom, String prenom, String email, String motDePasse, String telephone, LocalDate dateEmbauche, Boolean actif, String verificationCode, LocalDateTime expiryCode, List<Commande> commandes) {
         this.id = id;
         this.restaurant = restaurant;
         this.role = role;
@@ -158,9 +190,8 @@ public class Utilisateur {
         this.telephone = telephone;
         this.dateEmbauche = dateEmbauche;
         this.actif = actif;
+        this.verificationCode = verificationCode;
+        this.expiryCode = expiryCode;
         this.commandes = commandes;
-    }
-
-    public Utilisateur() {
     }
 }

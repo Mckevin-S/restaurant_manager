@@ -1,19 +1,12 @@
 package com.example.BackendProject.dto;
 
-import com.example.BackendProject.entities.Commande;
-import com.example.BackendProject.entities.Promotion;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-
-
 
 public class CommandePromotionDto {
 
-    private Commande commande;
-    private Promotion promotion;
+    private long commande;
+    private long promotion;
 
-    public CommandePromotionDto(Commande commande, Promotion promotion) {
+    public CommandePromotionDto(long commande, long promotion) {
         this.commande = commande;
         this.promotion = promotion;
     }
@@ -22,19 +15,19 @@ public class CommandePromotionDto {
 
     }
 
-    public Commande getCommande() {
+    public long getCommande() {
         return commande;
     }
 
-    public void setCommande(Commande commande) {
+    public void setCommande(long commande) {
         this.commande = commande;
     }
 
-    public Promotion getPromotion() {
+    public long getPromotion() {
         return promotion;
     }
 
-    public void setPromotion(Promotion promotion) {
+    public void setPromotion(long promotion) {
         this.promotion = promotion;
     }
 }

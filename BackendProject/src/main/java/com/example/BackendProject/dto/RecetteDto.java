@@ -10,13 +10,17 @@ import lombok.Setter;
 public class RecetteDto {
 
     private Long id;
-    private Plat plat;
+    private Long plat;
     private String nom;
 
-    public RecetteDto(Long id, Plat plat, String nom) {
+    public RecetteDto(Long id, Long plat, String nom) {
         this.id = id;
         this.plat = plat;
         this.nom = nom;
+    }
+
+    public RecetteDto() {
+
     }
 
     public Long getId() {
@@ -27,11 +31,11 @@ public class RecetteDto {
         this.id = id;
     }
 
-    public Plat getPlat() {
+    public Long getPlat() {
         return plat;
     }
 
-    public void setPlat(Plat plat) {
+    public void setPlat(Long plat) {
         this.plat = plat;
     }
 

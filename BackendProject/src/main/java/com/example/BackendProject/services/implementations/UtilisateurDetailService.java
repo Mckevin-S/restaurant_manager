@@ -24,18 +24,18 @@ public class UtilisateurDetailService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String nom) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String Email) throws UsernameNotFoundException {
 
         // 1. Cherche l'entité Personnel correspondante dans la base de données
         // L'entité Personnel est récupérée via une méthode personnalisée dans le repository.
-        Utilisateur utilisateur = utilisateurRepository.findByNom(nom);
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(Email);
 
 
         // 2. Vérification de l'existence de l'utilisateur
         if (utilisateur == null) {
             // Si l'utilisateur n'est pas trouvé, lance une exception spécifique
             // à Spring Security qui sera capturée pour signaler l'échec d'authentification.
-            throw new UsernameNotFoundException("Utilisateur not found with username: " + nom);
+            throw new UsernameNotFoundException("Utilisateur not found with username: " + Email);
         }
 
         // 3. Construction de la liste des autorités (rôles) de l'utilisateur
@@ -49,7 +49,7 @@ public class UtilisateurDetailService implements UserDetailsService {
         // Cet objet est utilisé par Spring Security pour comparer le mot de passe fourni
         // par l'utilisateur avec le mot de passe stocké (getPwdPersonnel) et encoder (haché).
         return new User(
-                utilisateur.getNom(), // Nom d'utilisateur (Username)
+                utilisateur.getEmail(), // Nom d'utilisateur (Username)
                 utilisateur.getMotDePasse(),   // Mot de passe HACHÉ (Password)
                 authorities                    // Liste des autorités/rôles (Authorities)
         );

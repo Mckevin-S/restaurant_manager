@@ -28,6 +28,10 @@ public class PromotionDto {
         this.dateExpiration = dateExpiration;
     }
 
+    public PromotionDto() {
+
+    }
+
     public Long getId() {
         return id;
     }

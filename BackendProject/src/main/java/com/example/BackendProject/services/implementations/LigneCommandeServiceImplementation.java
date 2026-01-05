@@ -49,11 +49,11 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
     @Override
     public LigneCommandeDto save(LigneCommandeDto ligneCommandeDto) {
         // Validation des champs obligatoires
-        if (ligneCommandeDto.getCommande() == null || ligneCommandeDto.getCommande().getId() == null) {
+        if (ligneCommandeDto.getCommande() == null || ligneCommandeDto.getCommande() == null) {
             throw new RuntimeException("La commande est obligatoire");
         }
 
-        if (ligneCommandeDto.getPlat() == null || ligneCommandeDto.getPlat().getId() == null) {
+        if (ligneCommandeDto.getPlat() == null || ligneCommandeDto.getPlat() == null) {
             throw new RuntimeException("Le plat est obligatoire");
         }
 
@@ -61,8 +61,8 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
             throw new RuntimeException("La quantité doit être supérieure à 0");
         }
 
-        Long commandeId = ligneCommandeDto.getCommande().getId();
-        Long platId = ligneCommandeDto.getPlat().getId();
+        Long commandeId = ligneCommandeDto.getCommande();
+        Long platId = ligneCommandeDto.getPlat();
 
         // Vérifier que la commande existe
         Commande commande = commandeRepository.findById(commandeId)
@@ -137,9 +137,9 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
         }
 
         // Mise à jour du plat (si nécessaire)
-        if (ligneCommandeDto.getPlat() != null && ligneCommandeDto.getPlat().getId() != null) {
-            Plat plat = platRepository.findById(ligneCommandeDto.getPlat().getId())
-                    .orElseThrow(() -> new RuntimeException("Plat non trouvé avec l'ID : " + ligneCommandeDto.getPlat().getId()));
+        if (ligneCommandeDto.getPlat() != null && ligneCommandeDto.getPlat() != null) {
+            Plat plat = platRepository.findById(ligneCommandeDto.getPlat())
+                    .orElseThrow(() -> new RuntimeException("Plat non trouvé avec l'ID : " + ligneCommandeDto.getPlat()));
 
             if (!plat.getDisponibilite()) {
                 throw new RuntimeException("Le plat '" + plat.getNom() + "' n'est pas disponible actuellement");

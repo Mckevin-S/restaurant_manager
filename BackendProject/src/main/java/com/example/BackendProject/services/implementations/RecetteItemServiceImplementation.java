@@ -38,10 +38,10 @@ public class RecetteItemServiceImplementation implements RecetteItemServiceInter
     @Override
     public RecetteItemDto save(RecetteItemDto dto) {
 
-        Recette recette = recetteRepository.findById(dto.getRecette().getId())
+        Recette recette = recetteRepository.findById(dto.getRecette())
                 .orElseThrow(() -> new RuntimeException("Recette introuvable"));
 
-        Ingredient ingredient = ingredientRepository.findById(dto.getIngredient().getId())
+        Ingredient ingredient = ingredientRepository.findById(dto.getIngredient())
                 .orElseThrow(() -> new RuntimeException("Ingrédient introuvable"));
 
         RecetteItem entity = mapper.toEntity(dto);
