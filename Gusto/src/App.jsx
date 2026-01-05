@@ -23,8 +23,8 @@ function App() {
       <Route path='/dashboard' element={<Dashboard />}>
         {/* Ici, on ne remet pas Dashboard en element, on met le contenu de la page d'accueil du dashboard */}
         <Route index element={<div>Bienvenue sur le Dashboard</div>} />
-        <Route path='users' element={<Users />} />
       </Route>
+        <Route path='/users' element={<Users />} />
         <Route path='/kitchen' element={<KitchenDashboard/>}/>
         <Route path='/server' element={<ServeurPage/>}/>
         <Route path='/payment' element={<PaymentInterface/>}/>
