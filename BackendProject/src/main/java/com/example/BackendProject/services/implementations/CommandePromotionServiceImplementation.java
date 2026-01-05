@@ -40,16 +40,16 @@ public class CommandePromotionServiceImplementation implements CommandePromotion
     @Override
     public CommandePromotionDto save(CommandePromotionDto commandePromotionDto) {
         // Validation
-        if (commandePromotionDto.getCommande() == null || commandePromotionDto.getCommande().getId() == null) {
+        if (commandePromotionDto.getCommande() == 0 ) {
             throw new RuntimeException("La commande est obligatoire");
         }
 
-        if (commandePromotionDto.getPromotion() == null || commandePromotionDto.getPromotion().getId() == null) {
+        if (commandePromotionDto.getPromotion() == 0) {
             throw new RuntimeException("La promotion est obligatoire");
         }
 
-        Long commandeId = commandePromotionDto.getCommande().getId();
-        Long promotionId = commandePromotionDto.getPromotion().getId();
+        Long commandeId = commandePromotionDto.getCommande();
+        Long promotionId = commandePromotionDto.getPromotion();
 
         // Vérifier que la commande existe
         Commande commande = commandeRepository.findById(commandeId)
@@ -171,11 +171,11 @@ public class CommandePromotionServiceImplementation implements CommandePromotion
 
         Commande commande = new Commande();
         commande.setId(commandeId);
-        dto.setCommande(commande);
+        dto.setCommande(commande.getId());
 
         Promotion promotion = new Promotion();
         promotion.setId(promotionId);
-        dto.setPromotion(promotion);
+        dto.setPromotion(promotion.getId());
 
         return save(dto);
     }

@@ -12,15 +12,18 @@ import java.math.BigDecimal;
 public class RecetteItemDto {
 
     private Long id;
-    private Recette recette;
-    private Ingredient ingredient;
+    private Long recette;
+    private Long ingredient;
     private BigDecimal quantiteRequise;
 
-    public RecetteItemDto(Long id, Recette recette, Ingredient ingredient, BigDecimal quantiteRequise) {
+    public RecetteItemDto(Long id, Long recette, Long ingredient, BigDecimal quantiteRequise) {
         this.id = id;
         this.recette = recette;
         this.ingredient = ingredient;
         this.quantiteRequise = quantiteRequise;
+    }
+
+    public RecetteItemDto() {
     }
 
     public Long getId() {
@@ -31,19 +34,19 @@ public class RecetteItemDto {
         this.id = id;
     }
 
-    public Recette getRecette() {
+    public Long getRecette() {
         return recette;
     }
 
-    public void setRecette(Recette recette) {
+    public void setRecette(Long recette) {
         this.recette = recette;
     }
 
-    public Ingredient getIngredient() {
+    public Long getIngredient() {
         return ingredient;
     }
 
-    public void setIngredient(Ingredient ingredient) {
+    public void setIngredient(Long ingredient) {
         this.ingredient = ingredient;
     }
 

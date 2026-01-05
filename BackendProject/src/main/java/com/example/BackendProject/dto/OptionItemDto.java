@@ -20,6 +20,10 @@ public class OptionItemDto {
         this.prixSupplementaire = prixSupplementaire;
     }
 
+    public OptionItemDto() {
+
+    }
+
     public Long getId() {
         return id;
     }

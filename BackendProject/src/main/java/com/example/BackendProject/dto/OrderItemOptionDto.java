@@ -13,12 +13,15 @@ import java.math.BigDecimal;
 public class OrderItemOptionDto {
 
     private Long id;
-    private LigneCommande ligneCommande;
-    private OptionItem option;
+    private Long ligneCommande;
+    private Long option;
     private String nomOption;
     private BigDecimal prixSupplementaire;
 
-    public OrderItemOptionDto(Long id, LigneCommande ligneCommande, OptionItem option, String nomOption, BigDecimal prixSupplementaire) {
+    public OrderItemOptionDto() {
+    }
+
+    public OrderItemOptionDto(Long id, Long ligneCommande, Long option, String nomOption, BigDecimal prixSupplementaire) {
         this.id = id;
         this.ligneCommande = ligneCommande;
         this.option = option;
@@ -34,19 +37,19 @@ public class OrderItemOptionDto {
         this.id = id;
     }
 
-    public LigneCommande getLigneCommande() {
+    public Long getLigneCommande() {
         return ligneCommande;
     }
 
-    public void setLigneCommande(LigneCommande ligneCommande) {
+    public void setLigneCommande(Long ligneCommande) {
         this.ligneCommande = ligneCommande;
     }
 
-    public OptionItem getOption() {
+    public Long getOption() {
         return option;
     }
 
-    public void setOption(OptionItem option) {
+    public void setOption(Long option) {
         this.option = option;
     }
 

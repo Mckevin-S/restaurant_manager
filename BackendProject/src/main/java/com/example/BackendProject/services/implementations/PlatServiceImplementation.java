@@ -47,7 +47,7 @@ public class PlatServiceImplementation implements PlatServiceInterface {
     @Override
     public PlatDto save(PlatDto platDto) {
         if (platDto.getCategory() != null) {
-            categoryRepository.findById(platDto.getCategory().getId())
+            categoryRepository.findById(platDto.getCategory())
                     .orElseThrow(() -> new RuntimeException("Catégorie non trouvée"));
         }
         Plat plat = platMapper.toEntity(platDto);
@@ -89,7 +89,7 @@ public class PlatServiceImplementation implements PlatServiceInterface {
         }
 
         if (platDto.getCategory() != null) {
-            var category = categoryRepository.findById(platDto.getCategory().getId())
+            var category = categoryRepository.findById(platDto.getCategory())
                     .orElseThrow(() -> new RuntimeException("Catégorie non trouvée"));
             existingPlat.setCategory(category);
         }
