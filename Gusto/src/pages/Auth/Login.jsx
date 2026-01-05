@@ -16,7 +16,7 @@ const Login = () => {
   const dispatch = useDispatch();
   
   // Lecture de l'état depuis le slice
-  const { loading, error, token } = useSelector((state) => state.auth);
+  const { loading, error, step } = useSelector((state) => state.auth);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState(''); // Ajout de l'état pour le mot de passe
@@ -24,10 +24,10 @@ const Login = () => {
 
   // Redirection automatique si le login réussit
   useEffect(() => {
-    if (token) {
+    if (step === '2FA') {
       navigate('/confirmation');
     }
-  }, [token, navigate]);
+  }, [step, navigate]);
 
   const handleLogin = (e) => {
     e.preventDefault();

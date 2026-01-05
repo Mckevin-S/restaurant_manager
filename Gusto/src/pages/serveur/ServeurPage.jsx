@@ -10,7 +10,7 @@ const ServeurPage = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   // Rôle défini sur SERVEUR pour filtrer la navigation
-  const userRole = "serveur"; 
+  const userRole = localStorage.getItem('role'); 
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f8fafc' }}>
