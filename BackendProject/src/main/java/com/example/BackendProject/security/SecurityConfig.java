@@ -42,6 +42,7 @@ public class SecurityConfig implements WebMvcConfigurer { // Ajout de l'interfac
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
+        // http.cors(cors -> cors.configure(http));
         http.csrf(csrf -> csrf.disable());
 
         http.sessionManagement(session ->

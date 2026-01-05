@@ -11,42 +11,42 @@ export const NAVIGATION = [
     title: 'Tableau de bord',
     path: '/dashboard',
     icon: <DashboardIcon />,
-    roles: ['admin', 'manager']
+    roles: ['ROLE_MANAGER']
   },
   {
     title: 'Gestion Utilisateurs',
     path: '/users',
     icon: <PeopleIcon />,
-    roles: ['admin']
+    roles: ['ROLE_MANAGER']
   },
   {
     title: 'Cuisine',
     path: '/kitchen',
     icon: <KitchenIcon />,
-    roles: ['cuisinier']
+    roles: ['ROLE_CUISINIER']
   },
   {
     title: 'Service Salle',
     path: '/server',
     icon: <RestaurantMenuIcon />,
-    roles: ['serveur']
+    roles: ['ROLE_SERVEUR']
   },
   {
     title: 'Rapports',
     path: '/reports',
     icon: <AssessmentIcon />,
-    roles: ['admin', 'manager']
+    roles: ['ROLE_MANAGER']
   },
   {
     title: 'Paramètres',
     path: '/settings',
     icon: <SettingsIcon />,
-    roles: ['admin', 'manager', 'serveur', 'cuisinier']
+    roles: ['ROLE_MANAGER']
   },
   {
     title: 'Deconnexion',
     path: '/login',
     icon: <Logout />,
-    roles: ['admin', 'manager', 'serveur', 'cuisinier']
+    roles: ['ROLE_MANAGER','ROLE_CUISINIER','ROLE_SERVEUR']
   },
 ];

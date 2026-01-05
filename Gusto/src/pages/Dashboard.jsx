@@ -19,14 +19,13 @@ const data = [
 ];
 
 const Dashboard = () => {
-  const usr = localStorage.getItem('user')
-  console.log(usr)
-  const user = { role: usr };
+  const usr = localStorage.getItem('role')
+  
 
 
   return (
     <Box sx={{ display: 'flex', bgcolor: '#F8F9FA', minHeight: '100vh', width: "100%" }}>
-      <SideBar userRole={user.role} />
+      <SideBar userRole={usr} />
 
       <Box component="main" sx={{ flexGrow: 1, p: 4, width: "100%", overflowX: 'hidden' }}>
 
@@ -34,7 +33,7 @@ const Dashboard = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4, alignItems: 'center' }}>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1A1C1E', textTransform: 'capitalize' }}>
-              {user.role} Dashboard
+              {usr} Dashboard
             </Typography>
             <Typography variant="body2" color="text.secondary">Overview of restaurant performance for today</Typography>
           </Box>

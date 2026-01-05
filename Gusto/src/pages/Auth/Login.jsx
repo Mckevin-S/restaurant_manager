@@ -1,93 +1,170 @@
-import React from 'react';
-import { Button, Checkbox, Field, Label, Input } from '@headlessui/react';
+import React, { useState, useEffect } from 'react'; // Ajout de useEffect
+import { 
+  Box, Typography, TextField, Button, Checkbox, 
+  FormControlLabel, Paper, Link, InputAdornment, IconButton,
+  CircularProgress, Alert // Ajout de composants pour le feedback
+} from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux'; // Hooks Redux
+import { loginUser } from '../../features/LoginSlice'; 
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import image1 from '../../images/cx.jpg';
 
 const Login = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  
+  // Lecture de l'état depuis le slice
+  const { loading, error, step } = useSelector((state) => state.auth);
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState(''); // Ajout de l'état pour le mot de passe
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Redirection automatique si le login réussit
+  useEffect(() => {
+    if (step === '2FA') {
+      navigate('/confirmation');
+    }
+  }, [step, navigate]);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    // Appel de l'action asynchrone du slice
+    dispatch(loginUser({ email, password }));
+  };
+
   return (
-    // Utilisation de flex au lieu de justify-items pour un meilleur centrage
-    <div className="flex min-h-screen w-full items-center justify-center bg-slate-50 p-4">
-      
-      {/* Container principal avec débordement caché pour l'arrondi de l'image */}
-      <div className="flex h-full max-h-[700px] w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+    <Box sx={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      bgcolor: '#f8fafc',
+      p: { xs: 2, md: 4 }
+    }}>
+      <Paper elevation={24} sx={{ 
+        display: 'flex', 
+        width: '100%', 
+        maxWidth: 1000, 
+        minHeight: { xs: 'auto', lg: 650 }, 
+        borderRadius: { xs: 4, md: 6 }, 
+        overflow: 'hidden',
+        flexDirection: { xs: 'column', lg: 'row' }
+      }}>
         
-        {/* Section Image - Cachée sur mobile pour le responsive */}
-        <div className="hidden w-1/2 lg:block">
-          <img 
-            src={image1} 
-            alt="Authentication background" 
-            className="h-full w-full object-cover" 
+        {/* Section Image */}
+        <Box sx={{ 
+          width: { xs: '100%', lg: '50%' }, 
+          display: { xs: 'none', lg: 'block' },
+          position: 'relative'
+        }}>
+          <Box
+            component="img"
+            src={image1}
+            alt="Authentication background"
+            sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
-        </div>
+        </Box>
 
         {/* Section Formulaire */}
-        <div className="flex w-full flex-col justify-center p-8 sm:p-12 lg:w-1/2">
-          <div className="mb-10 text-center">
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+        <Box sx={{ 
+          width: { xs: '100%', lg: '50%' }, 
+          p: { xs: 3, sm: 6, lg: 8 }, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'center',
+          bgcolor: 'white'
+        }}>
+          <Box sx={{ mb: { xs: 3, md: 5 } }}>
+            <Typography variant="h4" sx={{ fontWeight: 900, color: '#1e293b', letterSpacing: -1 }}>
               Bienvenue
-            </h1>
-            <p className="mt-2 text-sm text-slate-500">
-              Veuillez vous connecter à votre compte
-            </p>
-          </div>
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#64748b', mt: 1 }}>
+              Connectez-vous pour gérer vos commandes
+            </Typography>
+          </Box>
 
-          <form action="#" method="POST" className="space-y-6">
-            {/* Champ Email */}
-            <Field className="flex flex-col gap-2">
-              <Label className="text-sm font-medium text-slate-700">Email</Label>
-              <Input
+          {/* Affichage de l'erreur si elle existe */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <form onSubmit={handleLogin}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 } }}>
+              <TextField
+                fullWidth
+                label="Adresse Email"
+                variant="outlined"
                 type="email"
-                placeholder="nom@exemple.com"
-                className="w-full rounded-lg border border-slate-200 p-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="chef@gusto.com"
+                InputProps={{ sx: { borderRadius: 3 } }}
+                disabled={loading}
               />
-            </Field>
 
-            {/* Champ Password */}
-            <Field className="flex flex-col gap-2">
-              <Label className="text-sm font-medium text-slate-700">Mot de passe</Label>
-              <Input
-                type="password"
-                placeholder="••••••••"
-                className="w-full rounded-lg border border-slate-200 p-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              <TextField
+                fullWidth
+                label="Mot de passe"
+                type={showPassword ? 'text' : 'password'}
+                variant="outlined"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                InputProps={{
+                  sx: { borderRadius: 3 },
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
-            </Field>
 
-            {/* Options Supplémentaires */}
-            <div className="flex items-center justify-between">
-              <Field className="flex items-center gap-2">
-                <Checkbox
-                  className="group block size-4 rounded border border-slate-300 bg-white data-[checked]:bg-indigo-600"
-                >
-                  {/* Icône de check (optionnelle) */}
-                  <svg className="stroke-white opacity-0 group-data-[checked]:opacity-100" viewBox="0 0 14 14" fill="none">
-                    <path d="M3 8L6 11L11 3.5" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </Checkbox>
-                <Label className="text-sm text-slate-600 cursor-pointer">Se souvenir de moi</Label>
-              </Field>
-              <a href="#" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                Oublié ?
-              </a>
-            </div>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                <FormControlLabel
+                  control={<Checkbox size="small" sx={{ color: '#6366f1' }} />}
+                  label={<Typography variant="caption" sx={{ fontWeight: 600 }}>Rester connecté</Typography>}
+                />
+                <Link href="#" underline="none" sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#6366f1' }}>
+                  Oublié ?
+                </Link>
+              </Box>
 
-            {/* Bouton de Connexion */}
-            <Button
-              type="submit"
-              className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            >
-              Se connecter
-            </Button>
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                disableElevation
+                disabled={loading} // Désactivé pendant le chargement
+                sx={{ 
+                  py: 1.8, 
+                  borderRadius: 3, 
+                  bgcolor: '#6366f1',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  '&:hover': { bgcolor: '#4f46e5' }
+                }}
+              >
+                {loading ? <CircularProgress size={24} color="inherit" /> : 'Se connecter'}
+              </Button>
+            </Box>
           </form>
 
-          {/* Footer du formulaire */}
-          <p className="mt-8 text-center text-sm text-slate-500">
-            Pas encore de compte ?{' '}
-            <a href="#" className="font-semibold text-indigo-600 hover:underline">
-              S'inscrire
-            </a>
-          </p>
-        </div>
-      </div>
-    </div>
+          <Typography variant="caption" sx={{ mt: 'auto', textAlign: 'center', color: '#94a3b8', pt: 2 }}>
+            © 2026 Gusto System — Développé par Moko Yvan
+          </Typography>
+        </Box>
+      </Paper>
+    </Box>
   );
 };
 

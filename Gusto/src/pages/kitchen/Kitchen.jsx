@@ -10,7 +10,7 @@ const KitchenPage = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   // Rôle utilisateur extrait de votre profil Moko Yvan
-  const userRole = "cuisinier"; 
+  const userRole = localStorage.getItem('role')
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#0f172a' }}>
