@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -123,5 +124,24 @@ public class AuthController {
         }
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Code incorrect ou expiré");
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestBody Map<String, String> request) {
+        String nom = request.get("username");
+
+        // 1. Nettoyer les vérifications 2FA en cours si elles existent
+        if (nom != null) {
+            pendingVerifications.remove(nom);
+        }
+
+        // 2. Vider le contexte de sécurité de Spring
+        SecurityContextHolder.clearContext();
+
+        System.out.println("Déconnexion réussie pour : " + nom);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Déconnexion réussie. N'oubliez pas de supprimer le token côté client."
+        ));
     }
 }
