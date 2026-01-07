@@ -28,7 +28,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
 @Tag(name = "Gestion des Utilisateurs", description = "API pour la gestion des utilisateurs du restaurant")
 public class UtilisateurController {
 

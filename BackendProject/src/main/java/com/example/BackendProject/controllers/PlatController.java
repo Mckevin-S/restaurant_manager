@@ -27,7 +27,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/plats")
-@CrossOrigin(origins = "*")
 @Tag(name = "Gestion des Plats", description = "API pour la gestion des plats (entrées, plats principaux, desserts) du restaurant")
 public class PlatController {
 

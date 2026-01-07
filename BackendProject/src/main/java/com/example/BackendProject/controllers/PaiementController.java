@@ -34,7 +34,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/paiements")
-@CrossOrigin(origins = "*")
 @Tag(name = "Gestion des Paiements", description = "API pour gérer les paiements des commandes")
 public class PaiementController {
 

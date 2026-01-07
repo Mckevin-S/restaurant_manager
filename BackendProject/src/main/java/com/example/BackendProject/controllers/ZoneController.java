@@ -22,7 +22,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("api/zones")
-@CrossOrigin(origins = "*")
 @Tag(name = "Gestion des Zones", description = "API pour la gestion des zones du restaurant")
 public class ZoneController {
 

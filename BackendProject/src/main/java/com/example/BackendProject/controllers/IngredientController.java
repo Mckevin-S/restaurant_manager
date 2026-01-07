@@ -26,7 +26,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ingredients")
-@CrossOrigin(origins = "*")
 @Tag(name = "Gestion des Ingrédients", description = "API pour la gestion du stock d'ingrédients")
 public class IngredientController {
 

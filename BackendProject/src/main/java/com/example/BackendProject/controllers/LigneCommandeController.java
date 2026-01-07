@@ -27,7 +27,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ligne-commandes")
-@CrossOrigin(origins = "*")
 @Tag(name = "Gestion des Lignes de Commande", description = "API pour gérer les lignes de commande (articles commandés)")
 public class LigneCommandeController {
 

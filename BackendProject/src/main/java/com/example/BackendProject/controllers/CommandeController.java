@@ -33,7 +33,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/commandes")
-@CrossOrigin(origins = "*")
 @Tag(name = "Gestion des Commandes", description = "API pour la gestion des commandes du restaurant")
 public class CommandeController {
 

@@ -10,14 +10,12 @@
     </appender>
 
     <appender name="RollingFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/backend-project.log</file>
-        
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/archived/backend-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>${LOG_PATH}/%d{yyyy-MM-dd}.log</fileNamePattern>
             
-            <maxHistory>30</maxHistory>
+            <maxHistory>3</maxHistory>
             
-            <totalSizeCap>1GB</totalSizeCap>
+            <!-- <cleanHistoryOnStart>true</cleanHistoryOnStart> -->
         </rollingPolicy>
 
         <encoder>

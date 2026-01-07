@@ -25,7 +25,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/commande-promotions")
-@CrossOrigin(origins = "*")
 @Tag(name = "Gestion Commande-Promotion", description = "API pour gérer l'application de promotions aux commandes")
 public class CommandePromotionController {
 
