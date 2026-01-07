@@ -1,10 +1,10 @@
 package com.example.BackendProject.controllers;
 
-
 import com.example.BackendProject.dto.CommandeDto;
 import com.example.BackendProject.dto.UtilisateurDto;
 import com.example.BackendProject.services.implementations.CommandeServiceImplementation;
 import com.example.BackendProject.services.implementations.UtilisateurServiceImplementation;
+import com.example.BackendProject.utils.LoggingUtils;
 import com.example.BackendProject.utils.RoleType;
 import com.example.BackendProject.utils.StatutCommande;
 import com.example.BackendProject.utils.TypeCommande;
@@ -16,6 +16,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,8 +37,9 @@ import java.util.Map;
 @Tag(name = "Gestion des Commandes", description = "API pour la gestion des commandes du restaurant")
 public class CommandeController {
 
+    private static final Logger logger = LoggerFactory.getLogger(CommandeController.class);
     private final CommandeServiceImplementation commandeServiceImplementation;
-    private  final UtilisateurServiceImplementation utilisateurServiceImplementation;
+    private final UtilisateurServiceImplementation utilisateurServiceImplementation;
 
     public CommandeController(CommandeServiceImplementation commandeServiceImplementation, UtilisateurServiceImplementation utilisateurServiceImplementation) {
         this.commandeServiceImplementation = commandeServiceImplementation;
@@ -64,11 +68,15 @@ public class CommandeController {
                     description = "Données invalides"
             )
     })
-    public ResponseEntity<?> createCommande(@RequestBody CommandeDto commandeDto) {
+    public ResponseEntity<?> createCommande(@RequestBody CommandeDto commandeDto, HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Tentative de création d'une commande pour le client: {}", context, commandeDto.getServeur());
         try {
             CommandeDto savedCommande = commandeServiceImplementation.save(commandeDto);
+            logger.info("{} Commande créée avec succès. ID: {}", context, savedCommande.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(savedCommande);
         } catch (RuntimeException e) {
+            logger.error("{} Erreur lors de la création de la commande: {}", context, e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -91,8 +99,11 @@ public class CommandeController {
                     array = @ArraySchema(schema = @Schema(implementation = CommandeDto.class))
             )
     )
-    public ResponseEntity<List<CommandeDto>> getAllCommandes() {
+    public ResponseEntity<List<CommandeDto>> getAllCommandes(HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération de toutes les commandes", context);
         List<CommandeDto> commandes = commandeServiceImplementation.getAll();
+        logger.info("{} {} commandes récupérées", context, commandes.size());
         return ResponseEntity.ok(commandes);
     }
 
@@ -120,11 +131,15 @@ public class CommandeController {
     })
     public ResponseEntity<?> getCommandeById(
             @Parameter(description = "ID de la commande", required = true, example = "1")
-            @PathVariable Long id) {
+            @PathVariable Long id, HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération de la commande ID: {}", context, id);
         try {
             CommandeDto commande = commandeServiceImplementation.getById(id);
+            logger.info("{} Commande ID: {} trouvée", context, id);
             return ResponseEntity.ok(commande);
         } catch (RuntimeException e) {
+            logger.error("{} Commande ID: {} non trouvée", context, id);
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
@@ -152,11 +167,15 @@ public class CommandeController {
     public ResponseEntity<?> updateCommande(
             @Parameter(description = "ID de la commande à modifier", required = true, example = "1")
             @PathVariable Long id,
-            @RequestBody CommandeDto commandeDto) {
+            @RequestBody CommandeDto commandeDto, HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Tentative de mise à jour de la commande ID: {}", context, id);
         try {
             CommandeDto updatedCommande = commandeServiceImplementation.update(id, commandeDto);
+            logger.info("{} Commande ID: {} mise à jour avec succès", context, id);
             return ResponseEntity.ok(updatedCommande);
         } catch (RuntimeException e) {
+            logger.error("{} Erreur lors de la mise à jour de la commande ID: {} - {}", context, id, e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             HttpStatus status = e.getMessage().contains("non trouvée") ?
@@ -189,11 +208,15 @@ public class CommandeController {
     })
     public ResponseEntity<?> deleteCommande(
             @Parameter(description = "ID de la commande à supprimer", required = true, example = "1")
-            @PathVariable Long id) {
+            @PathVariable Long id, HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.warn("{} Tentative de suppression de la commande ID: {}", context, id);
         try {
             commandeServiceImplementation.delete(id);
+            logger.info("{} Commande ID: {} supprimée avec succès", context, id);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
+            logger.error("{} Erreur lors de la suppression de la commande ID: {} - {}", context, id, e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             HttpStatus status = e.getMessage().contains("non trouvée") ?
@@ -212,8 +235,11 @@ public class CommandeController {
     )
     public ResponseEntity<List<CommandeDto>> getCommandesByStatut(
             @Parameter(description = "Statut de la commande", required = true)
-            @PathVariable StatutCommande statut) {
+            @PathVariable StatutCommande statut, HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Recherche des commandes avec le statut: {}", context, statut);
         List<CommandeDto> commandes = commandeServiceImplementation.findByStatut(statut);
+        logger.info("{} {} commandes trouvées avec le statut {}", context, commandes.size(), statut);
         return ResponseEntity.ok(commandes);
     }
 
@@ -227,8 +253,11 @@ public class CommandeController {
     )
     public ResponseEntity<List<CommandeDto>> getCommandesByType(
             @Parameter(description = "Type de commande", required = true)
-            @PathVariable TypeCommande type) {
+            @PathVariable TypeCommande type, HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Recherche des commandes de type: {}", context, type);
         List<CommandeDto> commandes = commandeServiceImplementation.findByTypeCommande(type);
+        logger.info("{} {} commandes trouvées de type {}", context, commandes.size(), type);
         return ResponseEntity.ok(commandes);
     }
 
@@ -242,11 +271,15 @@ public class CommandeController {
     )
     public ResponseEntity<?> getCommandesByServeur(
             @Parameter(description = "ID du serveur", required = true, example = "1")
-            @PathVariable Long serveurId) {
+            @PathVariable Long serveurId, HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération des commandes du serveur ID: {}", context, serveurId);
         try {
             List<CommandeDto> commandes = commandeServiceImplementation.findByServeur(serveurId);
+            logger.info("{} {} commandes trouvées pour le serveur {}", context, commandes.size(), serveurId);
             return ResponseEntity.ok(commandes);
         } catch (RuntimeException e) {
+            logger.error("{} Erreur récupération commandes serveur ID: {}: {}", context, serveurId, e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
@@ -263,11 +296,15 @@ public class CommandeController {
     )
     public ResponseEntity<?> getCommandesByTable(
             @Parameter(description = "ID de la table", required = true, example = "1")
-            @PathVariable Long tableId) {
+            @PathVariable Long tableId, HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération des commandes pour la table ID: {}", context, tableId);
         try {
             List<CommandeDto> commandes = commandeServiceImplementation.findByTable(tableId);
+            logger.info("{} {} commandes trouvées pour la table {}", context, commandes.size(), tableId);
             return ResponseEntity.ok(commandes);
         } catch (RuntimeException e) {
+            logger.error("{} Erreur récupération commandes table ID: {}: {}", context, tableId, e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
@@ -286,11 +323,15 @@ public class CommandeController {
             @Parameter(description = "ID de la commande", required = true, example = "1")
             @PathVariable Long id,
             @Parameter(description = "Nouveau statut", required = true)
-            @RequestParam StatutCommande statut) {
+            @RequestParam StatutCommande statut, HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Mise à jour du statut de la commande ID: {} vers {}", context, id, statut);
         try {
             CommandeDto updatedCommande = commandeServiceImplementation.updateStatut(id, statut);
+            logger.info("{} Statut de la commande ID: {} mis à jour avec succès", context, id);
             return ResponseEntity.ok(updatedCommande);
         } catch (RuntimeException e) {
+            logger.error("{} Erreur mise à jour statut commande ID: {}: {}", context, id, e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -305,8 +346,11 @@ public class CommandeController {
             summary = "Récupérer les commandes du jour",
             description = "Retourne toutes les commandes créées aujourd'hui"
     )
-    public ResponseEntity<List<CommandeDto>> getCommandesAujourdhui() {
+    public ResponseEntity<List<CommandeDto>> getCommandesAujourdhui(HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération des commandes du jour", context);
         List<CommandeDto> commandes = commandeServiceImplementation.getCommandesAujourdhui();
+        logger.info("{} {} commandes récupérées pour aujourd'hui", context, commandes.size());
         return ResponseEntity.ok(commandes);
     }
 
@@ -322,7 +366,9 @@ public class CommandeController {
             @Parameter(description = "Date de début (format: yyyy-MM-dd'T'HH:mm:ss)", required = true)
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
             @Parameter(description = "Date de fin (format: yyyy-MM-dd'T'HH:mm:ss)", required = true)
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin, HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Calcul du total des ventes entre {} et {}", context, debut, fin);
 
         Timestamp timestampDebut = Timestamp.valueOf(debut);
         Timestamp timestampFin = Timestamp.valueOf(fin);
@@ -334,6 +380,7 @@ public class CommandeController {
         response.put("fin", fin);
         response.put("totalVentes", total);
 
+        logger.info("{} Total des ventes calculé: {}", context, total);
         return ResponseEntity.ok(response);
     }
 
@@ -345,12 +392,15 @@ public class CommandeController {
             summary = "Compter les commandes en cours",
             description = "Retourne le nombre de commandes en attente ou en préparation"
     )
-    public ResponseEntity<Map<String, Long>> countCommandesEnCours() {
+    public ResponseEntity<Map<String, Long>> countCommandesEnCours(HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Comptage des commandes en cours", context);
         Long count = commandeServiceImplementation.countCommandesEnCours();
 
         Map<String, Long> response = new HashMap<>();
         response.put("commandesEnCours", count);
 
+        logger.info("{} Nombre de commandes en cours: {}", context, count);
         return ResponseEntity.ok(response);
     }
 
@@ -366,8 +416,11 @@ public class CommandeController {
             responseCode = "200",
             description = "Liste des serveurs récupérée avec succès"
     )
-    public ResponseEntity<List<UtilisateurDto>> getAllServeurs() {
+    public ResponseEntity<List<UtilisateurDto>> getAllServeurs(HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération de la liste des serveurs", context);
         List<UtilisateurDto> serveurs = utilisateurServiceImplementation.findByRoleType(RoleType.SERVEUR);
+        logger.info("{} {} serveurs récupérés", context, serveurs.size());
         return ResponseEntity.ok(serveurs);
     }
 }

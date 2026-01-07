@@ -1,8 +1,8 @@
 package com.example.BackendProject.controllers;
 
-
 import com.example.BackendProject.dto.CommandePromotionDto;
 import com.example.BackendProject.services.implementations.CommandePromotionServiceImplementation;
+import com.example.BackendProject.utils.LoggingUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -12,6 +12,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,12 +29,12 @@ import java.util.Map;
 @Tag(name = "Gestion Commande-Promotion", description = "API pour gérer l'application de promotions aux commandes")
 public class CommandePromotionController {
 
+    private static final Logger logger = LoggerFactory.getLogger(CommandePromotionController.class);
     private final CommandePromotionServiceImplementation commandePromotionService;
 
     public CommandePromotionController(CommandePromotionServiceImplementation commandePromotionService) {
         this.commandePromotionService = commandePromotionService;
     }
-
 
     /**
      * Créer une association commande-promotion
@@ -68,11 +71,17 @@ public class CommandePromotionController {
                     description = "Association commande-promotion à créer",
                     required = true
             )
-            @RequestBody CommandePromotionDto commandePromotionDto) {
+            @RequestBody CommandePromotionDto commandePromotionDto,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Tentative d'association Commande ID: {} avec Promotion ID: {}", 
+                context, commandePromotionDto.getCommande(), commandePromotionDto.getPromotion());
         try {
             CommandePromotionDto saved = commandePromotionService.save(commandePromotionDto);
+            logger.info("{} Association créée avec succès", context);
             return ResponseEntity.status(HttpStatus.CREATED).body(saved);
         } catch (RuntimeException e) {
+            logger.error("{} Erreur lors de la création de l'association: {}", context, e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             HttpStatus status = e.getMessage().contains("non trouvée") ?
@@ -97,8 +106,11 @@ public class CommandePromotionController {
                     array = @ArraySchema(schema = @Schema(implementation = CommandePromotionDto.class))
             )
     )
-    public ResponseEntity<List<CommandePromotionDto>> getAllCommandePromotions() {
+    public ResponseEntity<List<CommandePromotionDto>> getAllCommandePromotions(HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération de toutes les associations commande-promotion", context);
         List<CommandePromotionDto> associations = commandePromotionService.getAll();
+        logger.info("{} {} associations récupérées", context, associations.size());
         return ResponseEntity.ok(associations);
     }
 
@@ -124,11 +136,16 @@ public class CommandePromotionController {
             @Parameter(description = "ID de la commande", required = true, example = "1")
             @PathVariable Long commandeId,
             @Parameter(description = "ID de la promotion", required = true, example = "1")
-            @PathVariable Long promotionId) {
+            @PathVariable Long promotionId,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération de l'association Commande: {} - Promotion: {}", context, commandeId, promotionId);
         try {
             CommandePromotionDto association = commandePromotionService.getById(commandeId, promotionId);
+            logger.info("{} Association trouvée", context);
             return ResponseEntity.ok(association);
         } catch (RuntimeException e) {
+            logger.error("{} Association non trouvée: {}", context, e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
@@ -157,11 +174,16 @@ public class CommandePromotionController {
             @Parameter(description = "ID de la commande", required = true, example = "1")
             @PathVariable Long commandeId,
             @Parameter(description = "ID de la promotion", required = true, example = "1")
-            @PathVariable Long promotionId) {
+            @PathVariable Long promotionId,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.warn("{} Tentative de suppression de l'association Commande: {} - Promotion: {}", context, commandeId, promotionId);
         try {
             commandePromotionService.delete(commandeId, promotionId);
+            logger.info("{} Association supprimée avec succès", context);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
+            logger.error("{} Erreur lors de la suppression: {}", context, e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
@@ -186,11 +208,16 @@ public class CommandePromotionController {
     )
     public ResponseEntity<?> getPromotionsByCommande(
             @Parameter(description = "ID de la commande", required = true, example = "1")
-            @PathVariable Long commandeId) {
+            @PathVariable Long commandeId,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération des promotions pour la commande ID: {}", context, commandeId);
         try {
             List<CommandePromotionDto> promotions = commandePromotionService.findByCommandeId(commandeId);
+            logger.info("{} {} promotions trouvées pour la commande {}", context, promotions.size(), commandeId);
             return ResponseEntity.ok(promotions);
         } catch (RuntimeException e) {
+            logger.error("{} Erreur lors de la récupération: {}", context, e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
@@ -215,11 +242,16 @@ public class CommandePromotionController {
     )
     public ResponseEntity<?> getCommandesByPromotion(
             @Parameter(description = "ID de la promotion", required = true, example = "1")
-            @PathVariable Long promotionId) {
+            @PathVariable Long promotionId,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération des commandes pour la promotion ID: {}", context, promotionId);
         try {
             List<CommandePromotionDto> commandes = commandePromotionService.findByPromotionId(promotionId);
+            logger.info("{} {} commandes trouvées pour la promotion {}", context, commandes.size(), promotionId);
             return ResponseEntity.ok(commandes);
         } catch (RuntimeException e) {
+            logger.error("{} Erreur lors de la récupération: {}", context, e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
@@ -252,11 +284,16 @@ public class CommandePromotionController {
             @Parameter(description = "ID de la commande", required = true, example = "1")
             @PathVariable Long commandeId,
             @Parameter(description = "ID de la promotion à appliquer", required = true, example = "1")
-            @PathVariable Long promotionId) {
+            @PathVariable Long promotionId,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Application directe Promotion: {} -> Commande: {}", context, promotionId, commandeId);
         try {
             CommandePromotionDto result = commandePromotionService.appliquerPromotion(commandeId, promotionId);
+            logger.info("{} Promotion appliquée avec succès", context);
             return ResponseEntity.status(HttpStatus.CREATED).body(result);
         } catch (RuntimeException e) {
+            logger.error("{} Erreur lors de l'application de la promotion: {}", context, e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             HttpStatus status = e.getMessage().contains("non trouvée") ?
@@ -287,11 +324,16 @@ public class CommandePromotionController {
             @Parameter(description = "ID de la commande", required = true, example = "1")
             @PathVariable Long commandeId,
             @Parameter(description = "ID de la promotion à retirer", required = true, example = "1")
-            @PathVariable Long promotionId) {
+            @PathVariable Long promotionId,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Retrait Promotion: {} de la Commande: {}", context, promotionId, commandeId);
         try {
             commandePromotionService.retirerPromotion(commandeId, promotionId);
+            logger.info("{} Promotion retirée avec succès", context);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
+            logger.error("{} Erreur lors du retrait de la promotion: {}", context, e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
@@ -318,11 +360,16 @@ public class CommandePromotionController {
     })
     public ResponseEntity<?> retirerToutesPromotions(
             @Parameter(description = "ID de la commande", required = true, example = "1")
-            @PathVariable Long commandeId) {
+            @PathVariable Long commandeId,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.warn("{} Retrait de TOUTES les promotions pour la commande ID: {}", context, commandeId);
         try {
             commandePromotionService.retirerToutesPromotions(commandeId);
+            logger.info("{} Toutes les promotions ont été retirées avec succès", context);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
+            logger.error("{} Erreur lors du retrait groupé: {}", context, e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
@@ -345,12 +392,16 @@ public class CommandePromotionController {
             @Parameter(description = "ID de la commande", required = true, example = "1")
             @PathVariable Long commandeId,
             @Parameter(description = "ID de la promotion", required = true, example = "1")
-            @PathVariable Long promotionId) {
+            @PathVariable Long promotionId,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Vérification promotion: {} sur commande: {}", context, promotionId, commandeId);
         boolean estAppliquee = commandePromotionService.promotionEstAppliquee(commandeId, promotionId);
-
+        
         Map<String, Boolean> response = new HashMap<>();
         response.put("promotionAppliquee", estAppliquee);
-
+        
+        logger.info("{} Résultat de la vérification: {}", context, estAppliquee);
         return ResponseEntity.ok(response);
     }
 }

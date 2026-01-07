@@ -4,6 +4,7 @@ import com.example.BackendProject.dto.ChangePasswordRequest;
 import com.example.BackendProject.dto.ResetPasswordRequest;
 import com.example.BackendProject.dto.UtilisateurDto;
 import com.example.BackendProject.services.implementations.UtilisateurServiceImplementation;
+import com.example.BackendProject.utils.LoggingUtils;
 import com.example.BackendProject.utils.RoleType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,6 +18,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +32,7 @@ import java.util.Map;
 @Tag(name = "Gestion des Utilisateurs", description = "API pour la gestion des utilisateurs du restaurant")
 public class UtilisateurController {
 
+    private static final Logger logger = LoggerFactory.getLogger(UtilisateurController.class);
     private final UtilisateurServiceImplementation utilisateurServiceImplementation;
 
     public UtilisateurController(UtilisateurServiceImplementation utilisateurServiceImplementation) {
@@ -39,8 +44,17 @@ public class UtilisateurController {
      */
     @PostMapping
     @Operation(summary = "Créer un utilisateur")
-    public ResponseEntity<UtilisateurDto> create(@RequestBody UtilisateurDto dto) {
-        return new ResponseEntity<>(utilisateurServiceImplementation.save(dto), HttpStatus.CREATED);
+    public ResponseEntity<UtilisateurDto> create(@RequestBody UtilisateurDto dto, HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Tentative de création d'un utilisateur - Email: {}", context, dto.getEmail());
+        try {
+            UtilisateurDto saved = utilisateurServiceImplementation.save(dto);
+            logger.info("{} Utilisateur créé avec succès. ID: {}, Email: {}", context, saved.getId(), saved.getEmail());
+            return new ResponseEntity<>(saved, HttpStatus.CREATED);
+        } catch (Exception e) {
+            logger.error("{} Erreur lors de la création de l'utilisateur: {}", context, e.getMessage(), e);
+            throw e;
+        }
     }
 //    @PostMapping
 //    @Operation(
@@ -92,8 +106,11 @@ public class UtilisateurController {
                     array = @ArraySchema(schema = @Schema(implementation = UtilisateurDto.class))
             )
     )
-    public ResponseEntity<List<UtilisateurDto>> getAllUsers() {
+    public ResponseEntity<List<UtilisateurDto>> getAllUsers(HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération de tous les utilisateurs", context);
         List<UtilisateurDto> users = utilisateurServiceImplementation.getAll();
+        logger.info("{} {} utilisateurs récupérés avec succès", context, users.size());
         return ResponseEntity.ok(users);
     }
 
@@ -121,11 +138,16 @@ public class UtilisateurController {
     })
     public ResponseEntity<UtilisateurDto> getUserById(
             @Parameter(description = "ID de l'utilisateur", required = true, example = "1")
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération de l'utilisateur avec l'ID: {}", context, id);
         try {
             UtilisateurDto user = utilisateurServiceImplementation.getById(id);
+            logger.info("{} Utilisateur ID: {} récupéré avec succès", context, id);
             return ResponseEntity.ok(user);
         } catch (RuntimeException e) {
+            logger.error("{} Erreur lors de la récupération de l'utilisateur ID: {} - {}", context, id, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
@@ -159,11 +181,16 @@ public class UtilisateurController {
                     description = "Nouvelles informations de l'utilisateur",
                     required = true
             )
-            @RequestBody UtilisateurDto utilisateurDto) {
+            @RequestBody UtilisateurDto utilisateurDto,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Tentative de mise à jour de l'utilisateur ID: {}", context, id);
         try {
             UtilisateurDto updatedUser = utilisateurServiceImplementation.update(id, utilisateurDto);
+            logger.info("{} Utilisateur ID: {} mis à jour avec succès", context, id);
             return ResponseEntity.ok(updatedUser);
         } catch (RuntimeException e) {
+            logger.error("{} Erreur lors de la mise à jour de l'utilisateur ID: {} - {}", context, id, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
@@ -188,11 +215,16 @@ public class UtilisateurController {
     })
     public ResponseEntity<Void> deleteUser(
             @Parameter(description = "ID de l'utilisateur à supprimer", required = true, example = "1")
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Tentative de suppression de l'utilisateur ID: {}", context, id);
         try {
             utilisateurServiceImplementation.delete(id);
+            logger.info("{} Utilisateur ID: {} supprimé avec succès", context, id);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
+            logger.error("{} Erreur lors de la suppression de l'utilisateur ID: {} - {}", context, id, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
@@ -222,8 +254,12 @@ public class UtilisateurController {
                     example = "SERVEUR",
                     schema = @Schema(implementation = RoleType.class)
             )
-            @PathVariable RoleType roleType) {
+            @PathVariable RoleType roleType,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération des utilisateurs par rôle: {}", context, roleType);
         List<UtilisateurDto> users = utilisateurServiceImplementation.findByRoleType(roleType);
+        logger.info("{} {} utilisateurs avec le rôle {} récupérés avec succès", context, users.size(), roleType);
         return ResponseEntity.ok(users);
     }
 
@@ -249,8 +285,12 @@ public class UtilisateurController {
                     required = true,
                     example = "Jean"
             )
-            @RequestParam String keyword) {
+            @RequestParam String keyword,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Recherche d'utilisateurs par mot-clé: {}", context, keyword);
         List<UtilisateurDto> users = utilisateurServiceImplementation.search(keyword);
+        logger.info("{} {} utilisateurs trouvés pour le mot-clé: {}", context, users.size(), keyword);
         return ResponseEntity.ok(users);
     }
 
@@ -293,13 +333,18 @@ public class UtilisateurController {
                     required = true,
                     content = @Content(schema = @Schema(implementation = ChangePasswordRequest.class))
             )
-            @RequestBody ChangePasswordRequest request) {
+            @RequestBody ChangePasswordRequest request,
+            HttpServletRequest httpRequest) {
+        String context = LoggingUtils.getLogContext(httpRequest);
+        logger.info("{} Tentative de changement de mot de passe pour l'utilisateur ID: {}", context, id);
         try {
             utilisateurServiceImplementation.changePassword(id, request.getOldPassword(), request.getNewPassword());
+            logger.info("{} Mot de passe modifié avec succès pour l'utilisateur ID: {}", context, id);
             Map<String, String> response = new HashMap<>();
             response.put("message", "Mot de passe modifié avec succès");
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
+            logger.error("{} Erreur lors du changement de mot de passe pour l'utilisateur ID: {} - {}", context, id, e.getMessage(), e);
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -345,13 +390,18 @@ public class UtilisateurController {
                     required = true,
                     content = @Content(schema = @Schema(implementation = ResetPasswordRequest.class))
             )
-            @RequestBody ResetPasswordRequest request) {
+            @RequestBody ResetPasswordRequest request,
+            HttpServletRequest httpRequest) {
+        String context = LoggingUtils.getLogContext(httpRequest);
+        logger.info("{} Tentative de réinitialisation de mot de passe pour l'utilisateur ID: {}", context, id);
         try {
             utilisateurServiceImplementation.resetPassword(id, request.getNewPassword());
+            logger.info("{} Mot de passe réinitialisé avec succès pour l'utilisateur ID: {}", context, id);
             Map<String, String> response = new HashMap<>();
             response.put("message", "Mot de passe réinitialisé avec succès");
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
+            logger.error("{} Erreur lors de la réinitialisation de mot de passe pour l'utilisateur ID: {} - {}", context, id, e.getMessage(), e);
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
