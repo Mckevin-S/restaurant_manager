@@ -12,6 +12,9 @@ import com.example.BackendProject.repository.CommandeRepository;
 import com.example.BackendProject.repository.LigneCommandeRepository;
 import com.example.BackendProject.repository.PlatRepository;
 import com.example.BackendProject.services.interfaces.LigneCommandeServiceInterface;
+import com.example.BackendProject.utils.LoggingUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,12 +27,13 @@ import java.util.stream.Collectors;
 @Transactional
 public class LigneCommandeServiceImplementation implements LigneCommandeServiceInterface {
 
+    private static final Logger logger = LoggerFactory.getLogger(LigneCommandeServiceImplementation.class);
     private final LigneCommandeMapper ligneCommandeMapper;
     private final LigneCommandeRepository ligneCommandeRepository;
     private final CommandeRepository commandeRepository;
     private final PlatRepository platRepository;
-    private final CommandeMapper commandeMapper; // Ajouté
-    private final SimpMessagingTemplate messagingTemplate; // Ajouté
+    private final CommandeMapper commandeMapper;
+    private final SimpMessagingTemplate messagingTemplate;
     private RestaurantDto restaurantDto;
 
     public LigneCommandeServiceImplementation(LigneCommandeMapper ligneCommandeMapper,
@@ -48,36 +52,45 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
 
     @Override
     public LigneCommandeDto save(LigneCommandeDto ligneCommandeDto) {
-        // Validation des champs obligatoires
-        if (ligneCommandeDto.getCommande() == null || ligneCommandeDto.getCommande() == null) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Tentative d'ajout d'une ligne de commande - Commande ID: {}, Plat ID: {}, Quantité: {}", 
+                    context, ligneCommandeDto.getCommande(), ligneCommandeDto.getPlat(), ligneCommandeDto.getQuantite());
+
+        if (ligneCommandeDto.getCommande() == null) {
+            logger.error("{} Erreur de validation: la commande est obligatoire", context);
             throw new RuntimeException("La commande est obligatoire");
         }
 
-        if (ligneCommandeDto.getPlat() == null || ligneCommandeDto.getPlat() == null) {
+        if (ligneCommandeDto.getPlat() == null) {
+            logger.error("{} Erreur de validation: le plat est obligatoire", context);
             throw new RuntimeException("Le plat est obligatoire");
         }
 
         if (ligneCommandeDto.getQuantite() == null || ligneCommandeDto.getQuantite() <= 0) {
+            logger.error("{} Erreur de validation: quantité invalide ({})", context, ligneCommandeDto.getQuantite());
             throw new RuntimeException("La quantité doit être supérieure à 0");
         }
 
         Long commandeId = ligneCommandeDto.getCommande();
         Long platId = ligneCommandeDto.getPlat();
 
-        // Vérifier que la commande existe
         Commande commande = commandeRepository.findById(commandeId)
-                .orElseThrow(() -> new RuntimeException("Commande non trouvée avec l'ID : " + commandeId));
+                .orElseThrow(() -> {
+                    logger.error("{} Commande non trouvée ID: {}", context, commandeId);
+                    return new RuntimeException("Commande non trouvée avec l'ID : " + commandeId);
+                });
 
-        // Vérifier que le plat existe
         Plat plat = platRepository.findById(platId)
-                .orElseThrow(() -> new RuntimeException("Plat non trouvé avec l'ID : " + platId));
+                .orElseThrow(() -> {
+                    logger.error("{} Plat non trouvé ID: {}", context, platId);
+                    return new RuntimeException("Plat non trouvé avec l'ID : " + platId);
+                });
 
-        // Vérifier que le plat est disponible
         if (!plat.getDisponibilite()) {
+            logger.warn("{} Tentative d'ajout d'un plat non disponible: {}", context, plat.getNom());
             throw new RuntimeException("Le plat '" + plat.getNom() + "' n'est pas disponible actuellement");
         }
 
-        // Définir le prix unitaire si non fourni
         if (ligneCommandeDto.getPrixUnitaire() == null) {
             ligneCommandeDto.setPrixUnitaire(plat.getPrix());
         }
@@ -87,8 +100,8 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
         ligneCommande.setPlat(plat);
 
         LigneCommande saved = ligneCommandeRepository.save(ligneCommande);
+        logger.info("{} Ligne de commande sauvegardée ID: {}", context, saved.getId());
 
-        // RECALCUL ICI
         mettreAJourEtNotifierAddition(commandeId);
 
         return ligneCommandeMapper.toDto(saved);
@@ -96,6 +109,8 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
 
     @Override
     public List<LigneCommandeDto> getAll() {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Récupération de toutes les lignes de commande", context);
         return ligneCommandeRepository.findAll()
                 .stream()
                 .map(ligneCommandeMapper::toDto)
@@ -104,18 +119,28 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
 
     @Override
     public LigneCommandeDto getById(Long id) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Récupération de la ligne de commande ID: {}", context, id);
         LigneCommande ligneCommande = ligneCommandeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ligne de commande non trouvée avec l'ID : " + id));
+                .orElseThrow(() -> {
+                    logger.error("{} Ligne de commande non trouvée ID: {}", context, id);
+                    return new RuntimeException("Ligne de commande non trouvée avec l'ID : " + id);
+                });
 
         return ligneCommandeMapper.toDto(ligneCommande);
     }
 
     @Override
     public LigneCommandeDto update(Long id, LigneCommandeDto ligneCommandeDto) {
-        LigneCommande ligneCommande = ligneCommandeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ligne de commande non trouvée avec l'ID : " + id));
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Mise à jour de la ligne de commande ID: {}", context, id);
 
-        // Mise à jour de la quantité
+        LigneCommande ligneCommande = ligneCommandeRepository.findById(id)
+                .orElseThrow(() -> {
+                    logger.error("{} Ligne de commande non trouvée ID: {}", context, id);
+                    return new RuntimeException("Ligne de commande non trouvée avec l'ID : " + id);
+                });
+
         if (ligneCommandeDto.getQuantite() != null) {
             if (ligneCommandeDto.getQuantite() <= 0) {
                 throw new RuntimeException("La quantité doit être supérieure à 0");
@@ -123,7 +148,6 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
             ligneCommande.setQuantite(ligneCommandeDto.getQuantite());
         }
 
-        // Mise à jour du prix unitaire
         if (ligneCommandeDto.getPrixUnitaire() != null) {
             if (ligneCommandeDto.getPrixUnitaire().compareTo(BigDecimal.ZERO) <= 0) {
                 throw new RuntimeException("Le prix unitaire doit être supérieur à 0");
@@ -131,27 +155,23 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
             ligneCommande.setPrixUnitaire(ligneCommandeDto.getPrixUnitaire());
         }
 
-        // Mise à jour des notes
         if (ligneCommandeDto.getNotesCuisine() != null) {
             ligneCommande.setNotesCuisine(ligneCommandeDto.getNotesCuisine());
         }
 
-        // Mise à jour du plat (si nécessaire)
-        if (ligneCommandeDto.getPlat() != null && ligneCommandeDto.getPlat() != null) {
+        if (ligneCommandeDto.getPlat() != null) {
             Plat plat = platRepository.findById(ligneCommandeDto.getPlat())
                     .orElseThrow(() -> new RuntimeException("Plat non trouvé avec l'ID : " + ligneCommandeDto.getPlat()));
 
             if (!plat.getDisponibilite()) {
                 throw new RuntimeException("Le plat '" + plat.getNom() + "' n'est pas disponible actuellement");
             }
-
             ligneCommande.setPlat(plat);
         }
 
-        // Sauvegarde
         LigneCommande updated = ligneCommandeRepository.save(ligneCommande);
+        logger.info("{} Ligne de commande ID: {} mise à jour avec succès", context, id);
 
-        // RECALCUL ICI
         mettreAJourEtNotifierAddition(updated.getCommande().getId());
 
         return ligneCommandeMapper.toDto(updated);
@@ -159,18 +179,26 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
 
     @Override
     public void delete(Long id) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Suppression de la ligne de commande ID: {}", context, id);
+
         LigneCommande ligneCommande = ligneCommandeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ligne de commande non trouvée avec l'ID : " + id));
+                .orElseThrow(() -> {
+                    logger.error("{} Ligne de commande non trouvée ID: {}", context, id);
+                    return new RuntimeException("Ligne de commande non trouvée avec l'ID : " + id);
+                });
 
+        Long commandeId = ligneCommande.getCommande().getId();
         ligneCommandeRepository.delete(ligneCommande);
+        logger.info("{} Ligne de commande ID: {} supprimée", context, id);
 
-        // RECALCUL ICI (Après la suppression)
-        mettreAJourEtNotifierAddition(id);
+        mettreAJourEtNotifierAddition(commandeId);
     }
 
     @Override
     public List<LigneCommandeDto> findByCommandeId(Long commandeId) {
-        // Vérifier que la commande existe
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Recherche des lignes pour la commande ID: {}", context, commandeId);
         if (!commandeRepository.existsById(commandeId)) {
             throw new RuntimeException("Commande non trouvée avec l'ID : " + commandeId);
         }
@@ -183,7 +211,8 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
 
     @Override
     public List<LigneCommandeDto> findByPlatId(Long platId) {
-        // Vérifier que le plat existe
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Recherche des lignes pour le plat ID: {}", context, platId);
         if (!platRepository.existsById(platId)) {
             throw new RuntimeException("Plat non trouvé avec l'ID : " + platId);
         }
@@ -196,25 +225,23 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
 
     @Override
     public LigneCommandeDto ajouterLigneCommande(Long commandeId, Long platId, Integer quantite, String notes) {
-        // Vérifier que la commande existe
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Ajout direct - Commande: {}, Plat: {}, Qté: {}", context, commandeId, platId, quantite);
+        
         Commande commande = commandeRepository.findById(commandeId)
                 .orElseThrow(() -> new RuntimeException("Commande non trouvée avec l'ID : " + commandeId));
 
-        // Vérifier que le plat existe
         Plat plat = platRepository.findById(platId)
                 .orElseThrow(() -> new RuntimeException("Plat non trouvé avec l'ID : " + platId));
 
-        // Vérifier que le plat est disponible
         if (!plat.getDisponibilite()) {
             throw new RuntimeException("Le plat '" + plat.getNom() + "' n'est pas disponible actuellement");
         }
 
-        // Vérifier la quantité
         if (quantite == null || quantite <= 0) {
             throw new RuntimeException("La quantité doit être supérieure à 0");
         }
 
-        // Créer la ligne de commande
         LigneCommande ligneCommande = new LigneCommande();
         ligneCommande.setCommande(commande);
         ligneCommande.setPlat(plat);
@@ -223,12 +250,17 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
         ligneCommande.setNotesCuisine(notes);
 
         LigneCommande saved = ligneCommandeRepository.save(ligneCommande);
-
+        
+        mettreAJourEtNotifierAddition(commandeId);
+        
         return ligneCommandeMapper.toDto(saved);
     }
 
     @Override
     public LigneCommandeDto updateQuantite(Long id, Integer nouvelleQuantite) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Mise à jour quantité ligne ID: {} -> {}", context, id, nouvelleQuantite);
+        
         if (nouvelleQuantite == null || nouvelleQuantite <= 0) {
             throw new RuntimeException("La quantité doit être supérieure à 0");
         }
@@ -237,10 +269,8 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
                 .orElseThrow(() -> new RuntimeException("Ligne de commande non trouvée avec l'ID : " + id));
 
         ligneCommande.setQuantite(nouvelleQuantite);
-
         LigneCommande updated = ligneCommandeRepository.save(ligneCommande);
 
-        // RECALCUL ICI
         mettreAJourEtNotifierAddition(updated.getCommande().getId());
 
         return ligneCommandeMapper.toDto(updated);
@@ -248,7 +278,9 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
 
     @Override
     public BigDecimal calculateTotalCommande(Long commandeId) {
-        // Vérifier que la commande existe
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Calcul total pour commande ID: {}", context, commandeId);
+        
         if (!commandeRepository.existsById(commandeId)) {
             throw new RuntimeException("Commande non trouvée avec l'ID : " + commandeId);
         }
@@ -259,34 +291,41 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
 
     @Override
     public void supprimerToutesLignesCommande(Long commandeId) {
-        // Vérifier que la commande existe
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Suppression de toutes les lignes pour la commande ID: {}", context, commandeId);
+        
         if (!commandeRepository.existsById(commandeId)) {
             throw new RuntimeException("Commande non trouvée avec l'ID : " + commandeId);
         }
 
         ligneCommandeRepository.deleteByCommandeId(commandeId);
+        mettreAJourEtNotifierAddition(commandeId);
     }
 
     private void mettreAJourEtNotifierAddition(Long commandeId) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Recalcul des totaux et notification pour la commande ID: {}", context, commandeId);
+        
         Commande commande = commandeRepository.findById(commandeId)
                 .orElseThrow(() -> new RuntimeException("Commande non trouvée"));
 
-        // Calcul du Total HT (Somme des lignes)
         BigDecimal totalHt = commande.getLignes().stream()
                 .map(l -> l.getPrixUnitaire().multiply(new BigDecimal(l.getQuantite())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Calcul TTC (TVA 19.25% Cameroun)
-        BigDecimal tva = totalHt.multiply(new BigDecimal(String.valueOf(restaurantDto.getTauxTva())));
+        // Correction ici: On utilise 19.25 pour le calcul si restaurantDto n'est pas encore initialisé
+        BigDecimal tauxTva = (restaurantDto != null) ? new BigDecimal(String.valueOf(restaurantDto.getTauxTva())) : new BigDecimal("0.1925");
+        BigDecimal tva = totalHt.multiply(tauxTva);
         BigDecimal totalTtc = totalHt.add(tva);
 
         commande.setTotalHt(totalHt);
         commande.setTotalTtc(totalTtc);
 
         commandeRepository.save(commande);
+        logger.info("{} Totaux mis à jour - HT: {}, TTC: {}", context, totalHt, totalTtc);
 
-        // Notification Temps Réel au serveur et à la caisse
         CommandeDto commandeDto = commandeMapper.toDto(commande);
         messagingTemplate.convertAndSend("/topic/serveurs/addition/" + commandeId, commandeDto);
+        logger.info("{} Notification envoyée sur /topic/serveurs/addition/{}", context, commandeId);
     }
 }

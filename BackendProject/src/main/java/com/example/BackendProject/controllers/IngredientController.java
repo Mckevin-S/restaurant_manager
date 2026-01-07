@@ -1,9 +1,8 @@
 package com.example.BackendProject.controllers;
 
-
-
 import com.example.BackendProject.dto.IngredientDto;
 import com.example.BackendProject.services.implementations.IngredientServiceImplementation;
+import com.example.BackendProject.utils.LoggingUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -13,6 +12,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,10 +26,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ingredients")
-@CrossOrigin(origins = "*")
 @Tag(name = "Gestion des Ingrédients", description = "API pour la gestion du stock d'ingrédients")
 public class IngredientController {
 
+    private static final Logger logger = LoggerFactory.getLogger(IngredientController.class);
     private final IngredientServiceImplementation ingredientService;
 
     public IngredientController(IngredientServiceImplementation ingredientService) {
@@ -66,14 +68,19 @@ public class IngredientController {
                     required = true,
                     content = @Content(schema = @Schema(implementation = IngredientDto.class))
             )
-            @RequestBody IngredientDto ingredientDto) {
+            @RequestBody IngredientDto ingredientDto,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Tentative de création d'un ingrédient: {}", context, 
+                    ingredientDto.getNom() != null ? ingredientDto.getNom() : "N/A");
         try {
             IngredientDto savedIngredient = ingredientService.save(ingredientDto);
+            logger.info("{} Ingrédient créé avec succès. ID: {} - Nom: {}", 
+                       context, savedIngredient.getId(), savedIngredient.getNom());
             return ResponseEntity.status(HttpStatus.CREATED).body(savedIngredient);
         } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+            logger.error("{} Erreur lors de la création de l'ingrédient: {}", context, e.getMessage(), e);
+            return buildErrorResponse(e);
         }
     }
 
@@ -93,8 +100,11 @@ public class IngredientController {
                     array = @ArraySchema(schema = @Schema(implementation = IngredientDto.class))
             )
     )
-    public ResponseEntity<List<IngredientDto>> getAllIngredients() {
+    public ResponseEntity<List<IngredientDto>> getAllIngredients(HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération de tous les ingrédients", context);
         List<IngredientDto> ingredients = ingredientService.getAll();
+        logger.info("{} {} ingrédients récupérés avec succès", context, ingredients.size());
         return ResponseEntity.ok(ingredients);
     }
 
@@ -126,14 +136,19 @@ public class IngredientController {
     })
     public ResponseEntity<?> getIngredientById(
             @Parameter(description = "ID de l'ingrédient", required = true, example = "1")
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération de l'ingrédient avec l'ID: {}", context, id);
         try {
             IngredientDto ingredient = ingredientService.getById(id);
+            logger.info("{} Ingrédient ID: {} récupéré avec succès - Nom: {}", 
+                       context, id, ingredient.getNom());
             return ResponseEntity.ok(ingredient);
         } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            logger.error("{} Erreur lors de la récupération de l'ingrédient ID: {} - {}", 
+                        context, id, e.getMessage(), e);
+            return buildErrorResponse(e);
         }
     }
 
@@ -170,16 +185,18 @@ public class IngredientController {
                     description = "Nouvelles informations de l'ingrédient",
                     required = true
             )
-            @RequestBody IngredientDto ingredientDto) {
+            @RequestBody IngredientDto ingredientDto,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Tentative de mise à jour de l'ingrédient ID: {}", context, id);
         try {
             IngredientDto updatedIngredient = ingredientService.update(id, ingredientDto);
+            logger.info("{} Ingrédient ID: {} mis à jour avec succès", context, id);
             return ResponseEntity.ok(updatedIngredient);
         } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            HttpStatus status = e.getMessage().contains("non trouvé") ?
-                    HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
-            return ResponseEntity.status(status).body(error);
+            logger.error("{} Erreur lors de la mise à jour de l'ingrédient ID: {} - {}", 
+                        context, id, e.getMessage(), e);
+            return buildErrorResponse(e);
         }
     }
 
@@ -207,16 +224,18 @@ public class IngredientController {
     })
     public ResponseEntity<?> deleteIngredient(
             @Parameter(description = "ID de l'ingrédient à supprimer", required = true, example = "1")
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Tentative de suppression de l'ingrédient ID: {}", context, id);
         try {
             ingredientService.delete(id);
+            logger.info("{} Ingrédient ID: {} supprimé avec succès", context, id);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            HttpStatus status = e.getMessage().contains("non trouvé") ?
-                    HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
-            return ResponseEntity.status(status).body(error);
+            logger.error("{} Erreur lors de la suppression de l'ingrédient ID: {} - {}", 
+                        context, id, e.getMessage(), e);
+            return buildErrorResponse(e);
         }
     }
 
@@ -242,8 +261,13 @@ public class IngredientController {
                     required = true,
                     example = "Tomate"
             )
-            @RequestParam String keyword) {
+            @RequestParam String keyword,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Recherche d'ingrédients avec le mot-clé: {}", context, keyword);
         List<IngredientDto> ingredients = ingredientService.search(keyword);
+        logger.info("{} {} ingrédients trouvés pour le mot-clé '{}'", 
+                   context, ingredients.size(), keyword);
         return ResponseEntity.ok(ingredients);
     }
 
@@ -263,8 +287,11 @@ public class IngredientController {
                     array = @ArraySchema(schema = @Schema(implementation = IngredientDto.class))
             )
     )
-    public ResponseEntity<List<IngredientDto>> getIngredientsEnAlerte() {
+    public ResponseEntity<List<IngredientDto>> getIngredientsEnAlerte(HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération des ingrédients en alerte", context);
         List<IngredientDto> ingredients = ingredientService.findIngredientsEnAlerte();
+        logger.info("{} {} ingrédients en alerte récupérés", context, ingredients.size());
         return ResponseEntity.ok(ingredients);
     }
 
@@ -290,14 +317,19 @@ public class IngredientController {
                     required = true,
                     example = "kg"
             )
-            @PathVariable String uniteMesure) {
+            @PathVariable String uniteMesure,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération des ingrédients par unité de mesure: {}", context, uniteMesure);
         try {
             List<IngredientDto> ingredients = ingredientService.findByUniteMesure(uniteMesure);
+            logger.info("{} {} ingrédients trouvés pour l'unité '{}'", 
+                       context, ingredients.size(), uniteMesure);
             return ResponseEntity.ok(ingredients);
         } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+            logger.error("{} Erreur lors de la récupération des ingrédients par unité {} - {}", 
+                        context, uniteMesure, e.getMessage(), e);
+            return buildErrorResponse(e);
         }
     }
 
@@ -331,130 +363,36 @@ public class IngredientController {
             @Parameter(description = "ID de l'ingrédient", required = true, example = "1")
             @PathVariable Long id,
             @Parameter(description = "Quantité à ajouter", required = true, example = "10.5")
-            @RequestParam BigDecimal quantite) {
+            @RequestParam BigDecimal quantite,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Tentative d'ajout de quantité - Ingrédient ID: {}, Quantité: {}", 
+                   context, id, quantite);
         try {
             IngredientDto updatedIngredient = ingredientService.ajouterQuantite(id, quantite);
+            logger.info("{} Quantité ajoutée avec succès - Ingrédient ID: {}, Nouvelle quantité: {}", 
+                       context, id, updatedIngredient.getQuantiteActuelle());
             return ResponseEntity.ok(updatedIngredient);
         } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            HttpStatus status = e.getMessage().contains("non trouvé") ?
-                    HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
-            return ResponseEntity.status(status).body(error);
+            logger.error("{} Erreur lors de l'ajout de quantité pour l'ingrédient ID: {} - {}", 
+                        context, id, e.getMessage(), e);
+            return buildErrorResponse(e);
         }
     }
 
     /**
-     * Retirer une quantité d'un ingrédient
+     * Méthode utilitaire pour construire les réponses d'erreur
      */
-    @PatchMapping("/{id}/retirer")
-    @Operation(
-            summary = "Retirer une quantité d'un ingrédient",
-            description = "Diminue la quantité actuelle d'un ingrédient (consommation)"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Quantité retirée avec succès",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = IngredientDto.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Ingrédient non trouvé"
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Quantité insuffisante ou invalide",
-                    content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(value = "{\"error\": \"Quantité insuffisante. Stock actuel : 5 kg\"}")
-                    )
-            )
-    })
-    public ResponseEntity<?> retirerQuantite(
-            @Parameter(description = "ID de l'ingrédient", required = true, example = "1")
-            @PathVariable Long id,
-            @Parameter(description = "Quantité à retirer", required = true, example = "2.5")
-            @RequestParam BigDecimal quantite) {
-        try {
-            IngredientDto updatedIngredient = ingredientService.retirerQuantite(id, quantite);
-            return ResponseEntity.ok(updatedIngredient);
-        } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            HttpStatus status = e.getMessage().contains("non trouvé") ?
-                    HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
-            return ResponseEntity.status(status).body(error);
+    private ResponseEntity<Map<String, String>> buildErrorResponse(RuntimeException e) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", e.getMessage());
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        if (e.getMessage().toLowerCase().contains("non trouvé") ||
+                e.getMessage().toLowerCase().contains("non trouvée")) {
+            status = HttpStatus.NOT_FOUND;
         }
-    }
 
-    /**
-     * Mettre à jour le seuil d'alerte
-     */
-    @PatchMapping("/{id}/seuil-alerte")
-    @Operation(
-            summary = "Mettre à jour le seuil d'alerte",
-            description = "Modifie le seuil d'alerte d'un ingrédient"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Seuil d'alerte mis à jour avec succès",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = IngredientDto.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Ingrédient non trouvé"
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Seuil invalide"
-            )
-    })
-    public ResponseEntity<?> updateSeuilAlerte(
-            @Parameter(description = "ID de l'ingrédient", required = true, example = "1")
-            @PathVariable Long id,
-            @Parameter(description = "Nouveau seuil d'alerte", required = true, example = "5.0")
-            @RequestParam BigDecimal seuil) {
-        try {
-            IngredientDto updatedIngredient = ingredientService.updateSeuilAlerte(id, seuil);
-            return ResponseEntity.ok(updatedIngredient);
-        } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            HttpStatus status = e.getMessage().contains("non trouvé") ?
-                    HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
-            return ResponseEntity.status(status).body(error);
-        }
-    }
-
-    /**
-     * Obtenir les statistiques du stock
-     */
-    @GetMapping("/statistiques")
-    @Operation(
-            summary = "Obtenir les statistiques du stock",
-            description = "Retourne des statistiques sur le stock d'ingrédients"
-    )
-    @ApiResponse(
-            responseCode = "200",
-            description = "Statistiques récupérées avec succès"
-    )
-    public ResponseEntity<Map<String, Object>> getStatistiques() {
-        List<IngredientDto> tous = ingredientService.getAll();
-        List<IngredientDto> enAlerte = ingredientService.findIngredientsEnAlerte();
-
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("totalIngredients", tous.size());
-        stats.put("ingredientsEnAlerte", enAlerte.size());
-        stats.put("tauxAlerte", tous.isEmpty() ? 0 : (enAlerte.size() * 100.0 / tous.size()));
-
-        return ResponseEntity.ok(stats);
+        return ResponseEntity.status(status).body(error);
     }
 }

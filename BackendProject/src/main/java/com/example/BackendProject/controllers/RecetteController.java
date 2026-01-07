@@ -3,12 +3,15 @@ package com.example.BackendProject.controllers;
 
 import com.example.BackendProject.dto.RecetteDto;
 import com.example.BackendProject.services.implementations.RecetteServiceImplementation;
+import com.example.BackendProject.utils.LoggingUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +24,7 @@ import java.util.List;
 )
 public class RecetteController {
 
+    private static final Logger logger = LoggerFactory.getLogger(RecetteController.class);
     private final RecetteServiceImplementation recetteServiceImplementation;
 
     public RecetteController(RecetteServiceImplementation recetteServiceImplementation) {
@@ -40,9 +44,19 @@ public class RecetteController {
     })
     @PostMapping
     public RecetteDto create(
-            @RequestBody RecetteDto dto
+            @RequestBody RecetteDto dto,
+            HttpServletRequest request
     ) {
-        return recetteServiceImplementation.save(dto);
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Tentative de création d'une recette", context);
+        try {
+            RecetteDto savedRecette = recetteServiceImplementation.save(dto);
+            logger.info("{} Recette créée avec succès. ID: {}", context, savedRecette.getId());
+            return savedRecette;
+        } catch (Exception e) {
+            logger.error("{} Erreur lors de la création de la recette: {}", context, e.getMessage(), e);
+            throw e;
+        }
     }
 
     // -------------------------------------------------
@@ -59,9 +73,19 @@ public class RecetteController {
     @GetMapping("/{id}")
     public RecetteDto getById(
             @Parameter(description = "ID de la recette", example = "1")
-            @PathVariable Long id
+            @PathVariable Long id,
+            HttpServletRequest request
     ) {
-        return recetteServiceImplementation.getById(id);
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération de la recette avec l'ID: {}", context, id);
+        try {
+            RecetteDto recette = recetteServiceImplementation.getById(id);
+            logger.info("{} Recette ID: {} récupérée avec succès", context, id);
+            return recette;
+        } catch (Exception e) {
+            logger.error("{} Erreur lors de la récupération de la recette ID: {} - {}", context, id, e.getMessage(), e);
+            throw e;
+        }
     }
 
     // -------------------------------------------------
@@ -72,8 +96,12 @@ public class RecetteController {
             description = "Retourne la liste complète des recettes"
     )
     @GetMapping
-    public List<RecetteDto> getAll() {
-        return recetteServiceImplementation.getAll();
+    public List<RecetteDto> getAll(HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération de toutes les recettes", context);
+        List<RecetteDto> recettes = recetteServiceImplementation.getAll();
+        logger.info("{} {} recettes récupérées avec succès", context, recettes.size());
+        return recettes;
     }
 
     // -------------------------------------------------
@@ -86,9 +114,14 @@ public class RecetteController {
     @GetMapping("/plat/{platId}")
     public List<RecetteDto> getByPlat(
             @Parameter(description = "ID du plat", example = "5")
-            @PathVariable Long platId
+            @PathVariable Long platId,
+            HttpServletRequest request
     ) {
-        return recetteServiceImplementation.getByPlat(platId);
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération des recettes pour le plat ID: {}", context, platId);
+        List<RecetteDto> recettes = recetteServiceImplementation.getByPlat(platId);
+        logger.info("{} {} recettes récupérées pour le plat ID: {}", context, recettes.size(), platId);
+        return recettes;
     }
 
     // -------------------------------------------------
@@ -105,9 +138,18 @@ public class RecetteController {
     @DeleteMapping("/{id}")
     public void delete(
             @Parameter(description = "ID de la recette", example = "3")
-            @PathVariable Long id
+            @PathVariable Long id,
+            HttpServletRequest request
     ) {
-        recetteServiceImplementation.delete(id);
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Tentative de suppression de la recette ID: {}", context, id);
+        try {
+            recetteServiceImplementation.delete(id);
+            logger.info("{} Recette ID: {} supprimée avec succès", context, id);
+        } catch (Exception e) {
+            logger.error("{} Erreur lors de la suppression de la recette ID: {} - {}", context, id, e.getMessage(), e);
+            throw e;
+        }
     }
 }
 

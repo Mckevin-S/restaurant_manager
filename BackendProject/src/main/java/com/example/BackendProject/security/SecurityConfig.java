@@ -3,6 +3,7 @@ package com.example.BackendProject.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer; // Ajouté
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -11,10 +12,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer; // Import crucial
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-public class SecurityConfig implements WebMvcConfigurer { // Ajout de l'interface pour les images
+public class SecurityConfig implements WebMvcConfigurer {
 
     private final JwtFilter jwtFilter;
 
@@ -32,7 +33,6 @@ public class SecurityConfig implements WebMvcConfigurer { // Ajout de l'interfac
         return config.getAuthenticationManager();
     }
 
-    // ✅ Configuration pour rendre les images accessibles via URL
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/api/images/**")
@@ -42,23 +42,23 @@ public class SecurityConfig implements WebMvcConfigurer { // Ajout de l'interfac
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        // http.cors(cors -> cors.configure(http));
+        // 1. ✅ Activer explicitement le CORS défini dans WebConfig
+        http.cors(Customizer.withDefaults()); 
+        
         http.csrf(csrf -> csrf.disable());
 
+        // 2. ✅ Forcer le mode STATELESS (Empêche Spring de chercher les tables de session)
         http.sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.authorizeHttpRequests(auth -> auth
-                // ✅ Endpoints publics
                 .requestMatchers("/api/Auth/**",
                         "/v3/api-docs/**",
                         "/swagger-ui/**",
                         "/swagger-ui.html").permitAll()
 
-                // ✅ Rendre les images publiques pour que le menu puisse les afficher
                 .requestMatchers("/api/images/**").permitAll()
 
-                // ✅ Vos autres endpoints (Attention : en permitAll, les rôles ne sont pas vérifiés)
                 .requestMatchers("/api/restaurants/**",
                         "/api/users/**",
                         "/api/cuisine/**",

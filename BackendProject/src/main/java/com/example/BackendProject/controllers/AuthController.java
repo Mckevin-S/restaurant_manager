@@ -7,6 +7,10 @@ import com.example.BackendProject.repository.UtilisateurRepository;
 import com.example.BackendProject.security.JwtUtils;
 import com.example.BackendProject.services.implementations.SmsService;
 import com.example.BackendProject.services.implementations.UtilisateurDetailService;
+import com.example.BackendProject.utils.LoggingUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,13 +24,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/api/Auth")
 public class AuthController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     // On continue d'utiliser le nom comme clé pour la vérification
     private final Map<String, String> pendingVerifications = new ConcurrentHashMap<>();
@@ -50,8 +54,10 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody UtilisateurDto request) {
+    public ResponseEntity<?> login(@RequestBody UtilisateurDto request, HttpServletRequest httpRequest) {
+        String logContext = LoggingUtils.getLogContext(httpRequest);
         System.out.println("Tentative de connexion (Email) : " + request.getEmail());
+        logger.info("{} Tentative de login pour l'email: {}", logContext, request.getEmail());
 
         try {
             // 1. Authentification via Email
@@ -64,6 +70,7 @@ public class AuthController {
             Utilisateur user = utilisateurRepository.findByEmail(request.getEmail());
 
             if (user == null) {
+                logger.warn("{} Utilisateur non trouvé après authentification pour: {}", logContext, request.getEmail());
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Compte introuvable");
             }
 
@@ -80,6 +87,7 @@ public class AuthController {
             smsService.sendSms(user.getTelephone(), "Code de validation : " + code);
 
             System.out.println("✅ Code généré pour le nom [" + user.getNom() + "] : " + code);
+            logger.info("{} Code 2FA généré et envoyé par SMS à {} pour l'utilisateur {}", logContext, user.getTelephone(), user.getNom());
 
             return ResponseEntity.ok(Map.of(
                     "status", "PENDING_2FA",
@@ -88,20 +96,26 @@ public class AuthController {
             ));
 
         } catch (BadCredentialsException e) {
+            logger.error("{} Échec d'authentification (Bad Credentials) pour: {}", logContext, request.getEmail());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email ou mot de passe incorrect");
         } catch (Exception e) {
+            logger.error("{} Erreur serveur lors du login: {}", logContext, e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur serveur");
         }
     }
 
     @PostMapping("/verify-2fa")
-    public ResponseEntity<?> verify2fa(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> verify2fa(@RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
+        String logContext = LoggingUtils.getLogContext(httpRequest);
         String nom = request.get("username"); // On récupère bien le nom ici
         String code = request.get("code");
 
+        logger.info("{} Tentative de vérification 2FA pour l'utilisateur: {}", logContext, nom);
+
         if (!pendingVerifications.containsKey(nom)) {
+            logger.warn("{} Tentative de vérification 2FA échouée: Session inexistante pour {}", logContext, nom);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Session expirée ou nom invalide");
         }
 
@@ -110,7 +124,7 @@ public class AuthController {
         if (user != null && code.equals(user.getVerificationCode())
                 && user.getExpiryCode().isAfter(LocalDateTime.now())) {
 
-            // Succès -> Le JWT est généré (basé sur l'email ou le nom selon votre JwtUtils)
+            // Succès -> Le JWT est généré
             var userDetails = utilisateurDetailService.loadUserByUsername(user.getEmail());
             String token = jwtUtils.generateToken(userDetails);
 
@@ -120,14 +134,18 @@ public class AuthController {
             utilisateurRepository.save(user);
             pendingVerifications.remove(nom);
 
+            logger.info("{}  Vérification 2FA réussie pour {}", logContext, nom);
+
             return ResponseEntity.ok(new LoginResponse(token, user.getNom(), "ROLE_" + user.getRole().name()));
         }
 
+        logger.warn("{} Code 2FA incorrect ou expiré pour {}", logContext, nom);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Code incorrect ou expiré");
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> logout(@RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
+        String logContext = LoggingUtils.getLogContext(httpRequest);
         String nom = request.get("username");
 
         // 1. Nettoyer les vérifications 2FA en cours si elles existent
@@ -139,6 +157,7 @@ public class AuthController {
         SecurityContextHolder.clearContext();
 
         System.out.println("Déconnexion réussie pour : " + nom);
+        logger.info("{} Déconnexion réussie pour l'utilisateur: {}", logContext, nom);
 
         return ResponseEntity.ok(Map.of(
                 "message", "Déconnexion réussie. N'oubliez pas de supprimer le token côté client."

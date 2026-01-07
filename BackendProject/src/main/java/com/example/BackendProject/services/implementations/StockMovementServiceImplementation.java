@@ -7,7 +7,10 @@ import com.example.BackendProject.mappers.StockMovementMapper;
 import com.example.BackendProject.repository.IngredientRepository;
 import com.example.BackendProject.repository.StockMovementRepository;
 import com.example.BackendProject.services.interfaces.StockMovementServiceInterface;
+import com.example.BackendProject.utils.LoggingUtils;
 import com.example.BackendProject.utils.TypeMouvement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +23,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class StockMovementServiceImplementation implements StockMovementServiceInterface {
 
+    private static final Logger logger = LoggerFactory.getLogger(StockMovementServiceImplementation.class);
     private final StockMovementMapper stockMovementMapper;
     private final StockMovementRepository stockMovementRepository;
     private final IngredientRepository ingredientRepository;
@@ -37,21 +41,32 @@ public class StockMovementServiceImplementation implements StockMovementServiceI
 
     @Override
     public StockMovementDto createStockMovement(StockMovementDto dto) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Tentative de création d'un mouvement de stock - Type: {}, Ingrédient ID: {}, Quantité: {}", 
+                    context, dto.getTypeMouvement(), 
+                    dto.getIngredient() != null ? dto.getIngredient().getId() : "N/A", 
+                    dto.getQuantite());
 
         if (dto.getIngredient() == null || dto.getIngredient().getId() == null) {
+            logger.error("{} Erreur de validation: l'ingrédient est obligatoire", context);
             throw new RuntimeException("L'ingrédient est obligatoire");
         }
 
         if (dto.getTypeMouvement() == null) {
+            logger.error("{} Erreur de validation: le type de mouvement est obligatoire", context);
             throw new RuntimeException("Le type de mouvement est obligatoire");
         }
 
         if (dto.getQuantite() == null || dto.getQuantite().compareTo(BigDecimal.ZERO) <= 0) {
+            logger.error("{} Erreur de validation: la quantité doit être > 0", context);
             throw new RuntimeException("La quantité doit être > 0");
         }
 
         Ingredient ingredient = ingredientRepository.findById(dto.getIngredient().getId())
-                .orElseThrow(() -> new RuntimeException("Ingrédient non trouvé"));
+                .orElseThrow(() -> {
+                    logger.error("{} Ingrédient non trouvé avec l'ID: {}", context, dto.getIngredient().getId());
+                    return new RuntimeException("Ingrédient non trouvé");
+                });
 
         if (dto.getDateMouvement() == null) {
             dto.setDateMouvement(new Timestamp(System.currentTimeMillis()));
@@ -61,6 +76,8 @@ public class StockMovementServiceImplementation implements StockMovementServiceI
         movement.setIngredient(ingredient);
 
         StockMovement saved = stockMovementRepository.save(movement);
+        logger.info("{} Mouvement de stock créé avec succès. ID: {}, Type: {}, Quantité: {}", 
+                    context, saved.getId(), saved.getTypeMouvement(), saved.getQuantite());
 
         return stockMovementMapper.toDto(saved);
     }
@@ -69,9 +86,14 @@ public class StockMovementServiceImplementation implements StockMovementServiceI
 
     @Override
     public StockMovementDto updateStockMovement(Long id, StockMovementDto dto) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Tentative de mise à jour du mouvement de stock ID: {}", context, id);
 
         StockMovement movement = stockMovementRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Mouvement non trouvé"));
+                .orElseThrow(() -> {
+                    logger.error("{} Mouvement de stock non trouvé avec l'ID: {}", context, id);
+                    return new RuntimeException("Mouvement non trouvé");
+                });
 
         if (dto.getTypeMouvement() != null) {
             movement.setTypeMouvement(dto.getTypeMouvement());
@@ -91,82 +113,119 @@ public class StockMovementServiceImplementation implements StockMovementServiceI
 
         if (dto.getIngredient() != null && dto.getIngredient().getId() != null) {
             Ingredient ingredient = ingredientRepository.findById(dto.getIngredient().getId())
-                    .orElseThrow(() -> new RuntimeException("Ingrédient non trouvé"));
+                    .orElseThrow(() -> {
+                        logger.error("{} Ingrédient non trouvé avec l'ID: {}", context, dto.getIngredient().getId());
+                        return new RuntimeException("Ingrédient non trouvé");
+                    });
             movement.setIngredient(ingredient);
         }
 
-        return stockMovementMapper.toDto(stockMovementRepository.save(movement));
+        StockMovement updated = stockMovementRepository.save(movement);
+        logger.info("{} Mouvement de stock ID: {} mis à jour avec succès", context, id);
+        return stockMovementMapper.toDto(updated);
     }
 
 
 
     @Override
     public void deleteStockMovement(Long id) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Tentative de suppression du mouvement de stock ID: {}", context, id);
         StockMovement movement = stockMovementRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Mouvement non trouvé"));
+                .orElseThrow(() -> {
+                    logger.error("{} Mouvement de stock non trouvé avec l'ID: {}", context, id);
+                    return new RuntimeException("Mouvement non trouvé");
+                });
         stockMovementRepository.delete(movement);
+        logger.info("{} Mouvement de stock ID: {} supprimé avec succès", context, id);
     }
 
 
 
     @Override
     public StockMovementDto getStockMovementById(Long id) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Récupération du mouvement de stock avec l'ID: {}", context, id);
         return stockMovementRepository.findById(id)
                 .map(stockMovementMapper::toDto)
-                .orElseThrow(() -> new RuntimeException("Mouvement non trouvé"));
+                .orElseThrow(() -> {
+                    logger.error("{} Mouvement de stock non trouvé avec l'ID: {}", context, id);
+                    return new RuntimeException("Mouvement non trouvé");
+                });
     }
 
     @Override
     public List<StockMovementDto> getAllStockMovements() {
-        return stockMovementRepository.findAll()
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Récupération de tous les mouvements de stock", context);
+        List<StockMovementDto> movements = stockMovementRepository.findAll()
                 .stream()
                 .map(stockMovementMapper::toDto)
                 .collect(Collectors.toList());
+        logger.info("{} {} mouvements de stock récupérés avec succès", context, movements.size());
+        return movements;
     }
 
     @Override
     public List<StockMovementDto> getStockMovementsByIngredientId(Long ingredientId) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Récupération des mouvements de stock pour l'ingrédient ID: {}", context, ingredientId);
         if (!ingredientRepository.existsById(ingredientId)) {
+            logger.error("{} Ingrédient non trouvé avec l'ID: {}", context, ingredientId);
             throw new RuntimeException("Ingrédient non trouvé");
         }
 
-        return stockMovementRepository.findByIngredientIdOrderByDateMouvementDesc(ingredientId)
+        List<StockMovementDto> movements = stockMovementRepository.findByIngredientIdOrderByDateMouvementDesc(ingredientId)
                 .stream()
                 .map(stockMovementMapper::toDto)
                 .collect(Collectors.toList());
+        logger.info("{} {} mouvements récupérés pour l'ingrédient ID: {}", context, movements.size(), ingredientId);
+        return movements;
     }
 
     @Override
     public List<StockMovementDto> getStockMovementsByType(TypeMouvement type) {
-        return stockMovementRepository
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Récupération des mouvements de stock par type: {}", context, type);
+        List<StockMovementDto> movements = stockMovementRepository
                 .findByTypeMouvementOrderByDateMouvementDesc(type)
                 .stream()
                 .map(stockMovementMapper::toDto)
                 .collect(Collectors.toList());
+        logger.info("{} {} mouvements de type {} récupérés avec succès", context, movements.size(), type);
+        return movements;
     }
 
     @Override
     public List<StockMovementDto> getStockMovementsBetweenDates(Timestamp start, Timestamp end) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Récupération des mouvements de stock entre {} et {}", context, start, end);
         if (start.after(end)) {
+            logger.error("{} Dates invalides: date de début postérieure à la date de fin", context);
             throw new RuntimeException("Dates invalides");
         }
 
-        return stockMovementRepository
+        List<StockMovementDto> movements = stockMovementRepository
                 .findByDateMouvementBetweenOrderByDateMouvementDesc(start, end)
                 .stream()
                 .map(stockMovementMapper::toDto)
                 .collect(Collectors.toList());
+        logger.info("{} {} mouvements récupérés pour la période spécifiée", context, movements.size());
+        return movements;
     }
 
 
     @Override
     public BigDecimal getTotalQuantityByIngredient(Long ingredientId) {
-
-        return stockMovementRepository.findByIngredientId(ingredientId)
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Calcul du total de stock pour l'ingrédient ID: {}", context, ingredientId);
+        BigDecimal total = stockMovementRepository.findByIngredientId(ingredientId)
                 .stream()
                 .map(m -> m.getTypeMouvement() == TypeMouvement.ENTREE
                         ? m.getQuantite()
                         : m.getQuantite().negate())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        logger.info("{} Total calculé pour l'ingrédient ID: {} - Quantité: {}", context, ingredientId, total);
+        return total;
     }
 }

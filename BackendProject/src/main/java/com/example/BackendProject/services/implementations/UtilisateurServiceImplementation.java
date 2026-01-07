@@ -8,7 +8,10 @@ import com.example.BackendProject.repository.RestaurantRepository;
 import com.example.BackendProject.repository.UtilisateurRepository;
 import com.example.BackendProject.services.interfaces.UtilisateurServiceInterface;
 import com.example.BackendProject.utils.CodeGenerator;
+import com.example.BackendProject.utils.LoggingUtils;
 import com.example.BackendProject.utils.RoleType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +21,7 @@ import java.util.stream.Collectors;
 @Service
 public class UtilisateurServiceImplementation implements UtilisateurServiceInterface {
 
+    private static final Logger logger = LoggerFactory.getLogger(UtilisateurServiceImplementation.class);
     private final UtilisateurMapper utilisateurMapper;
     private final RestaurantRepository restaurantRepository;
 
@@ -36,6 +40,9 @@ public class UtilisateurServiceImplementation implements UtilisateurServiceInter
 
     @Override
     public UtilisateurDto save(UtilisateurDto utilisateurDto) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Tentative de sauvegarde d'un utilisateur - Email: {}, Rôle: {}", 
+                    context, utilisateurDto.getEmail(), utilisateurDto.getRole());
         // 1. Mapper le DTO vers l'Entité
         Utilisateur utilisateur = utilisateurMapper.toEntity(utilisateurDto);
 
@@ -47,16 +54,16 @@ public class UtilisateurServiceImplementation implements UtilisateurServiceInter
         // 3. Associer le restaurant
         if (utilisateurDto.getRestaurantId() != null) {
             Restaurant restaurant = restaurantRepository.findById(utilisateurDto.getRestaurantId())
-                    .orElseThrow(() -> new RuntimeException("Restaurant non trouvé avec l'ID : " + utilisateurDto.getRestaurantId()));
+                    .orElseThrow(() -> {
+                        logger.error("{} Restaurant non trouvé avec l'ID: {}", context, utilisateurDto.getRestaurantId());
+                        return new RuntimeException("Restaurant non trouvé avec l'ID : " + utilisateurDto.getRestaurantId());
+                    });
             utilisateur.setRestaurant(restaurant);
         }
 
-        // 4. Générer l'ID technique/métier si nécessaire
-        // Note: Si votre entité utilise un Long auto-généré, ignorez cette étape ou adaptez-la
-        // utilisateur.setId(codeGenerator.generate(utilisateurDto.getRole().name()));
-
         // 5. Sauvegarder l'entité
         Utilisateur savedUtilisateur = utilisateurRepository.save(utilisateur);
+        logger.info("{} Utilisateur sauvegardé avec succès. ID: {}, Email: {}", context, savedUtilisateur.getId(), savedUtilisateur.getEmail());
 
         // 6. Retourner le DTO sans le mot de passe
         UtilisateurDto result = utilisateurMapper.toDto(savedUtilisateur);
@@ -96,7 +103,9 @@ public class UtilisateurServiceImplementation implements UtilisateurServiceInter
 
     @Override
     public List<UtilisateurDto> getAll() {
-        return utilisateurRepository.findAll()
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Récupération de tous les utilisateurs", context);
+        List<UtilisateurDto> utilisateurs = utilisateurRepository.findAll()
                 .stream()
                 .map(user -> {
                     UtilisateurDto dto = utilisateurMapper.toDto(user);
@@ -104,22 +113,35 @@ public class UtilisateurServiceImplementation implements UtilisateurServiceInter
                     return dto;
                 })
                 .collect(Collectors.toList());
+        logger.info("{} {} utilisateurs récupérés avec succès", context, utilisateurs.size());
+        return utilisateurs;
     }
 
     @Override
     public UtilisateurDto getById(Long id) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Récupération de l'utilisateur avec l'ID: {}", context, id);
         Utilisateur utilisateur = utilisateurRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Utilisateur avec avec le code "+ id +" est introuvable " ));
+                .orElseThrow(() -> {
+                    logger.error("{} Utilisateur non trouvé avec l'ID: {}", context, id);
+                    return new RuntimeException("Utilisateur avec avec le code "+ id +" est introuvable ");
+                });
 
         UtilisateurDto dto = utilisateurMapper.toDto(utilisateur);
         dto.setMotDePasse(null); // Masquer le mot de passe
+        logger.info("{} Utilisateur ID: {} récupéré avec succès - Email: {}", context, id, utilisateur.getEmail());
         return dto;
     }
 
     @Override
     public UtilisateurDto update(Long id, UtilisateurDto utilisateurDto) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Tentative de mise à jour de l'utilisateur ID: {}", context, id);
         Utilisateur utilisateur = utilisateurRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID : " + id));
+                .orElseThrow(() -> {
+                    logger.error("{} Utilisateur non trouvé avec l'ID: {}", context, id);
+                    return new RuntimeException("Utilisateur non trouvé avec l'ID : " + id);
+                });
 
         // Mise à jour des champs (sauf le mot de passe pour l'instant)
         if (utilisateurDto.getNom() != null && !utilisateurDto.getNom().isEmpty()) {
@@ -154,9 +176,18 @@ public class UtilisateurServiceImplementation implements UtilisateurServiceInter
 
         // Mise à jour des autres champs si présents
         if (utilisateurDto.getRestaurantId() != null) {
-            // 1. On va chercher l'OBJET Restaurant complet en base de données via son ID
+            // 1. On cherche l'OBJET complet en base
             Restaurant restaurant = restaurantRepository.findById(utilisateurDto.getRestaurantId())
-                    .orElseThrow(() -> new RuntimeException("Restaurant introuvable avec l'ID : " + utilisateurDto.getRestaurantId()));
+                    .orElseThrow(() -> {
+                        logger.error("{} Restaurant ID {} non trouvé pour l'utilisateur {}", context, utilisateurDto.getRestaurantId(), id);
+                        return new RuntimeException("Restaurant introuvable avec l'ID : " + utilisateurDto.getRestaurantId());
+                    });
+
+            // 2. LIGNE ESSENTIELLE : On lie le restaurant à l'utilisateur
+            utilisateur.setRestaurant(restaurant); 
+            
+            // 3. Traçabilité
+            logger.info("{} Utilisateur ID: {} rattaché avec succès au restaurant ID: {}", context, id, restaurant.getId());
         }
 
         if (utilisateurDto.getRole() != null) {
@@ -169,6 +200,7 @@ public class UtilisateurServiceImplementation implements UtilisateurServiceInter
 
         // Sauvegarde
         Utilisateur updatedUtilisateur = utilisateurRepository.save(utilisateur);
+        logger.info("{} Utilisateur ID: {} mis à jour avec succès", context, id);
 
         UtilisateurDto resultDto = utilisateurMapper.toDto(updatedUtilisateur);
         resultDto.setMotDePasse(null); // Ne jamais renvoyer le mot de passe
@@ -178,15 +210,23 @@ public class UtilisateurServiceImplementation implements UtilisateurServiceInter
 
     @Override
     public void delete(Long id) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Tentative de suppression de l'utilisateur ID: {}", context, id);
         Utilisateur utilisateur = utilisateurRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID : " + id));
+                .orElseThrow(() -> {
+                    logger.error("{} Utilisateur non trouvé avec l'ID: {}", context, id);
+                    return new RuntimeException("Utilisateur non trouvé avec l'ID : " + id);
+                });
 
         utilisateurRepository.delete(utilisateur);
+        logger.info("{} Utilisateur ID: {} supprimé avec succès", context, id);
     }
 
     @Override
     public List<UtilisateurDto> findByRoleType(RoleType role) {
-        return utilisateurRepository.findByRole(role)
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Récupération des utilisateurs par rôle: {}", context, role);
+        List<UtilisateurDto> utilisateurs = utilisateurRepository.findByRole(role)
                 .stream()
                 .map(personnel -> {
                     UtilisateurDto dto = utilisateurMapper.toDto(personnel);
@@ -194,11 +234,15 @@ public class UtilisateurServiceImplementation implements UtilisateurServiceInter
                     return dto;
                 })
                 .collect(Collectors.toList());
+        logger.info("{} {} utilisateurs avec le rôle {} récupérés avec succès", context, utilisateurs.size(), role);
+        return utilisateurs;
     }
 
     @Override
     public List<UtilisateurDto> search(String keyword) {
-        return utilisateurRepository.findByNomContainingIgnoreCaseOrPrenomContainingIgnoreCase(keyword, keyword)
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Recherche d'utilisateurs par mot-clé: {}", context, keyword);
+        List<UtilisateurDto> utilisateurs = utilisateurRepository.findByNomContainingIgnoreCaseOrPrenomContainingIgnoreCase(keyword, keyword)
                 .stream()
                 .map(personnel -> {
                     UtilisateurDto dto = utilisateurMapper.toDto(personnel);
@@ -206,20 +250,29 @@ public class UtilisateurServiceImplementation implements UtilisateurServiceInter
                     return dto;
                 })
                 .collect(Collectors.toList());
+        logger.info("{} {} utilisateurs trouvés pour le mot-clé: {}", context, utilisateurs.size(), keyword);
+        return utilisateurs;
     }
 
     @Override
     public void changePassword(Long id, String oldPassword, String newPassword) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Tentative de changement de mot de passe pour l'utilisateur ID: {}", context, id);
         Utilisateur utilisateur = utilisateurRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID : " + id));
+                .orElseThrow(() -> {
+                    logger.error("{} Utilisateur non trouvé avec l'ID: {}", context, id);
+                    return new RuntimeException("Utilisateur non trouvé avec l'ID : " + id);
+                });
 
         // Vérifier que l'ancien mot de passe est correct
         if (!passwordEncoder.matches(oldPassword, utilisateur.getMotDePasse())) {
+            logger.warn("{} Tentative de changement de mot de passe avec un ancien mot de passe incorrect pour l'utilisateur ID: {}", context, id);
             throw new RuntimeException("L'ancien mot de passe est incorrect");
         }
 
         // Validation du nouveau mot de passe (optionnel)
         if (newPassword == null || newPassword.length() < 6) {
+            logger.error("{} Nouveau mot de passe invalide (moins de 6 caractères) pour l'utilisateur ID: {}", context, id);
             throw new RuntimeException("Le nouveau mot de passe doit contenir au moins 6 caractères");
         }
 
@@ -228,15 +281,22 @@ public class UtilisateurServiceImplementation implements UtilisateurServiceInter
         utilisateur.setMotDePasse(encodedPassword);
 
         utilisateurRepository.save(utilisateur);
+        logger.info("{} Mot de passe modifié avec succès pour l'utilisateur ID: {}", context, id);
     }
 
     @Override
     public void resetPassword(Long id, String newPassword) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Tentative de réinitialisation de mot de passe pour l'utilisateur ID: {}", context, id);
         Utilisateur utilisateur = utilisateurRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID : " + id));
+                .orElseThrow(() -> {
+                    logger.error("{} Utilisateur non trouvé avec l'ID: {}", context, id);
+                    return new RuntimeException("Utilisateur non trouvé avec l'ID : " + id);
+                });
 
         // Validation du nouveau mot de passe (optionnel)
         if (newPassword == null || newPassword.length() < 6) {
+            logger.error("{} Mot de passe invalide (moins de 6 caractères) pour l'utilisateur ID: {}", context, id);
             throw new RuntimeException("Le mot de passe doit contenir au moins 6 caractères");
         }
 
@@ -245,9 +305,8 @@ public class UtilisateurServiceImplementation implements UtilisateurServiceInter
         utilisateur.setMotDePasse(encodedPassword);
 
         utilisateurRepository.save(utilisateur);
+        logger.info("{} Mot de passe réinitialisé avec succès pour l'utilisateur ID: {}", context, id);
     }
-
-
 
 
 }
