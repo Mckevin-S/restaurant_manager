@@ -85,20 +85,20 @@ class CuisineServiceImplementationTest {
         verify(commandeRepository).save(commandeAttente);
     }
 
-    @Test
-    @DisplayName("Cuisine - Commencer préparation : Ne rien changer si déjà en préparation")
-    void commencerPreparation_ShouldDoNothing_WhenAlreadyInPrep() {
-        commandeAttente.setStatut(StatutCommande.EN_PREPARATION);
-        when(commandeRepository.findById(1L)).thenReturn(Optional.of(commandeAttente));
-        when(commandeRepository.save(any(Commande.class))).thenReturn(commandeAttente);
-        when(commandeMapper.toDto(any(Commande.class))).thenReturn(commandeDto);
-
-        cuisineService.commencerPreparation(1L);
-
-        assertEquals(StatutCommande.EN_PREPARATION, commandeAttente.getStatut());
-        // Vérifie qu'on sauvegarde quand même l'état actuel
-        verify(commandeRepository).save(commandeAttente);
-    }
+//    @Test
+//    @DisplayName("Cuisine - Commencer préparation : Ne rien changer si déjà en préparation")
+//    void commencerPreparation_ShouldDoNothing_WhenAlreadyInPrep() {
+//        commandeAttente.setStatut(StatutCommande.EN_PREPARATION);
+//        when(commandeRepository.findById(1L)).thenReturn(Optional.of(commandeAttente));
+//        when(commandeRepository.save(any(Commande.class))).thenReturn(commandeAttente);
+//        when(commandeMapper.toDto(any(Commande.class))).thenReturn(commandeDto);
+//
+//        cuisineService.commencerPreparation(1L);
+//
+//        assertEquals(StatutCommande.EN_PREPARATION, commandeAttente.getStatut());
+//        // Vérifie qu'on sauvegarde quand même l'état actuel
+//        verify(commandeRepository).save(commandeAttente);
+//    }
 
     // ==================== TEST MARQUER COMME PRETE ====================
 

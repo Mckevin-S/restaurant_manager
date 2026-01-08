@@ -98,10 +98,15 @@ class OrderItemOptionServiceImplementationTest {
     @Test
     @DisplayName("Delete - Devrait appeler le repository pour suppression")
     void delete_ShouldCallRepository() {
+        // Arrange
+        Long id = 1L;
+        // On simule que l'élément existe pour passer la validation du service
+        when(repository.existsById(id)).thenReturn(true);
+
         // Act
-        service.delete(1L);
+        service.delete(id);
 
         // Assert
-        verify(repository, times(1)).deleteById(1L);
+        verify(repository, times(1)).deleteById(id);
     }
 }

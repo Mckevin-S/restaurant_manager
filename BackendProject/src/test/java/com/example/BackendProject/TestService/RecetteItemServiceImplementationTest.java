@@ -129,7 +129,15 @@ class RecetteItemServiceImplementationTest {
     @Test
     @DisplayName("Delete - Appelle le repository")
     void delete_ShouldInvokeRepository() {
-        service.delete(1L);
-        verify(recetteItemRepository, times(1)).deleteById(1L);
+        // 1. Arrange : On prépare le terrain
+        Long id = 1L;
+        // On indique au mock que l'élément existe bien
+        when(recetteItemRepository.existsById(id)).thenReturn(true);
+
+        // 2. Act : On exécute l'action
+        service.delete(id);
+
+        // 3. Assert : On vérifie que la méthode de suppression a bien été appelée
+        verify(recetteItemRepository, times(1)).deleteById(id);
     }
 }
