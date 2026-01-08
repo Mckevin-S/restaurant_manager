@@ -1,5 +1,5 @@
 # Stage 1: Build the Java application
-FROM openjdk:17-jdk-slim AS build
+FROM eclipse-temurin:24-jdk AS build
 WORKDIR /app
 COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
@@ -11,7 +11,7 @@ COPY src ./src
 RUN ./mvnw package -DskipTests
 
 # Stage 2: Create the final Docker image
-FROM openjdk:17-jre-slim
+FROM eclipse-temurin:24-jre
 WORKDIR /app
 # Copier le JAR construit depuis le stage de build
 COPY --from=build /app/target/*.jar app.jar
