@@ -38,7 +38,7 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
                                             @Param("statut") StatutCommande statut);
 
     // Trouver les commandes du jour
-    @Query("SELECT c FROM Commande c WHERE DATE(c.dateHeureCommande) = CURRENT_DATE")
+    @Query("SELECT c FROM Commande c WHERE CAST(c.dateHeureCommande AS date) = CURRENT_DATE")
     List<Commande> findCommandesAujourdhui();
 
     // Calculer le total des ventes par période

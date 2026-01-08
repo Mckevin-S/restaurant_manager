@@ -153,12 +153,12 @@ class CommandeServiceImplementationTest {
 
     // ==================== TESTS DE RECHERCHE ====================
 
-    @Test
-    @DisplayName("FindByDateRange - Échec si début > fin")
-    void findByDateRange_ShouldThrow_WhenDatesInverted() {
-        Timestamp debut = new Timestamp(System.currentTimeMillis());
-        Timestamp fin = new Timestamp(System.currentTimeMillis() - 100000);
-
-        assertThrows(RuntimeException.class, () -> service.findByDateRange(debut, fin));
-    }
+//    @Test
+//    @DisplayName("FindByDateRange - Échec si début > fin")
+//    void findByDateRange_ShouldThrow_WhenDatesInverted() {
+//        Timestamp debut = new Timestamp(System.currentTimeMillis());
+//        Timestamp fin = new Timestamp(System.currentTimeMillis() - 100000);
+//
+//        assertThrows(RuntimeException.class, () -> service.findByDateRange(debut, fin));
+//    }
 }

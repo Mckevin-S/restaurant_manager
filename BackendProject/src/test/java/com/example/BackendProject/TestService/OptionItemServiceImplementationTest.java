@@ -126,12 +126,18 @@ class OptionItemServiceImplementationTest {
     // ==================== TESTS DELETE ====================
 
     @Test
-    @DisplayName("Delete - Devrait appeler le repository")
+    @DisplayName("Delete - Devrait appeler le repository pour suppression")
     void delete_ShouldInvokeRepository() {
-        doNothing().when(optionItemRepository).deleteById(1L);
+        // Arrange
+        Long id = 1L;
+        // On simule que l'objet existe pour passer la validation interne du service
+        // Note: Utilisez existsById ou findById selon ce que votre service utilise
+        when(optionItemRepository.existsById(id)).thenReturn(true);
 
-        optionItemService.delete(1L);
+        // Act
+        optionItemService.delete(id);
 
-        verify(optionItemRepository, times(1)).deleteById(1L);
+        // Assert
+        verify(optionItemRepository, times(1)).deleteById(id);
     }
 }
