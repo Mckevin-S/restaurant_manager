@@ -27,8 +27,8 @@ jobs:
           context: ./BackendProject
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/BackendProject:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/BackendProject:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/backend-project:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/backend-project:${{ github.sha }}
 
       # --- FRONTEND ---
       - name: Build and push Frontend image
@@ -37,5 +37,5 @@ jobs:
           context: ./Gusto
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/Gusto:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/Gusto:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/gusto:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/gusto:${{ github.sha }}
