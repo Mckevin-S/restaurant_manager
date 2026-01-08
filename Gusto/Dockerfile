@@ -11,7 +11,7 @@ RUN npm run build
 # Stage 2: Serve the React application with Nginx
 FROM nginx:alpine
 # Copier le build statique depuis le stage de build
-COPY --from=build /app/build /usr/share/nginx/html
+COPY --from=build /app/dist /usr/share/nginx/html
 # Copier une configuration Nginx personnalisée si vous en avez une
 # COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
