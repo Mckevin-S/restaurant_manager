@@ -43,7 +43,7 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     boolean existsByCommandeId(@Param("commandeId") Long commandeId);
 
     // Obtenir les paiements du jour
-    @Query("SELECT p FROM Paiement p WHERE DATE(p.datePaiement) = CURRENT_DATE")
+    @Query("SELECT p FROM Paiement p WHERE CAST(p.datePaiement AS date) = CURRENT_DATE")
     List<Paiement> findPaiementsAujourdhui();
 
     // Compter les paiements par type
