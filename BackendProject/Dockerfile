@@ -8,7 +8,7 @@ RUN chmod +x ./mvnw
 RUN ./mvnw dependency:go-offline -B
 COPY src ./src
 # Construire l'application
-RUN ./mvnw package
+RUN ./mvnw package -Dspring.profiles.active=test
 # RUN ./mvnw package -DskipTests
 
 # Stage 2: Create the final Docker image
