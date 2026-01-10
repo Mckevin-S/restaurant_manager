@@ -1,117 +1,167 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { verifyTwoFactor } from '../../features/LoginSlice'; // Ajustez le chemin
+import { verifyTwoFactor } from '../../features/LoginSlice';
 import { 
-  Box, Typography, Button, Avatar, Paper, Grid, 
-  IconButton, Divider, Zoom, CircularProgress, Alert 
+  Box, 
+  Typography, 
+  Button, 
+  Avatar, 
+  Paper, 
+  Grid, 
+  IconButton, 
+  Zoom, 
+  CircularProgress, 
+  Alert 
 } from '@mui/material';
 import BackspaceOutlinedIcon from '@mui/icons-material/BackspaceOutlined';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-// ... vos autres imports d'icônes
 
 const Confirmation = () => {
     const [pin, setPin] = useState('');
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    // On récupère les infos du store Redux
-    const { loading, error, tempUsername, token } = useSelector((state) => state.auth);
+    const { loading, error, tempUsername, token, user, step } = useSelector((state) => state.auth);
 
-    const {user} = useSelector((state)=> state.auth)
-
-    localStorage.setItem('role',user?.role);
-
-    // Redirection automatique une fois le token reçu
-    useEffect(() => {
-        if (token) {
-            navigate('/dashboard');
-        }
-    }, [token, navigate]);
-
-    const handleNumberClick = (num) => {
-        if (pin.length < 4) setPin(prev => prev + num);
-    };
-
-    const handleDelete = () => {
-        setPin(prev => prev.slice(0, -1));
-    };
-
-    // Fonction de validation
-    const handleVerify = () => {
-        if (pin.length === 4) {
+    // --- LOGIQUE DE VALIDATION ---
+    const handleVerify = useCallback(() => {
+        if (pin.length === 4 && !loading) {
             dispatch(verifyTwoFactor({ 
-                username: tempUsername, // Le nom stocké lors du login
+                username: tempUsername, 
                 code: pin 
             }));
         }
-    };
+    }, [pin, loading, tempUsername, dispatch]);
+
+    const handleDelete = useCallback(() => {
+        setPin(prev => prev.slice(0, -1));
+    }, []);
+
+    const handleNumberInput = useCallback((num) => {
+        setPin(prev => (prev.length < 4 ? prev + num : prev));
+    }, []);
+
+    // --- GESTION DU CLAVIER PHYSIQUE ---
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            // Chiffres 0-9
+            if (/^[0-9]$/.test(event.key)) {
+                handleNumberInput(event.key);
+            } 
+            // Effacer
+            else if (event.key === 'Backspace') {
+                handleDelete();
+            } 
+            // Valider
+            else if (event.key === 'Enter' && pin.length === 4) {
+                handleVerify();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [pin, handleNumberInput, handleDelete, handleVerify]);
+
+    // --- REDIRECTIONS ---
+    useEffect(() => {
+        if (step === 'COMPLETED' && token) {
+            localStorage.setItem('role', user?.role);
+            navigate('/dashboard', { replace: true });
+        }
+        if (!tempUsername && step !== 'COMPLETED') {
+            navigate('/login', { replace: true });
+        }
+    }, [step, token, tempUsername, navigate, user]);
 
     return (
-        <Box sx={{ /* ... vos styles existants ... */ }}>
+        <Box sx={{ 
+            minHeight: '100vh', display: 'flex', alignItems: 'center', 
+            justifyContent: 'center', bgcolor: '#0f172a', p: 2 
+        }}>
             <Zoom in={true}>
-                <Paper elevation={0} sx={{ /* ... vos styles ... */ }}>
+                <Paper elevation={0} sx={{ 
+                    display: 'flex', width: '100%', maxWidth: '900px', 
+                    minHeight: '600px', borderRadius: '32px', overflow: 'hidden',
+                    flexDirection: { xs: 'column', md: 'row' }
+                }}>
                     
-                    {/* SECTION GAUCHE : IDENTITÉ DYNAMIQUE */}
-                    <Box sx={{ flex: 0.9, p: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'white' }}>
-                        <Avatar 
-                            // Vous pouvez adapter l'image selon l'utilisateur si besoin
-                            src={`https://ui-avatars.com/api/?name=${tempUsername}&background=6366f1&color=fff`} 
-                            sx={{ width: 150, height: 150, mb: 4 }} 
-                        />
-                        <Typography variant="h3" sx={{ fontWeight: 900, mb: 1 }}>
-                            {tempUsername || "Utilisateur"}
+                    {/* SECTION GAUCHE : INFOS UTILISATEUR */}
+                    <Box sx={{ 
+                        flex: 1, p: { xs: 4, md: 8 }, display: 'flex', 
+                        flexDirection: 'column', bgcolor: 'white' 
+                    }}>
+                        <Typography variant="h4" sx={{ fontWeight: 800, color: '#1e293b', mb: 1 }}>
+                            Vérification
                         </Typography>
-                        {/* ... reste de la section gauche ... */}
+                        <Typography variant="body1" sx={{ color: '#64748b', mb: 6 }}>
+                            Utilisez votre code PIN pour valider la connexion.
+                        </Typography>
+
+                        <Box sx={{
+                            display: 'flex', alignItems: 'center', p: 2.5,
+                            borderRadius: '20px', border: '2px solid #6366f1',
+                            bgcolor: '#f8faff', width: '100%'
+                        }}>
+                            <Avatar 
+                                src={`https://ui-avatars.com/api/?name=${tempUsername}&background=6366f1&color=fff`} 
+                                sx={{ width: 60, height: 60, mr: 2, borderRadius: '14px' }} 
+                            />
+                            <Box>
+                                <Typography sx={{ fontWeight: 800, color: '#1e293b', fontSize: '1.1rem' }}>
+                                    {tempUsername || "Utilisateur"}
+                                </Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
+                                    {user?.role || "Accès Sécurisé"}
+                                </Typography>
+                            </Box>
+                        </Box>
                     </Box>
 
-                    {/* SECTION DROITE : INTERFACE DE SAISIE */}
-                    <Box sx={{ flex: 1.1, p: 8, bgcolor: '#f8fafc', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    {/* SECTION DROITE : INTERFACE PIN */}
+                    <Box sx={{ 
+                        flex: 1, p: 6, display: 'flex', flexDirection: 'column', 
+                        alignItems: 'center', justifyContent: 'center', bgcolor: '#fcfdfe' 
+                    }}>
                         
-                        {/* Affichage des erreurs du backend */}
-                        {error && (
-                            <Alert severity="error" sx={{ mb: 2, borderRadius: 3 }}>
-                                {error}
-                            </Alert>
-                        )}
-
-                        <Box sx={{ textAlign: 'center', mb: 6 }}>
-                            <Typography variant="h4" sx={{ fontWeight: 800, mb: 1.5 }}>
-                                Validation SMS
-                            </Typography>
-                            <Typography variant="body1" sx={{ color: '#64748b' }}>
-                                Entrez le code envoyé au téléphone associé au compte de <strong>{tempUsername}</strong>.
-                            </Typography>
-                        </Box>
-
-                        {/* INDICATEURS PIN */}
-                        <Box sx={{ display: 'flex', gap: 3, mb: 8 }}>
+                        {/* INDICATEURS VISUELS */}
+                        <Box sx={{ display: 'flex', gap: 2.5, mb: 6 }}>
                             {[...Array(4)].map((_, i) => (
                                 <Box key={i} sx={{
-                                    width: 20, height: 20, borderRadius: '6px',
-                                    bgcolor: i < pin.length ? '#6366f1' : 'white',
-                                    border: '2px solid',
-                                    borderColor: i < pin.length ? '#6366f1' : '#e2e8f0',
-                                    transition: 'all 0.3s',
-                                    transform: i < pin.length ? 'rotate(45deg)' : 'none',
+                                    width: 16, height: 16, borderRadius: '4px',
+                                    bgcolor: i < pin.length ? '#6366f1' : '#e2e8f0',
+                                    transform: i < pin.length ? 'rotate(45deg) scale(1.1)' : 'none',
+                                    transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                    boxShadow: i < pin.length ? '0 4px 12px rgba(99, 102, 241, 0.3)' : 'none'
                                 }} />
                             ))}
                         </Box>
 
-                        {/* PAVÉ NUMÉRIQUE */}
-                        <Grid container spacing={3} sx={{ maxWidth: 380 }}>
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 'empty', 0, 'delete'].map((btn, idx) => (
-                                <Grid item xs={4} key={idx}>
-                                    {btn === 'empty' ? null : btn === 'delete' ? (
-                                        <IconButton onClick={handleDelete} sx={{ width: '100%', height: 80 }}>
-                                            <BackspaceOutlinedIcon sx={{ fontSize: 35 }} />
+                        {error && (
+                            <Alert severity="error" sx={{ mb: 3, width: '100%', borderRadius: '12px' }}>
+                                {error}
+                            </Alert>
+                        )}
+
+                        {/* PAVÉ NUMÉRIQUE VIRTUEL */}
+                        <Grid container spacing={2} sx={{ maxWidth: 300 }}>
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, null, 0, 'delete'].map((btn, idx) => (
+                                <Grid item xs={4} key={idx} sx={{ display: 'flex', justifyContent: 'center' }}>
+                                    {btn === null ? (
+                                        <Box sx={{ width: 75 }} />
+                                    ) : btn === 'delete' ? (
+                                        <IconButton onClick={handleDelete} sx={{ width: 75, height: 65 }}>
+                                            <BackspaceOutlinedIcon sx={{ color: '#94a3b8' }} />
                                         </IconButton>
                                     ) : (
                                         <Button
-                                            fullWidth
-                                            onClick={() => handleNumberClick(btn.toString())}
-                                            sx={{ height: 80, borderRadius: 5, bgcolor: 'white', fontWeight: 800, fontSize: '1.75rem' }}
+                                            onClick={() => handleNumberInput(btn.toString())}
+                                            sx={{ 
+                                                width: 75, height: 65, borderRadius: '18px', 
+                                                bgcolor: '#f1f5f9', color: '#1e293b',
+                                                fontSize: '1.5rem', fontWeight: 800,
+                                                '&:hover': { bgcolor: '#e2e8f0' }
+                                            }}
                                         >
                                             {btn}
                                         </Button>
@@ -120,14 +170,26 @@ const Confirmation = () => {
                             ))}
                         </Grid>
 
-                        {/* BOUTON DE VALIDATION */}
                         <Button
+                            fullWidth
                             onClick={handleVerify}
                             disabled={pin.length !== 4 || loading}
                             variant="contained"
-                            sx={{ mt: 8, width: '100%', maxWidth: 380, py: 2.5, borderRadius: 5 }}
+                            sx={{ 
+                                mt: 6, maxWidth: 300, py: 2, borderRadius: '16px',
+                                bgcolor: '#1e293b', color: 'white', fontWeight: 800,
+                                textTransform: 'none', fontSize: '1.1rem',
+                                boxShadow: '0 10px 15px -3px rgba(30, 41, 59, 0.2)',
+                                '&:hover': { bgcolor: '#0f172a' }
+                            }}
                         >
-                            {loading ? <CircularProgress size={24} color="inherit" /> : "Valider le code"}
+                            {loading ? (
+                                <CircularProgress size={24} color="inherit" />
+                            ) : (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    Continuer <ChevronRightIcon />
+                                </Box>
+                            )}
                         </Button>
                     </Box>
                 </Paper>

@@ -7,7 +7,8 @@ import PointOfSale from './pages/POS';
 import KitchenDashboard from './pages/kitchen/Kitchen';
 import ServeurPage from './pages/serveur/ServeurPage';
 import PaymentInterface from './pages/PaymentInterface';
-import ProtectedRoute from './widget/ProtectedRoute'; // Import du protecteur
+import ProtectedRoute from './widget/ProtectedRoute';
+import ProfilePage from './pages/ProfilePage';
 
 function App() {
   return (
@@ -17,6 +18,12 @@ function App() {
       <Route path='/confirmation' element={<Confirmation />} />
       <Route path='/' element={<Navigate to="/login" />} />
       <Route path="/POS" element={<PointOfSale/>}/>
+
+      {/* --- ROUTES ACCESSIBLES À TOUS LES CONNECTÉS --- */}
+      <Route element={<ProtectedRoute allowedRoles={['ROLE_MANAGER', 'ROLE_SERVEUR', 'ROLE_CUISINIER']} />}>
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/POS" element={<PointOfSale/>}/>
+      </Route>
 
       {/* --- ROUTES MANAGER --- */}
       <Route element={<ProtectedRoute allowedRoles={['ROLE_MANAGER']} />}>

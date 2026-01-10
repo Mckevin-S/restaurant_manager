@@ -1,127 +1,165 @@
-import React, { useState } from 'react';
-import { Box, Typography, Paper, Grid, Button, Divider, Chip, Badge } from '@mui/material';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchCommandes, updateStatutCommande } from '../../features/ServeurDashboardSlice';
+import { Box, Typography, Paper, Button, Divider, Chip, Stack, CircularProgress, Grid, Avatar } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Icônes
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import PaymentsIcon from '@mui/icons-material/Payments';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
-
-const INITIAL_TABLES = [
-  { id: 1, name: 'Table 1', time: '07:15 PM', item: 'Signature Cocktail', total: '14.00', status: 'READY TO SERVE' },
-  { id: 2, name: 'Table 2', time: '04:21 PM', item: 'Wagyu Burger', total: '24.00', status: 'SERVED' },
-  { id: 4, name: 'Table 4', time: '07:16 PM', item: 'Tiramisu', total: '10.00', status: 'PENDING' }
-];
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
 const ServeurDashboard = () => {
-  const [tables, setTables] = useState(INITIAL_TABLES);
+  const dispatch = useDispatch();
+  const { commandes = [], loading } = useSelector((state) => state.serveur);
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'READY TO SERVE': return { border: '#10b981', bg: '#ecfdf5', text: '#10b981' };
-      case 'SERVED': return { border: '#3b82f6', bg: '#eff6ff', text: '#3b82f6' };
-      default: return { border: '#e2e8f0', bg: '#f8fafc', text: '#64748b' };
-    }
-  };
+useEffect(() => {
+  // 1. Premier chargement
+  dispatch(fetchCommandes());
 
-  const renderTableCard = (table) => {
-    const colors = getStatusColor(table.status);
-    
-    return (
-      <Grid item xs={12} sm={6} lg={4} key={table.id}>
-        <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <Paper elevation={0} sx={{ 
-            p: 2.5, borderRadius: 4, bgcolor: 'white', 
-            border: '2px solid', borderColor: colors.border,
-            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
-          }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Box sx={{ 
-                  width: 40, height: 40, borderRadius: 2, bgcolor: '#f1f5f9', 
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800
-                }}>
-                  {table.id}
-                </Box>
-                <Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>{table.name}</Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>🕒 {table.time}</Typography>
-                </Box>
-              </Box>
-              <Chip 
-                label={table.status} 
-                size="small" 
-                sx={{ bgcolor: colors.bg, color: colors.text, fontWeight: 800, fontSize: '0.65rem' }} 
-              />
-            </Box>
+  // 2. Mise à jour automatique toutes les 5 secondes
+  const interval = setInterval(() => {
+    // On n'affiche pas le gros spinner central lors des mises à jour en arrière-plan
+    dispatch(fetchCommandes()); 
+  }, 5000);
 
-            <Box sx={{ minHeight: 80, mb: 2 }}>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b', mb: 1 }}>
-                1x {table.item}
-              </Typography>
-              <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
-              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography variant="body2" sx={{ color: '#64748b' }}>Total</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 800 }}>${table.total}</Typography>
-              </Box>
-            </Box>
+  return () => clearInterval(interval);
+}, [dispatch]);
 
-            {table.status === 'READY TO SERVE' && (
-              <Button 
-                fullWidth variant="contained" disableElevation
-                startIcon={<CheckCircleIcon />}
-                sx={{ bgcolor: '#10b981', '&:hover': { bgcolor: '#059669' }, borderRadius: 3, textTransform: 'none', fontWeight: 700 }}
-              >
-                Mark as Served
-              </Button>
-            )}
-
-            {table.status === 'SERVED' && (
-              <Button 
-                fullWidth variant="contained" disableElevation
-                startIcon={<PaymentsIcon />}
-                sx={{ bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' }, borderRadius: 3, textTransform: 'none', fontWeight: 700 }}
-              >
-                Process Payment
-              </Button>
-            )}
-
-            {table.status === 'PENDING' && (
-              <Button 
-                fullWidth variant="outlined" disabled
-                startIcon={<RestaurantIcon />}
-                sx={{ borderRadius: 3, textTransform: 'none', fontWeight: 700, borderStyle: 'dashed' }}
-              >
-                Kitchen Preparing...
-              </Button>
-            )}
-          </Paper>
-        </motion.div>
-      </Grid>
-    );
+  const getStatusConfig = (statut) => {
+    const configs = {
+      'PRETE': { color: '#10b981', bg: '#ecfdf5', label: 'À SERVIR', pulse: true },
+      'EN_PREPARATION': { color: '#f59e0b', bg: '#fffbeb', label: 'CUISINE', pulse: false },
+      'PAYEE': { color: '#3b82f6', bg: '#eff6ff', label: 'TERMINÉE', pulse: false },
+      'EN_ATTENTE': { color: '#ef4444', bg: '#fef2f2', label: 'NOUVEAU', pulse: true }
+    };
+    return configs[statut] || { color: '#64748b', bg: '#f1f5f9', label: statut };
   };
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+    <Box sx={{ p: 4, bgcolor: '#f8fafc', minHeight: '100vh' }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 5 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 900, color: '#1e293b' }}>Service Dashboard</Typography>
-          <Typography variant="body2" sx={{ color: '#64748b' }}>Monitor tables and serve food</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 900, color: '#1e293b' }}>Tableau de Service</Typography>
+          <Typography color="text.secondary">Gérez les commandes en temps réel</Typography>
         </Box>
         
-        <Badge badgeContent={1} color="error" overlap="circular">
-          <Button 
-            variant="contained" 
-            startIcon={<NotificationsActiveIcon />}
-            sx={{ bgcolor: '#ecfdf5', color: '#10b981', '&:hover': { bgcolor: '#d1fae5' }, borderRadius: 2, textTransform: 'none', fontWeight: 700, boxShadow: 'none' }}
-          >
-            1 Order Ready
-          </Button>
-        </Badge>
-      </Box>
+        {/* Badge d'alerte pour les commandes PRÊTES */}
+        <Button 
+          variant="contained" 
+          startIcon={<NotificationsActiveIcon />}
+          sx={{ 
+            bgcolor: '#10b981', borderRadius: 3, px: 3, py: 1.5, fontWeight: 800,
+            '&:hover': { bgcolor: '#059669' }
+          }}
+        >
+          {commandes.filter(c => c.statut === 'PRETE').length} Plats prêts
+        </Button>
+      </Stack>
 
       <Grid container spacing={3}>
-        {tables.map(renderTableCard)}
+        <AnimatePresence>
+          {commandes.map((cmd) => {
+            const config = getStatusConfig(cmd.statut);
+            return (
+              <Grid item xs={12} md={6} lg={4} key={cmd.id}>
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }} 
+                  animate={{ opacity: 1, y: 0 }} 
+                  exit={{ opacity: 0, scale: 0.5 }}
+                >
+                  <Paper elevation={0} sx={{ borderRadius: 5, border: `2px solid ${config.bg}`, overflow: 'hidden', position: 'relative' }}>
+                    
+                    {/* Header de la carte */}
+                    <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: config.bg }}>
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Avatar sx={{ bgcolor: '#fff', color: '#1e293b', fontWeight: 900, border: '1px solid #e2e8f0' }}>
+                          {cmd.table?.numero}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>Table {cmd.table?.numero}</Typography>
+                          <Stack direction="row" alignItems="center" spacing={0.5}>
+                            <AccessTimeIcon sx={{ fontSize: 14, color: '#64748b' }} />
+                            <Typography variant="caption" color="text.secondary">
+                              {new Date(cmd.dateHeureCommande).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </Typography>
+                          </Stack>
+                        </Box>
+                      </Stack>
+                      <Chip 
+                        label={config.label} 
+                        sx={{ bgcolor: '#fff', color: config.color, fontWeight: 900, fontSize: '0.7rem' }} 
+                        variant="outlined"
+                      />
+                    </Box>
+
+                    {/* Contenu de la commande */}
+                    <Box sx={{ p: 3 }}>
+                      <Stack spacing={1} sx={{ mb: 2 }}>
+                        {cmd.lignesCommande?.map((ligne, idx) => (
+                          <Stack key={idx} direction="row" justifyContent="space-between">
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              <span style={{ color: '#10b981' }}>{ligne.quantite}x</span> {ligne.platNom || "Plat"}
+                            </Typography>
+                          </Stack>
+                        ))}
+                      </Stack>
+                      
+                      <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
+                      
+                      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+                        <Typography variant="caption" color="text.secondary">Total à régler</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 900 }}>{cmd.totalTtc?.toLocaleString()} FCFA</Typography>
+                      </Stack>
+
+                      {/* Actions Dynamiques */}
+                      {cmd.statut === 'EN_ATTENTE' && (
+                        <Button 
+                          fullWidth variant="contained" 
+                          onClick={() => dispatch(updateStatutCommande({ id: cmd.id, nouveauStatut: 'EN_PREPARATION' }))}
+                          sx={{ bgcolor: '#1e293b', borderRadius: 3, py: 1.5, fontWeight: 800, textTransform: 'none' }}
+                        >
+                          Envoyer en Cuisine
+                        </Button>
+                      )}
+
+                      {cmd.statut === 'PRETE' && (
+                        <Button 
+                          fullWidth variant="contained" 
+                          startIcon={<CheckCircleIcon />}
+                          onClick={() => dispatch(updateStatutCommande({ id: cmd.id, nouveauStatut: 'PAYEE' }))}
+                          sx={{ 
+                            bgcolor: '#10b981', borderRadius: 3, py: 1.5, fontWeight: 800, textTransform: 'none',
+                            animation: config.pulse ? 'pulse 2s infinite' : 'none'
+                          }}
+                        >
+                          Marquer comme Servi
+                        </Button>
+                      )}
+
+                      {cmd.statut === 'EN_PREPARATION' && (
+                        <Button fullWidth disabled sx={{ borderRadius: 3, py: 1.5 }}>
+                          <CircularProgress size={20} sx={{ mr: 1 }} /> En préparation...
+                        </Button>
+                      )}
+                    </Box>
+                  </Paper>
+                </motion.div>
+              </Grid>
+            );
+          })}
+        </AnimatePresence>
       </Grid>
+      
+      {/* CSS pour l'animation d'urgence */}
+      <style>{`
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.02); box-shadow: 0 0 20px rgba(16,185,129,0.4); }
+          100% { transform: scale(1); }
+        }
+      `}</style>
     </Box>
   );
 };

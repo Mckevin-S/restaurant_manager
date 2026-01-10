@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react'; // Ajout de useEffect
+import React, { useState, useEffect } from 'react';
 import { 
   Box, Typography, TextField, Button, Checkbox, 
   FormControlLabel, Paper, Link, InputAdornment, IconButton,
-  CircularProgress, Alert // Ajout de composants pour le feedback
+  CircularProgress, Alert, Stack 
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux'; // Hooks Redux
+import { useDispatch, useSelector } from 'react-redux';
 import { loginUser } from '../../features/LoginSlice'; 
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -15,113 +15,132 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   
-  // Lecture de l'état depuis le slice
   const { loading, error, step } = useSelector((state) => state.auth);
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState(''); // Ajout de l'état pour le mot de passe
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
 
-  // Redirection automatique si le login réussit
-  useEffect(() => {
-    if (step === '2FA') {
-      navigate('/confirmation');
-    }
-  }, [step, navigate]);
+useEffect(() => {
+  if (step === '2FA') {
+    navigate('/confirmation');
+  }
+}, [step, navigate]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // Appel de l'action asynchrone du slice
-    dispatch(loginUser({ email, password }));
+    dispatch(loginUser(formData));
   };
 
   return (
     <Box sx={{ 
-      minHeight: '100vh', 
+      minHeight: '100dvh', // Utilisation de dvh pour mobile (évite les bugs de barre d'adresse)
       display: 'flex', 
       alignItems: 'center', 
       justifyContent: 'center', 
-      bgcolor: '#f8fafc',
-      p: { xs: 2, md: 4 }
+      bgcolor: '#f1f5f9',
+      p: { xs: 1, sm: 2, md: 4 } 
     }}>
-      <Paper elevation={24} sx={{ 
+      <Paper elevation={0} sx={{ 
         display: 'flex', 
         width: '100%', 
-        maxWidth: 1000, 
-        minHeight: { xs: 'auto', lg: 650 }, 
-        borderRadius: { xs: 4, md: 6 }, 
+        maxWidth: { lg: '1000px', md: '800px' }, 
+        minHeight: { xs: 'auto', md: '600px' }, 
+        borderRadius: { xs: 4, md: 8 }, 
         overflow: 'hidden',
-        flexDirection: { xs: 'column', lg: 'row' }
+        flexDirection: { xs: 'column', md: 'row' },
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
       }}>
         
-        {/* Section Image */}
+        {/* SECTION IMAGE - Optimisée pour le chargement */}
         <Box sx={{ 
-          width: { xs: '100%', lg: '50%' }, 
-          display: { xs: 'none', lg: 'block' },
-          position: 'relative'
+          width: { xs: '100%', md: '50%' }, 
+          height: { xs: '200px', md: 'auto' }, // Visible sur mobile mais plus petit
+          position: 'relative',
+          bgcolor: '#e2e8f0' // Placeholder pendant le chargement
         }}>
           <Box
             component="img"
             src={image1}
-            alt="Authentication background"
-            sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            loading="lazy" // Optimisation navigateur
+            alt="Gusto Kitchen"
+            sx={{ 
+              width: '100%', 
+              height: '100%', 
+              objectFit: 'cover',
+              willChange: 'transform'
+            }}
           />
+          <Box sx={{
+            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+            background: 'linear-gradient(to bottom, rgba(99, 102, 241, 0.05), rgba(15, 23, 42, 0.4))'
+          }} />
         </Box>
 
-        {/* Section Formulaire */}
+        {/* SECTION FORMULAIRE - Responsive et Rapide */}
         <Box sx={{ 
-          width: { xs: '100%', lg: '50%' }, 
-          p: { xs: 3, sm: 6, lg: 8 }, 
+          width: { xs: '100%', md: '50%' }, 
+          p: { xs: 3, sm: 5, lg: 7 }, 
           display: 'flex', 
-          flexDirection: 'column', 
-          justifyContent: 'center',
-          bgcolor: 'white'
+          flexDirection: 'column',
+          bgcolor: 'white',
+          opacity: loading ? 0.7 : 1, // Feedback visuel de chargement
+          transition: 'opacity 0.2s ease'
         }}>
-          <Box sx={{ mb: { xs: 3, md: 5 } }}>
-            <Typography variant="h4" sx={{ fontWeight: 900, color: '#1e293b', letterSpacing: -1 }}>
+          
+          <Stack spacing={1} sx={{ mb: { xs: 4, md: 6 } }}>
+            <Typography variant="h4" sx={{ 
+              fontWeight: 900, 
+              color: '#1e293b', 
+              fontSize: { xs: '1.75rem', md: '2.125rem' },
+              letterSpacing: '-0.025em'
+            }}>
               Bienvenue
             </Typography>
-            <Typography variant="body2" sx={{ color: '#64748b', mt: 1 }}>
-              Connectez-vous pour gérer vos commandes
+            <Typography variant="body2" sx={{ color: '#64748b', fontSize: '1rem' }}>
+              Accédez à votre tableau de bord <strong>Gusto</strong>
             </Typography>
-          </Box>
+          </Stack>
 
-          {/* Affichage de l'erreur si elle existe */}
           {error && (
-            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+            <Alert severity="error" variant="outlined" sx={{ mb: 3, borderRadius: 3, fontWeight: 500 }}>
               {error}
             </Alert>
           )}
 
-          <form onSubmit={handleLogin}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 } }}>
+          <form onSubmit={handleLogin} style={{ width: '100%' }}>
+            <Stack spacing={2.5}>
               <TextField
                 fullWidth
-                label="Adresse Email"
-                variant="outlined"
+                label="Email"
+                name="email"
                 type="email"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="chef@gusto.com"
-                InputProps={{ sx: { borderRadius: 3 } }}
+                value={formData.email}
+                onChange={handleChange}
                 disabled={loading}
+                autoComplete="email"
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
               />
 
               <TextField
                 fullWidth
                 label="Mot de passe"
+                name="password"
                 type={showPassword ? 'text' : 'password'}
-                variant="outlined"
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={handleChange}
                 disabled={loading}
+                autoComplete="current-password"
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                 InputProps={{
-                  sx: { borderRadius: 3 },
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
@@ -129,12 +148,12 @@ const Login = () => {
                 }}
               />
 
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
                 <FormControlLabel
                   control={<Checkbox size="small" sx={{ color: '#6366f1' }} />}
-                  label={<Typography variant="caption" sx={{ fontWeight: 600 }}>Rester connecté</Typography>}
+                  label={<Typography sx={{ fontSize: '0.875rem', fontWeight: 500 }}>Rester connecté</Typography>}
                 />
-                <Link href="#" underline="none" sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#6366f1' }}>
+                <Link href="#" underline="hover" sx={{ fontSize: '0.875rem', fontWeight: 700, color: '#6366f1' }}>
                   Oublié ?
                 </Link>
               </Box>
@@ -143,25 +162,30 @@ const Login = () => {
                 type="submit"
                 fullWidth
                 variant="contained"
-                disableElevation
-                disabled={loading} // Désactivé pendant le chargement
+                disabled={loading}
                 sx={{ 
-                  py: 1.8, 
+                  py: 2, 
                   borderRadius: 3, 
-                  bgcolor: '#6366f1',
+                  bgcolor: '#1e293b', // Couleur plus pro (Slate 900)
+                  fontSize: '1rem',
                   textTransform: 'none',
                   fontWeight: 700,
-                  '&:hover': { bgcolor: '#4f46e5' }
+                  transition: 'all 0.2s',
+                  '&:hover': { bgcolor: '#0f172a', transform: 'translateY(-1px)' },
+                  '&:active': { transform: 'translateY(0)' }
                 }}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : 'Se connecter'}
+                {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Se connecter'}
               </Button>
-            </Box>
+            </Stack>
           </form>
 
-          <Typography variant="caption" sx={{ mt: 'auto', textAlign: 'center', color: '#94a3b8', pt: 2 }}>
-            © 2026 Gusto System — Développé par Moko Yvan
-          </Typography>
+          <Box sx={{ mt: 'auto', pt: 4, textAlign: 'center' }}>
+            <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 500 }}>
+              © 2026 Gusto System — Développé par Moko Yvan
+            </Typography>
+          </Box>
+          
         </Box>
       </Paper>
     </Box>

@@ -49,14 +49,19 @@ const LoginSlice = createSlice({
     error: null,
     tempUsername: null, // Pour garder le nom entre les deux étapes
   },
-  reducers: {
+ reducers: {
     logout: (state) => {
-      state.user = null;
-      state.token = null;
-      state.step = 'LOGIN';
-      localStorage.removeItem('userToken');
+        state.user = null;
+        state.token = null;
+        state.step = 'LOGIN';
+        state.tempUsername = null;
+        state.error = null;
+        localStorage.removeItem('userToken');
+    },
+    resetAuthError: (state) => {
+        state.error = null;
     }
-  },
+},
   extraReducers: (builder) => {
     builder
       // Gestion Login
