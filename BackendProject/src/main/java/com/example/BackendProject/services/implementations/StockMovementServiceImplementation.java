@@ -44,10 +44,10 @@ public class StockMovementServiceImplementation implements StockMovementServiceI
         String context = LoggingUtils.getLogContext();
         logger.info("{} Tentative de création d'un mouvement de stock - Type: {}, Ingrédient ID: {}, Quantité: {}", 
                     context, dto.getTypeMouvement(), 
-                    dto.getIngredient() != null ? dto.getIngredient().getId() : "N/A", 
+                    dto.getIngredientId() != null ? dto.getIngredientId() : "N/A",
                     dto.getQuantite());
 
-        if (dto.getIngredient() == null || dto.getIngredient().getId() == null) {
+        if (dto.getIngredientId() == null || dto.getIngredientId() == null) {
             logger.error("{} Erreur de validation: l'ingrédient est obligatoire", context);
             throw new RuntimeException("L'ingrédient est obligatoire");
         }
@@ -62,9 +62,9 @@ public class StockMovementServiceImplementation implements StockMovementServiceI
             throw new RuntimeException("La quantité doit être > 0");
         }
 
-        Ingredient ingredient = ingredientRepository.findById(dto.getIngredient().getId())
+        Ingredient ingredient = ingredientRepository.findById(dto.getIngredientId())
                 .orElseThrow(() -> {
-                    logger.error("{} Ingrédient non trouvé avec l'ID: {}", context, dto.getIngredient().getId());
+                    logger.error("{} Ingrédient non trouvé avec l'ID: {}", context, dto.getIngredientId());
                     return new RuntimeException("Ingrédient non trouvé");
                 });
 
@@ -111,10 +111,10 @@ public class StockMovementServiceImplementation implements StockMovementServiceI
             movement.setRaison(dto.getRaison());
         }
 
-        if (dto.getIngredient() != null && dto.getIngredient().getId() != null) {
-            Ingredient ingredient = ingredientRepository.findById(dto.getIngredient().getId())
+        if (dto.getIngredientId() != null && dto.getIngredientId() != null) {
+            Ingredient ingredient = ingredientRepository.findById(dto.getIngredientId())
                     .orElseThrow(() -> {
-                        logger.error("{} Ingrédient non trouvé avec l'ID: {}", context, dto.getIngredient().getId());
+                        logger.error("{} Ingrédient non trouvé avec l'ID: {}", context, dto.getIngredientId());
                         return new RuntimeException("Ingrédient non trouvé");
                     });
             movement.setIngredient(ingredient);

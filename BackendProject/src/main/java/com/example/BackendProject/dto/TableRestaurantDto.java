@@ -7,22 +7,19 @@ import lombok.Setter;
 
 
 public class TableRestaurantDto {
-
     private Long id;
-    private Zone zone;
+    private Long zoneId; // Utilisation de l'ID uniquement pour casser la boucle
     private String numero;
     private Integer capacite;
 
-
-    public TableRestaurantDto(Long id, Zone zone, String numero, Integer capacite) {
+    public TableRestaurantDto(Long id, Long zoneId, String numero, Integer capacite) {
         this.id = id;
-        this.zone = zone;
+        this.zoneId = zoneId;
         this.numero = numero;
         this.capacite = capacite;
     }
 
     public TableRestaurantDto() {
-
     }
 
     public Long getId() {
@@ -33,12 +30,12 @@ public class TableRestaurantDto {
         this.id = id;
     }
 
-    public Zone getZone() {
-        return zone;
+    public Long getZoneId() {
+        return zoneId;
     }
 
-    public void setZone(Zone zone) {
-        this.zone = zone;
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
     }
 
     public String getNumero() {

@@ -13,19 +13,22 @@ import java.sql.Timestamp;
 public class StockMovementDto {
 
     private Long id;
-    private Ingredient ingredient;
+    private Long ingredientId;
     private TypeMouvement typeMouvement;
     private BigDecimal quantite;
     private Timestamp dateMouvement;
     private String raison;
 
-    public StockMovementDto(Long id, Ingredient ingredient, TypeMouvement typeMouvement, BigDecimal quantite, Timestamp dateMouvement, String raison) {
+    public StockMovementDto(Long id, Long ingredientId, TypeMouvement typeMouvement, BigDecimal quantite, Timestamp dateMouvement, String raison) {
         this.id = id;
-        this.ingredient = ingredient;
+        this.ingredientId = ingredientId;
         this.typeMouvement = typeMouvement;
         this.quantite = quantite;
         this.dateMouvement = dateMouvement;
         this.raison = raison;
+    }
+
+    public StockMovementDto() {
     }
 
     public Long getId() {
@@ -36,12 +39,12 @@ public class StockMovementDto {
         this.id = id;
     }
 
-    public Ingredient getIngredient() {
-        return ingredient;
+    public Long getIngredientId() {
+        return ingredientId;
     }
 
-    public void setIngredient(Ingredient ingredient) {
-        this.ingredient = ingredient;
+    public void setIngredientId(Long ingredientId) {
+        this.ingredientId = ingredientId;
     }
 
     public TypeMouvement getTypeMouvement() {

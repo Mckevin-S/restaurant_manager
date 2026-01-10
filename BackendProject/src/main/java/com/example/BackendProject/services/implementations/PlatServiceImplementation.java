@@ -107,7 +107,7 @@ public class PlatServiceImplementation implements PlatServiceInterface {
         existingPlat.setDescription(platDto.getDescription());
         existingPlat.setPrix(platDto.getPrix());
 //        existingPlat.setDisponibilite(platDto.isDisponible());
-        existingPlat.setRecette(platDto.getRecette());
+//        existingPlat.setRecette(platDto.getRecetteId());
 
         // On ne met à jour l'URL photo ici que si elle est fournie explicitement (via texte)
         if (platDto.getPhotoUrl() != null) {

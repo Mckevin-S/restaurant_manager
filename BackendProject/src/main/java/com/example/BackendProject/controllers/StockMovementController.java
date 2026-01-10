@@ -58,7 +58,7 @@ public class StockMovementController {
         String context = LoggingUtils.getLogContext(request);
         logger.info("{} Tentative de création d'un mouvement de stock - Type: {}, Ingrédient ID: {}", 
                     context, stockMovementDto.getTypeMouvement(), 
-                    stockMovementDto.getIngredient() != null ? stockMovementDto.getIngredient().getId() : "N/A");
+                    stockMovementDto.getIngredientId() != null ? stockMovementDto.getIngredientId() : "N/A");
         try {
             StockMovementDto created = stockMovementService.createStockMovement(stockMovementDto);
             logger.info("{} Mouvement de stock créé avec succès. ID: {}", context, created.getId());

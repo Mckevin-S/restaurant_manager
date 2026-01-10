@@ -1,6 +1,7 @@
 package com.example.BackendProject.entities;
 
 import com.example.BackendProject.utils.StatutTable;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -15,6 +16,7 @@ public class TableRestaurant {
 
     @ManyToOne
     @JoinColumn(name = "zone_id")
+    @JsonIgnoreProperties("tables") // Empêche de remonter vers les tables depuis la zone
     private Zone zone;
 
     private String numero;

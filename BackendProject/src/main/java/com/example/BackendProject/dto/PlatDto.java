@@ -18,11 +18,10 @@ public class PlatDto {
     private String description;
     private BigDecimal prix;
     private String photoUrl;
-    private Recette recette;
+    private RecetteDto recette;
     private boolean disponibilite;
 
-
-    public PlatDto(Long id, Long category, String nom, String description, BigDecimal prix, String photoUrl, Recette recette, boolean disponibilite) {
+    public PlatDto(Long id, Long category, String nom, String description, BigDecimal prix, String photoUrl, RecetteDto recette, boolean disponibilite) {
         this.id = id;
         this.category = category;
         this.nom = nom;
@@ -34,31 +33,6 @@ public class PlatDto {
     }
 
     public PlatDto() {
-
-    }
-
-    public Long getCategory() {
-        return category;
-    }
-
-    public void setCategory(Long category) {
-        this.category = category;
-    }
-
-    public BigDecimal getPrix() {
-        return prix;
-    }
-
-    public void setPrix(BigDecimal prix) {
-        this.prix = prix;
-    }
-
-    public boolean isDisponibilite() {
-        return disponibilite;
-    }
-
-    public void setDisponibilite(boolean disponibilite) {
-        this.disponibilite = disponibilite;
     }
 
     public Long getId() {
@@ -67,6 +41,14 @@ public class PlatDto {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getCategory() {
+        return category;
+    }
+
+    public void setCategory(Long category) {
+        this.category = category;
     }
 
     public String getNom() {
@@ -85,6 +67,14 @@ public class PlatDto {
         this.description = description;
     }
 
+    public BigDecimal getPrix() {
+        return prix;
+    }
+
+    public void setPrix(BigDecimal prix) {
+        this.prix = prix;
+    }
+
     public String getPhotoUrl() {
         return photoUrl;
     }
@@ -93,11 +83,19 @@ public class PlatDto {
         this.photoUrl = photoUrl;
     }
 
-    public Recette getRecette() {
+    public RecetteDto getRecette() {
         return recette;
     }
 
-    public void setRecette(Recette recette) {
+    public void setRecette(RecetteDto recette) {
         this.recette = recette;
+    }
+
+    public boolean isDisponibilite() {
+        return disponibilite;
+    }
+
+    public void setDisponibilite(boolean disponibilite) {
+        this.disponibilite = disponibilite;
     }
 }

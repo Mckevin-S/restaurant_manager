@@ -45,18 +45,18 @@ public class CategoryServiceImplementation implements CategoryServiceInterface {
         }
 
         // Vérifier que le menu existe si fourni
-        if (categoryDto.getMenu() != null && categoryDto.getMenu().getId() != null) {
-            if (!menuRepository.existsById(categoryDto.getMenu().getId())) {
-                logger.error("{} Menu non trouvé avec l'ID : {}", context, categoryDto.getMenu().getId());
-                throw new RuntimeException("Menu non trouvé avec l'ID : " + categoryDto.getMenu().getId());
+        if (categoryDto.getMenuId() != null && categoryDto.getMenuId() != null) {
+            if (!menuRepository.existsById(categoryDto.getMenuId())) {
+                logger.error("{} Menu non trouvé avec l'ID : {}", context, categoryDto.getMenuId());
+                throw new RuntimeException("Menu non trouvé avec l'ID : " + categoryDto.getMenuId());
             }
         }
 
         // Si l'ordre d'affichage n'est pas fourni, le définir automatiquement
         if (categoryDto.getOrdreAffichage() == null &&
-                categoryDto.getMenu() != null &&
-                categoryDto.getMenu().getId() != null) {
-            Integer maxOrdre = categoryRepository.findMaxOrdreAffichageByMenuId(categoryDto.getMenu().getId());
+                categoryDto.getMenuId() != null &&
+                categoryDto.getMenuId() != null) {
+            Integer maxOrdre = categoryRepository.findMaxOrdreAffichageByMenuId(categoryDto.getMenuId());
             categoryDto.setOrdreAffichage(maxOrdre != null ? maxOrdre + 1 : 1);
             logger.info("{} Ordre d'affichage généré automatiquement : {}", context, categoryDto.getOrdreAffichage());
         }
@@ -118,12 +118,12 @@ public class CategoryServiceImplementation implements CategoryServiceInterface {
         }
 
         // Mise à jour du menu si fourni
-        if (categoryDto.getMenu() != null && categoryDto.getMenu().getId() != null) {
-            if (!menuRepository.existsById(categoryDto.getMenu().getId())) {
-                logger.error("{} Menu de remplacement non trouvé ID : {}", context, categoryDto.getMenu().getId());
-                throw new RuntimeException("Menu non trouvé avec l'ID : " + categoryDto.getMenu().getId());
+        if (categoryDto.getMenuId() != null && categoryDto.getMenuId() != null) {
+            if (!menuRepository.existsById(categoryDto.getMenuId())) {
+                logger.error("{} Menu de remplacement non trouvé ID : {}", context, categoryDto.getMenuId());
+                throw new RuntimeException("Menu non trouvé avec l'ID : " + categoryDto.getMenuId());
             }
-            Menu menu = menuRepository.findById(categoryDto.getMenu().getId()).get();
+            Menu menu = menuRepository.findById(categoryDto.getMenuId()).get();
             category.setMenu(menu);
         }
 

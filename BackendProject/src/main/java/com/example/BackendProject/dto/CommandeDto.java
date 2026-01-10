@@ -13,18 +13,18 @@ import java.sql.Timestamp;
 public class CommandeDto {
 
     private Long id;
-    private TableRestaurant table;
-    private Utilisateur serveur;
+    private Long tableId;   // Renommé pour correspondre au Mapper
+    private Long serveurId; // Renommé pour correspondre au Mapper
     private Timestamp dateHeureCommande;
     private StatutCommande statut;
     private TypeCommande typeCommande;
     private BigDecimal totalHt;
-    private BigDecimal totalTtc;
+    private BigDecimal totalTtc;;
 
-    public CommandeDto(Long id, TableRestaurant table, Utilisateur serveur, Timestamp dateHeureCommande, StatutCommande statut, TypeCommande typeCommande, BigDecimal totalHt, BigDecimal totalTtc) {
+    public CommandeDto(Long id, Long tableId, Long serveurId, Timestamp dateHeureCommande, StatutCommande statut, TypeCommande typeCommande, BigDecimal totalHt, BigDecimal totalTtc) {
         this.id = id;
-        this.table = table;
-        this.serveur = serveur;
+        this.tableId = tableId;
+        this.serveurId = serveurId;
         this.dateHeureCommande = dateHeureCommande;
         this.statut = statut;
         this.typeCommande = typeCommande;
@@ -44,20 +44,20 @@ public class CommandeDto {
         this.id = id;
     }
 
-    public TableRestaurant getTable() {
-        return table;
+    public Long getTableId() {
+        return tableId;
     }
 
-    public void setTable(TableRestaurant table) {
-        this.table = table;
+    public void setTableId(Long tableId) {
+        this.tableId = tableId;
     }
 
-    public Utilisateur getServeur() {
-        return serveur;
+    public Long getServeurId() {
+        return serveurId;
     }
 
-    public void setServeur(Utilisateur serveur) {
-        this.serveur = serveur;
+    public void setServeurId(Long serveurId) {
+        this.serveurId = serveurId;
     }
 
     public Timestamp getDateHeureCommande() {

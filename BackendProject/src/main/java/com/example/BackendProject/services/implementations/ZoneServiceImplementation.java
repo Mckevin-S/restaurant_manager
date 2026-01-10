@@ -32,7 +32,7 @@ public class ZoneServiceImplementation implements ZoneServiceInterface {
     public ZoneDto addZone(ZoneDto zoneDto) {
         String context = LoggingUtils.getLogContext();
         logger.info("{} Tentative de création d'une zone - Nom: {}", context, zoneDto != null ? zoneDto.getNom() : "N/A");
-        if (zoneDto.getNom()== null ||  !restaurantRepository.existsById(zoneDto.getRestaurant().getId())) {
+        if (zoneDto.getNom()== null ||  !restaurantRepository.existsById(zoneDto.getRestaurantId())) {
             logger.error("{} Erreur de validation: données incorrectes pour la création de la zone", context);
             throw new RuntimeException("Données incorrectes");
         }
@@ -82,7 +82,6 @@ public class ZoneServiceImplementation implements ZoneServiceInterface {
                 throw new RuntimeException("Zone non trouvée avec l'ID : " + id);
             }
             zone.setNom(zoneDto.getNom());
-            zone.setRestaurant(zoneDto.getRestaurant());
             Zone updatedZone = zoneRepository.save(zone);
             logger.info("{} Zone ID: {} mise à jour avec succès - Nom: {}", context, id, updatedZone.getNom());
             return zoneMapper.toDto(updatedZone);

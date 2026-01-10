@@ -10,10 +10,8 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface RecetteMapper {
 
-    @Mapping(target = "plat", source = "entity.plat.id")
     RecetteDto toDto(Recette entity);
 
-    @Mapping(target = "plat", source = "dto.plat")
     Recette toEntity(RecetteDto dto);
 
 

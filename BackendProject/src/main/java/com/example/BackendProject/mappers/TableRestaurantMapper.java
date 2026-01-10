@@ -3,11 +3,13 @@ package com.example.BackendProject.mappers;
 import org.mapstruct.Mapper;
 import com.example.BackendProject.entities.TableRestaurant;
 import com.example.BackendProject.dto.TableRestaurantDto;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface TableRestaurantMapper {
+    @Mapping(target = "zoneId", source = "zone.id")
+    TableRestaurantDto toDto(TableRestaurant table);
 
-    TableRestaurantDto toDto(TableRestaurant entity);
-
+    @Mapping(target = "zone.id", source = "zoneId")
     TableRestaurant toEntity(TableRestaurantDto dto);
 }

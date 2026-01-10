@@ -31,8 +31,7 @@ public class RecetteServiceImplementation implements RecetteServiceInterface {
     @Override
     public RecetteDto save(RecetteDto dto) {
         String context = LoggingUtils.getLogContext();
-        logger.info("{} Tentative de sauvegarde d'une recette - Plat ID: {}", 
-                    context, dto.getPlat() != null ? dto.getPlat() : "N/A");
+        logger.info("{} Tentative de sauvegarde d'une recette - Plat ID: {}");
         Recette recette = recetteMapper.toEntity(dto);
         Recette saved = recetteRepository.save(recette);
         logger.info("{} Recette sauvegardée avec succès. ID: {}", context, saved.getId());

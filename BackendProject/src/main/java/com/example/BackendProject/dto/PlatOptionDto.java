@@ -12,15 +12,14 @@ public class PlatOptionDto {
 
     private Long platId;
     private Long optionId;
-    private Plat plat;
-    private OptionItem option;
 
 
-    public PlatOptionDto(Long platId, Long optionId, Plat plat, OptionItem option) {
+    public PlatOptionDto(Long platId, Long optionId) {
         this.platId = platId;
         this.optionId = optionId;
-        this.plat = plat;
-        this.option = option;
+    }
+
+    public PlatOptionDto() {
     }
 
     public Long getPlatId() {
@@ -39,19 +38,5 @@ public class PlatOptionDto {
         this.optionId = optionId;
     }
 
-    public Plat getPlat() {
-        return plat;
-    }
 
-    public void setPlat(Plat plat) {
-        this.plat = plat;
-    }
-
-    public OptionItem getOption() {
-        return option;
-    }
-
-    public void setOption(OptionItem option) {
-        this.option = option;
-    }
 }

@@ -9,21 +9,20 @@ public class CategoryDto {
 
 
     private Long id;
-    private Menu menu;
+    private Long menuId;
     private String nom;
     private String description;
     private Integer ordreAffichage;
 
-    public CategoryDto(Long id, Menu menu, String nom, String description, Integer ordreAffichage) {
+    public CategoryDto(Long id, Long menuId, String nom, String description, Integer ordreAffichage) {
         this.id = id;
-        this.menu = menu;
+        this.menuId = menuId;
         this.nom = nom;
         this.description = description;
         this.ordreAffichage = ordreAffichage;
     }
 
     public CategoryDto() {
-
     }
 
     public Long getId() {
@@ -34,12 +33,12 @@ public class CategoryDto {
         this.id = id;
     }
 
-    public Menu getMenu() {
-        return menu;
+    public Long getMenuId() {
+        return menuId;
     }
 
-    public void setMenu(Menu menu) {
-        this.menu = menu;
+    public void setMenuId(Long menuId) {
+        this.menuId = menuId;
     }
 
     public String getNom() {

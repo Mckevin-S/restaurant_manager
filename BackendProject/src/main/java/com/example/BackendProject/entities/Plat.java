@@ -1,5 +1,6 @@
 package com.example.BackendProject.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -39,6 +40,7 @@ public class Plat {
     private List<OptionItem> options;
 
     @OneToOne(mappedBy = "plat")
+    @JsonIgnore
     private Recette recette;
 
     public Plat(Long id, Category category, String nom, String description, BigDecimal prix, String photoUrl, Boolean disponibilite, List<OptionItem> options, Recette recette) {

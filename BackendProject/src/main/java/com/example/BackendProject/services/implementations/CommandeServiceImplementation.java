@@ -48,7 +48,7 @@ public class CommandeServiceImplementation implements CommandeServiceInterface {
         String context = LoggingUtils.getLogContext();
         logger.info("{} Tentative de création d'une commande - Type: {}, Table ID: {}", 
                     context, commandeDto.getTypeCommande(), 
-                    (commandeDto.getTable() != null ? commandeDto.getTable().getId() : "N/A"));
+                    (commandeDto.getTableId() != null ? commandeDto.getTableId() : "N/A"));
 
         // Validation des champs obligatoires
         if (commandeDto.getTypeCommande() == null) {
@@ -57,11 +57,11 @@ public class CommandeServiceImplementation implements CommandeServiceInterface {
         }
 
         // Vérifier que le serveur existe et a le bon rôle
-        if (commandeDto.getServeur() != null && commandeDto.getServeur().getId() != null) {
-            Utilisateur serveur = utilisateurRepository.findById(commandeDto.getServeur().getId())
+        if (commandeDto.getServeurId() != null && commandeDto.getServeurId() != null) {
+            Utilisateur serveur = utilisateurRepository.findById(commandeDto.getServeurId())
                     .orElseThrow(() -> {
-                        logger.error("{} Serveur non trouvé avec l'ID: {}", context, commandeDto.getServeur().getId());
-                        return new RuntimeException("Utilisateur non trouvé avec l'ID : " + commandeDto.getServeur().getId());
+                        logger.error("{} Serveur non trouvé avec l'ID: {}", context, commandeDto.getServeurId());
+                        return new RuntimeException("Utilisateur non trouvé avec l'ID : " + commandeDto.getServeurId());
                     });
 
             if (serveur.getRole() != RoleType.SERVEUR) {
@@ -72,11 +72,11 @@ public class CommandeServiceImplementation implements CommandeServiceInterface {
 
         // Vérifier la table
         if (commandeDto.getTypeCommande() == TypeCommande.SUR_PLACE &&
-                commandeDto.getTable() != null &&
-                commandeDto.getTable().getId() != null) {
-            if (!tableRestaurantRepository.existsById(commandeDto.getTable().getId())) {
-                logger.error("{} Table non trouvée ID: {}", context, commandeDto.getTable().getId());
-                throw new RuntimeException("Table non trouvée avec l'ID : " + commandeDto.getTable().getId());
+                commandeDto.getTableId() != null &&
+                commandeDto.getTableId() != null) {
+            if (!tableRestaurantRepository.existsById(commandeDto.getTableId())) {
+                logger.error("{} Table non trouvée ID: {}", context, commandeDto.getTableId());
+                throw new RuntimeException("Table non trouvée avec l'ID : " + commandeDto.getTableId());
             }
         }
 

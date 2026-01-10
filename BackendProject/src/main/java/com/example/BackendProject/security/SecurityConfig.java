@@ -3,7 +3,7 @@ package com.example.BackendProject.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.Customizer; // Ajouté
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -11,8 +11,14 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 public class SecurityConfig implements WebMvcConfigurer {
@@ -33,6 +39,30 @@ public class SecurityConfig implements WebMvcConfigurer {
         return config.getAuthenticationManager();
     }
 
+    // ✅ CONFIGURATION CORS POUR JWT
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // 1. Origine autorisée (votre React)
+        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+
+        // 2. Méthodes autorisées (Bien inclure PATCH pour vos changements de statut)
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+
+        // 3. Headers autorisés (Indispensable pour porter le Token JWT)
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With"));
+
+        // 4. Autoriser les informations d'authentification
+        configuration.setAllowCredentials(true);
+
+        // 5. Appliquer cette config à tous les chemins de l'API
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source; // On retourne la SOURCE qui contient la CONFIG
+    }
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/api/images/**")
@@ -41,38 +71,19 @@ public class SecurityConfig implements WebMvcConfigurer {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
-        // 1. ✅ Activer explicitement le CORS défini dans WebConfig
-        http.cors(Customizer.withDefaults()); 
-        
-        http.csrf(csrf -> csrf.disable());
-
-        // 2. ✅ Forcer le mode STATELESS (Empêche Spring de chercher les tables de session)
-        http.sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
-        http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/Auth/**",
-                        "/v3/api-docs/**",
-                        "/swagger-ui/**",
-                        "/swagger-ui.html").permitAll()
-
-                .requestMatchers("/api/images/**").permitAll()
-
-                .requestMatchers("/api/restaurants/**",
-                        "/api/users/**",
-                        "/api/cuisine/**",
-                        "/api/categories/**",
-                        "/api/plats/**",
-                        "/api/paiements/**",
-                        "/api/stock-movements/**",
-                        "/api/ligne-commandes/**").permitAll()
-
-                .anyRequest().authenticated()
-        );
+        http
+                .cors(Customizer.withDefaults()) // Utilise le bean corsConfigurationSource
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/Auth/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                        .requestMatchers("/api/images/**").permitAll()
+                        .requestMatchers("/api/plats/**","/api/tables/**","/api/commandes/**",
+                                "/api/categories/**").permitAll()
+                        .anyRequest().authenticated()
+                );
 
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 }

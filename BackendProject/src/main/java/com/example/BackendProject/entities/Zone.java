@@ -1,5 +1,6 @@
 package com.example.BackendProject.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -14,6 +15,7 @@ public class Zone {
 
     @ManyToOne
     @JoinColumn(name = "restaurant_id")
+    @JsonIgnoreProperties("zones") // Empêche de remonter vers les zones depuis le restaurant
     private Restaurant restaurant;
 
     private String nom;

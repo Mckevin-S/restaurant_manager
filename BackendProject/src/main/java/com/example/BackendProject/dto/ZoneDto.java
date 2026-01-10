@@ -1,23 +1,31 @@
 package com.example.BackendProject.dto;
 
 import com.example.BackendProject.entities.Restaurant;
+import com.example.BackendProject.entities.TableRestaurant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 
 public class ZoneDto {
-
     private Long id;
-    private Restaurant restaurant;
+    private Long restaurantId; // Utilisation de l'ID uniquement
     private String nom;
     private String description;
+    // Si vous voulez lister les tables, utilisez un DTO qui ne contient PAS la zone
+    private List<TableRestaurantDto> tables;
 
-    public ZoneDto(Long id, Restaurant restaurant, String nom, String description) {
+    public ZoneDto(Long id, Long restaurantId, String nom, String description, List<TableRestaurantDto> tables) {
         this.id = id;
-        this.restaurant = restaurant;
+        this.restaurantId = restaurantId;
         this.nom = nom;
         this.description = description;
+        this.tables = tables;
+    }
+
+    public ZoneDto() {
     }
 
     public Long getId() {
@@ -28,12 +36,12 @@ public class ZoneDto {
         this.id = id;
     }
 
-    public Restaurant getRestaurant() {
-        return restaurant;
+    public Long getRestaurantId() {
+        return restaurantId;
     }
 
-    public void setRestaurant(Restaurant restaurant) {
-        this.restaurant = restaurant;
+    public void setRestaurantId(Long restaurantId) {
+        this.restaurantId = restaurantId;
     }
 
     public String getNom() {
@@ -50,5 +58,13 @@ public class ZoneDto {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public List<TableRestaurantDto> getTables() {
+        return tables;
+    }
+
+    public void setTables(List<TableRestaurantDto> tables) {
+        this.tables = tables;
     }
 }

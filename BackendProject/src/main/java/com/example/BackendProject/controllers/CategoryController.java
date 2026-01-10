@@ -63,7 +63,7 @@ public class CategoryController {
             @RequestBody CategoryDto categoryDto, HttpServletRequest request) {
         String context = LoggingUtils.getLogContext(request);
         logger.info("{} Tentative de création d'une catégorie : '{}' pour le menu ID : {}", 
-                context, categoryDto.getNom(), categoryDto.getMenu());
+                context, categoryDto.getNom(), categoryDto.getMenuId());
         try {
             CategoryDto savedCategory = categoryServiceImplementation.save(categoryDto);
             logger.info("{} Catégorie créée avec succès. ID : {}", context, savedCategory.getId());

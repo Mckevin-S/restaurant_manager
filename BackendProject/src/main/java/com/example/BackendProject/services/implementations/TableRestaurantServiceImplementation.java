@@ -38,7 +38,7 @@ public class TableRestaurantServiceImplementation implements TableRestaurantServ
         logger.info("{} Tentative de création d'une table - Numéro: {}", context, tableDto != null ? tableDto.getNumero() : "N/A");
         if (tableDto == null
                 || tableDto.getNumero() == null || tableDto.getNumero().isBlank()
-                || tableDto.getZone() == null || tableDto.getZone().getId() == null || !zoneRepository.existsById(tableDto.getZone().getId())) {
+                || tableDto.getZoneId() == null || tableDto.getZoneId() == null || !zoneRepository.existsById(tableDto.getZoneId())) {
             logger.error("{} Erreur de validation: données incorrectes pour la création de la table", context);
             throw new RuntimeException("Données incorrectes pour la création de la table");
         }
@@ -95,11 +95,11 @@ public class TableRestaurantServiceImplementation implements TableRestaurantServ
         if (tableDto.getCapacite() != null) existing.setCapacite(tableDto.getCapacite());
        // if (tableDto.getS() != null) existing.setStatut(tableDto.getStatut());
 
-        if (tableDto.getZone() != null && tableDto.getZone().getId() != null) {
-            Zone zone = zoneRepository.findById(tableDto.getZone().getId())
+        if (tableDto.getZoneId() != null && tableDto.getZoneId() != null) {
+            Zone zone = zoneRepository.findById(tableDto.getZoneId())
                     .orElseThrow(() -> {
-                        logger.error("{} Zone non trouvée avec l'ID: {}", context, tableDto.getZone().getId());
-                        return new RuntimeException("Zone introuvable avec l'ID : " + tableDto.getZone().getId());
+                        logger.error("{} Zone non trouvée avec l'ID: {}", context, tableDto.getZoneId());
+                        return new RuntimeException("Zone introuvable avec l'ID : " + tableDto.getZoneId());
                     });
             existing.setZone(zone);
         }
