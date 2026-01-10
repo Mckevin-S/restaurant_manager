@@ -14,6 +14,7 @@ import com.example.BackendProject.utils.StatutCommande;
 import com.example.BackendProject.utils.TypeCommande;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,15 +33,18 @@ public class CommandeServiceImplementation implements CommandeServiceInterface {
     private final CommandeRepository commandeRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final TableRestaurantRepository tableRestaurantRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public CommandeServiceImplementation(CommandeMapper commandeMapper,
                                          CommandeRepository commandeRepository,
                                          UtilisateurRepository UtilisateurRepository,
-                                         TableRestaurantRepository tableRestaurantRepository) {
+                                         TableRestaurantRepository tableRestaurantRepository,
+                                         SimpMessagingTemplate messagingTemplate) {
         this.commandeMapper = commandeMapper;
         this.commandeRepository = commandeRepository;
         this.utilisateurRepository = UtilisateurRepository;
         this.tableRestaurantRepository = tableRestaurantRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @Override
@@ -90,7 +94,16 @@ public class CommandeServiceImplementation implements CommandeServiceInterface {
         Commande savedCommande = commandeRepository.save(commande);
 
         logger.info("{} Commande enregistrée avec succès. ID: {}, Statut: {}", context, savedCommande.getId(), savedCommande.getStatut());
-        return commandeMapper.toDto(savedCommande);
+        
+        CommandeDto resultDto = commandeMapper.toDto(savedCommande);
+        
+        // Notification WebSocket pour la cuisine
+        if (savedCommande.getStatut() == StatutCommande.EN_ATTENTE) {
+            messagingTemplate.convertAndSend("/topic/cuisine/commandes", resultDto);
+            logger.info("{} Notification envoyée à la cuisine pour la nouvelle commande ID: {}", context, savedCommande.getId());
+        }
+
+        return resultDto;
     }
 
     @Override
@@ -157,7 +170,22 @@ public class CommandeServiceImplementation implements CommandeServiceInterface {
         commande.setStatut(nouveauStatut);
         Commande updated = commandeRepository.save(commande);
         logger.info("{} Statut mis à jour avec succès pour la commande ID: {}", context, id);
-        return commandeMapper.toDto(updated);
+        
+        CommandeDto updatedDto = commandeMapper.toDto(updated);
+
+        // Notifications WebSocket basées sur le nouveau statut
+        if (nouveauStatut == StatutCommande.PRETE) {
+            messagingTemplate.convertAndSend("/topic/salle/prete", updatedDto);
+            logger.info("{} Notification 'PRÊTE' envoyée pour la commande ID: {}", context, id);
+        } else if (nouveauStatut == StatutCommande.PAYEE) {
+            messagingTemplate.convertAndSend("/topic/serveurs/addition", updatedDto);
+            logger.info("{} Notification 'PAYÉE' envoyée pour la commande ID: {}", context, id);
+        } else if (nouveauStatut == StatutCommande.EN_PREPARATION || nouveauStatut == StatutCommande.EN_ATTENTE) {
+            // Optionnel : notifier la cuisine si une commande change entre ces deux états
+            messagingTemplate.convertAndSend("/topic/cuisine/commandes", updatedDto);
+        }
+
+        return updatedDto;
     }
 
     @Override

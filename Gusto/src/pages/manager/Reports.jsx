@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, DollarSign, Users, Download } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../../services/apiClient';
+
 import { toast } from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -12,22 +13,12 @@ const Reports = () => {
     const [period, setPeriod] = useState('month');
     const [loading, setLoading] = useState(true);
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006/api';
-
-    useEffect(() => {
-        fetchStats();
-        fetchTopPlats();
-    }, [period]);
-
     const fetchStats = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/rapports/statistiques?period=${period}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await apiClient.get(`/rapports/statistiques?period=${period}`);
             setStats(response.data);
         } catch (error) {
-            toast.error('Erreur lors du chargement des statistiques');
+            //ApiClient gère déjà les erreurs
         } finally {
             setLoading(false);
         }
@@ -35,15 +26,13 @@ const Reports = () => {
 
     const fetchTopPlats = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/plats/plus-vendus`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await apiClient.get('/plats/plus-vendus');
             setTopPlats(response.data);
         } catch (error) {
             console.error('Erreur top plats:', error);
         }
     };
+
 
     const exportPDF = () => {
         const doc = new jsPDF();

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Package, AlertTriangle, TrendingDown, Plus, Search } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../../services/apiClient';
 import { toast } from 'react-hot-toast';
+
 
 const StockManagement = () => {
     const [ingredients, setIngredients] = useState([]);
@@ -18,7 +19,6 @@ const StockManagement = () => {
         motif: ''
     });
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006/api';
 
     useEffect(() => {
         fetchIngredients();
@@ -27,39 +27,32 @@ const StockManagement = () => {
 
     const fetchIngredients = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/ingredients`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await apiClient.get('/ingredients');
             setIngredients(response.data);
         } catch (error) {
-            toast.error('Erreur lors du chargement du stock');
+            //ApiClient gère déjà les erreurs
         } finally {
             setLoading(false);
         }
     };
 
+
     const fetchMovements = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/stock-movements`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await apiClient.get('/stock-movements');
             setMovements(response.data.slice(0, 10)); // 10 derniers mouvements
         } catch (error) {
             console.error('Erreur mouvements:', error);
         }
     };
 
+
     const handleCreateMovement = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('token');
-            await axios.post(`${API_URL}/stock-movements`, {
+            await apiClient.post('/stock-movements', {
                 ...movementForm,
                 quantite: parseFloat(movementForm.quantite)
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Mouvement enregistré');
             fetchIngredients();
@@ -70,6 +63,7 @@ const StockManagement = () => {
             toast.error('Erreur lors de l\'enregistrement');
         }
     };
+
 
     const getStockStatus = (ingredient) => {
         if (ingredient.quantiteStock <= ingredient.seuilAlerte) {

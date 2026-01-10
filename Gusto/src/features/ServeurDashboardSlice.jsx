@@ -1,16 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-
-const API_URL = "http://localhost:3006/api/commandes";
+import apiClient from '../services/apiClient';
 
 export const fetchCommandes = createAsyncThunk(
   'serveur/fetchCommandes',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const token = getState().auth.token;
-      const response = await axios.get(API_URL, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await apiClient.get('/commandes');
       // On s'assure de retourner un tableau
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
@@ -21,22 +16,20 @@ export const fetchCommandes = createAsyncThunk(
 
 export const updateStatutCommande = createAsyncThunk(
   'serveur/updateStatut',
-  async ({ id, nouveauStatut }, { getState, rejectWithValue }) => {
+  async ({ id, nouveauStatut }, { rejectWithValue }) => {
     try {
-      const token = getState().auth.token;
       // CORRECTION URL & PARAM : Correspondance avec @PatchMapping("/{id}/statut")
-      const response = await axios.patch(
-        `${API_URL}/${id}/statut`,
-        { statut: nouveauStatut },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await apiClient.patch(`/commandes/${id}/statut`, null, {
+        params: { statut: nouveauStatut }
+      });
       // On retourne l'id et le nouveau statut pour mettre à jour le store
       return { id, nouveauStatut };
     } catch (error) {
-      return rejectWithValue("Erreur lors du changement de statut");
+      return rejectWithValue(error.response?.data || "Erreur lors du changement de statut");
     }
   }
 );
+
 
 const serveurSlice = createSlice({
   name: 'serveur',

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Upload, Eye, EyeOff, Search } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../../services/apiClient';
 import { toast } from 'react-hot-toast';
 
 const MenuManagement = () => {
@@ -28,60 +28,42 @@ const MenuManagement = () => {
         description: ''
     });
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006/api';
-
     useEffect(() => {
-        fetchPlats();
-        fetchCategories();
+        loadData();
     }, []);
 
-    const fetchPlats = async () => {
+    const loadData = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/plats`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setPlats(response.data);
+            const [platsRes, categoriesRes] = await Promise.all([
+                apiClient.get('/plats'),
+                apiClient.get('/categories')
+            ]);
+            setPlats(platsRes.data);
+            setCategories(categoriesRes.data);
         } catch (error) {
-            toast.error('Erreur lors du chargement des plats');
+            console.error('Erreur chargement données menu', error);
+            toast.error('Erreur lors du chargement des données');
         } finally {
             setLoading(false);
-        }
-    };
-
-    const fetchCategories = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/categories`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setCategories(response.data);
-        } catch (error) {
-            console.error('Erreur catégories:', error);
         }
     };
 
     const handleCreatePlat = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('token');
             const data = {
                 ...platForm,
                 prix: parseFloat(platForm.prix)
             };
 
             if (editingPlat) {
-                await axios.put(`${API_URL}/plats/${editingPlat.id}`, data, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await apiClient.put(`/plats/${editingPlat.id}`, data);
                 toast.success('Plat modifié avec succès');
             } else {
-                await axios.post(`${API_URL}/plats`, data, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await apiClient.post('/plats', data);
                 toast.success('Plat créé avec succès');
             }
-            fetchPlats();
+            loadData();
             resetPlatForm();
         } catch (error) {
             toast.error('Erreur lors de la sauvegarde');
@@ -97,19 +79,11 @@ const MenuManagement = () => {
         formData.append('file', file);
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.post(
-                `${API_URL}/plats/${platId}/upload-image`,
-                formData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'multipart/form-data'
-                    }
-                }
-            );
+            await apiClient.post(`/plats/${platId}/upload-image`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
             toast.success('Image uploadée avec succès');
-            fetchPlats();
+            loadData();
         } catch (error) {
             toast.error('Erreur lors de l\'upload');
         }
@@ -117,14 +91,10 @@ const MenuManagement = () => {
 
     const handleDeletePlat = async (id) => {
         if (!confirm('Êtes-vous sûr de vouloir supprimer ce plat ?')) return;
-
         try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`${API_URL}/plats/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await apiClient.delete(`/plats/${id}`);
             toast.success('Plat supprimé');
-            fetchPlats();
+            loadData();
         } catch (error) {
             toast.error('Erreur lors de la suppression');
         }
@@ -132,14 +102,9 @@ const MenuManagement = () => {
 
     const toggleDisponibilite = async (plat) => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.patch(
-                `${API_URL}/plats/${plat.id}/statut-disponibilite?disponible=${!plat.disponibilite}`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await apiClient.patch(`/plats/${plat.id}/statut-disponibilite?disponible=${!plat.disponibilite}`);
             toast.success('Disponibilité mise à jour');
-            fetchPlats();
+            loadData();
         } catch (error) {
             toast.error('Erreur lors de la mise à jour');
         }
@@ -148,12 +113,9 @@ const MenuManagement = () => {
     const handleCreateCategory = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('token');
-            await axios.post(`${API_URL}/categories`, categoryForm, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await apiClient.post('/categories', categoryForm);
             toast.success('Catégorie créée avec succès');
-            fetchCategories();
+            loadData();
             setShowCategoryForm(false);
             setCategoryForm({ nom: '', description: '' });
         } catch (error) {
@@ -234,7 +196,7 @@ const MenuManagement = () => {
 
                     <div className="flex gap-3 flex-1 max-w-2xl">
                         <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                            <Plus className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 rotate-45" size={20} />
                             <input
                                 type="text"
                                 placeholder="Rechercher un plat..."
@@ -286,7 +248,6 @@ const MenuManagement = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredPlats.map(plat => (
                     <div key={plat.id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition">
-                        {/* Image */}
                         <div className="relative h-48 bg-gray-200">
                             {plat.photoUrl ? (
                                 <img
@@ -300,28 +261,18 @@ const MenuManagement = () => {
                                 </div>
                             )}
 
-                            {/* Badge disponibilité */}
                             <div className="absolute top-2 right-2">
                                 <button
                                     onClick={() => toggleDisponibilite(plat)}
                                     className={`px-3 py-1 rounded-full text-xs font-medium ${plat.disponibilite
-                                            ? 'bg-green-100 text-green-800'
-                                            : 'bg-red-100 text-red-800'
+                                        ? 'bg-green-100 text-green-800'
+                                        : 'bg-red-100 text-red-800'
                                         }`}
                                 >
-                                    {plat.disponibilite ? (
-                                        <span className="flex items-center gap-1">
-                                            <Eye size={14} /> Disponible
-                                        </span>
-                                    ) : (
-                                        <span className="flex items-center gap-1">
-                                            <EyeOff size={14} /> Indisponible
-                                        </span>
-                                    )}
+                                    {plat.disponibilite ? 'Disponible' : 'Indisponible'}
                                 </button>
                             </div>
 
-                            {/* Upload image */}
                             <label className="absolute bottom-2 right-2 bg-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-gray-50">
                                 <Upload size={16} className="text-gray-600" />
                                 <input
@@ -333,7 +284,6 @@ const MenuManagement = () => {
                             </label>
                         </div>
 
-                        {/* Contenu */}
                         <div className="p-4">
                             <h3 className="font-bold text-lg text-gray-900 mb-1">{plat.nom}</h3>
                             {plat.description && (
@@ -344,14 +294,8 @@ const MenuManagement = () => {
                                 <span className="text-2xl font-bold text-indigo-600">
                                     {plat.prix.toFixed(2)} FCFA
                                 </span>
-                                {categories.find(c => c.id === plat.category) && (
-                                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                                        {categories.find(c => c.id === plat.category).nom}
-                                    </span>
-                                )}
                             </div>
 
-                            {/* Actions */}
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => editPlat(plat)}
@@ -372,167 +316,46 @@ const MenuManagement = () => {
                 ))}
             </div>
 
-            {filteredPlats.length === 0 && (
-                <div className="text-center py-12">
-                    <p className="text-gray-500">Aucun plat trouvé</p>
-                </div>
-            )}
-
             {/* Modal Formulaire Plat */}
             {showPlatForm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
                     <div className="bg-white rounded-lg max-w-2xl w-full p-6 my-8">
-                        <h3 className="text-xl font-bold mb-4">
-                            {editingPlat ? 'Modifier le plat' : 'Nouveau plat'}
-                        </h3>
+                        <h3 className="text-xl font-bold mb-4">{editingPlat ? 'Modifier le plat' : 'Nouveau plat'}</h3>
                         <form onSubmit={handleCreatePlat} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Nom du plat *
-                                    </label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Nom du plat *</label>
                                     <input
                                         type="text"
                                         required
                                         value={platForm.nom}
                                         onChange={(e) => setPlatForm({ ...platForm, nom: e.target.value })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                        placeholder="Ex: Pizza Margherita"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                     />
                                 </div>
-
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Prix (FCFA) *
-                                    </label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Prix (FCFA) *</label>
                                     <input
                                         type="number"
                                         required
-                                        min="0"
-                                        step="0.01"
                                         value={platForm.prix}
                                         onChange={(e) => setPlatForm({ ...platForm, prix: e.target.value })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                        placeholder="5000"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                     />
                                 </div>
                             </div>
-
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Description
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                                 <textarea
                                     value={platForm.description}
                                     onChange={(e) => setPlatForm({ ...platForm, description: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                    rows="3"
-                                    placeholder="Description du plat..."
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Catégorie *
-                                    </label>
-                                    <select
-                                        required
-                                        value={platForm.category}
-                                        onChange={(e) => setPlatForm({ ...platForm, category: e.target.value })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                    >
-                                        <option value="">Sélectionner une catégorie</option>
-                                        {categories.map(cat => (
-                                            <option key={cat.id} value={cat.id}>{cat.nom}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Disponibilité
-                                    </label>
-                                    <select
-                                        value={platForm.disponibilite}
-                                        onChange={(e) => setPlatForm({ ...platForm, disponibilite: e.target.value === 'true' })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                    >
-                                        <option value="true">Disponible</option>
-                                        <option value="false">Indisponible</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="flex gap-3 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={resetPlatForm}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                                >
-                                    Annuler
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                                >
-                                    {editingPlat ? 'Modifier' : 'Créer'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal Formulaire Catégorie */}
-            {showCategoryForm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg max-w-md w-full p-6">
-                        <h3 className="text-xl font-bold mb-4">Nouvelle catégorie</h3>
-                        <form onSubmit={handleCreateCategory} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Nom de la catégorie *
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={categoryForm.nom}
-                                    onChange={(e) => setCategoryForm({ ...categoryForm, nom: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                    placeholder="Ex: Entrées, Plats, Desserts..."
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Description
-                                </label>
-                                <textarea
-                                    value={categoryForm.description}
-                                    onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                     rows="3"
                                 />
                             </div>
-
                             <div className="flex gap-3 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setShowCategoryForm(false);
-                                        setCategoryForm({ nom: '', description: '' });
-                                    }}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                                >
-                                    Annuler
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                                >
-                                    Créer
-                                </button>
+                                <button type="button" onClick={resetPlatForm} className="flex-1 px-4 py-2 border rounded-lg">Annuler</button>
+                                <button type="submit" className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg">{editingPlat ? 'Modifier' : 'Créer'}</button>
                             </div>
                         </form>
                     </div>

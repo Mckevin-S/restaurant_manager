@@ -1,28 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-
-const API_URL = 'http://localhost:3006/api/commandes';
-
-// Configuration du header avec le token JWT
-const getAuthHeader = () => ({
-  headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-});
+import apiClient from '../services/apiClient';
 
 // Récupérer les commandes pour la cuisine
 export const fetchKitchenOrders = createAsyncThunk('kitchen/fetchAll', async (_, { rejectWithValue }) => {
   try {
-    const token = localStorage.getItem('token');
-
-    // Si pas de token, on ne tente même pas la requête
-    if (!token) return rejectWithValue("Pas de token trouvé");
-
-    const response = await axios.get(API_URL, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
+    const response = await apiClient.get('/commandes');
     // Filtrage pour la cuisine
     return response.data.filter(order => order.statut !== 'PAYEE' && order.statut !== 'ANNULEE');
   } catch (error) {
@@ -31,20 +13,21 @@ export const fetchKitchenOrders = createAsyncThunk('kitchen/fetchAll', async (_,
 });
 
 // Mettre à jour le statut (ex: EN_PREPARATION -> PRETE)
-// Mettre à jour le statut (ex: EN_PREPARATION -> PRETE)
 export const updateKitchenStatus = createAsyncThunk(
   'kitchen/updateStatus',
-  async ({ id, nouveauStatut }) => {
-    // Correction : Le backend attend le statut dans le corps (body) ou en Query Param selon Controller.
-    // D'après api.jsx: axios.patch(`${API_URL}/commandes/${id}/statut`, { statut });
-    const response = await axios.patch(
-      `${API_URL}/${id}/statut`,
-      { statut: nouveauStatut },
-      getAuthHeader()
-    );
-    return response.data;
+  async ({ id, nouveauStatut }, { rejectWithValue }) => {
+    try {
+      // Le backend attend le statut en @RequestParam pour @PatchMapping("/{id}/statut")
+      const response = await apiClient.patch(`/commandes/${id}/statut`, null, {
+        params: { statut: nouveauStatut }
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || "Erreur lors de la mise à jour");
+    }
   }
 );
+
 
 const kitchenSlice = createSlice({
   name: 'kitchen',

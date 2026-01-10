@@ -28,12 +28,10 @@ export const getTables = () => apiClient.get('/tables');
  */
 export const createCommande = (commande) => apiClient.post('/commandes', commande);
 
-/** 
- * Met à jour le statut d'une commande
- * @param {number} id - ID de la commande
- * @param {string} statut - Nouveau statut
- */
-export const updateStatut = (id, statut) => apiClient.patch(`/commandes/${id}/statut`, { statut });
+// Mettre à jour le statut (ex: EN_PREPARATION -> PRETE)
+export const updateStatut = (id, statut) =>
+    apiClient.patch(`/commandes/${id}/statut`, null, { params: { statut } });
+
 
 /** Récupère toutes les commandes */
 export const getCommandes = () => apiClient.get('/commandes');

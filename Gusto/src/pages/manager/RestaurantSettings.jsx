@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Settings, Save, Upload, Clock, Phone, Mail, MapPin } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../../services/apiClient';
 import { toast } from 'react-hot-toast';
+
 
 const RestaurantSettings = () => {
     const [settings, setSettings] = useState({
@@ -28,7 +29,6 @@ const RestaurantSettings = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006/api';
 
     useEffect(() => {
         fetchSettings();
@@ -36,10 +36,7 @@ const RestaurantSettings = () => {
 
     const fetchSettings = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/restaurant/settings`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await apiClient.get('/restaurant/settings');
             setSettings(response.data);
         } catch (error) {
             console.error('Erreur settings:', error);
@@ -48,14 +45,12 @@ const RestaurantSettings = () => {
         }
     };
 
+
     const handleSave = async (e) => {
         e.preventDefault();
         setSaving(true);
         try {
-            const token = localStorage.getItem('token');
-            await axios.put(`${API_URL}/restaurant/settings`, settings, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await apiClient.put('/restaurant/settings', settings);
             toast.success('Paramètres sauvegardés avec succès');
         } catch (error) {
             toast.error('Erreur lors de la sauvegarde');
@@ -63,6 +58,7 @@ const RestaurantSettings = () => {
             setSaving(false);
         }
     };
+
 
     const handleLogoUpload = async (e) => {
         const file = e.target.files[0];
@@ -72,12 +68,8 @@ const RestaurantSettings = () => {
         formData.append('file', file);
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.post(`${API_URL}/restaurant/upload-logo`, formData, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data'
-                }
+            const response = await apiClient.post('/restaurant/upload-logo', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
             setSettings({ ...settings, logo: response.data.url });
             toast.success('Logo uploadé avec succès');
@@ -85,6 +77,7 @@ const RestaurantSettings = () => {
             toast.error('Erreur lors de l\'upload');
         }
     };
+
 
     const updateHoraire = (jour, field, value) => {
         setSettings({

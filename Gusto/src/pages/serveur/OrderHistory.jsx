@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Calendar, Filter, FileText } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../../services/apiClient';
 import { toast } from 'react-hot-toast';
 
 const OrderHistory = () => {
@@ -10,8 +10,6 @@ const OrderHistory = () => {
     const [statusFilter, setStatusFilter] = useState('all');
     const [dateFilter, setDateFilter] = useState('all');
     const [loading, setLoading] = useState(true);
-
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006/api';
 
     useEffect(() => {
         fetchCommandes();
@@ -24,7 +22,7 @@ const OrderHistory = () => {
     const fetchCommandes = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/commandes`, {
+            const response = await apiClient.get('/commandes', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCommandes(response.data);

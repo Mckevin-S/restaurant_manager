@@ -28,7 +28,7 @@ export const verifyTwoFactor = createAsyncThunk(
       });
 
       // Ici on reçoit enfin le token !
-      localStorage.setItem('userToken', response.data.token);
+      localStorage.setItem('token', response.data.token);
       return response.data; // Contient { token, username, role }
     } catch (error) {
       return rejectWithValue(error.response?.data || "Code incorrect ou expiré");
@@ -41,7 +41,7 @@ const LoginSlice = createSlice({
   initialState: {
     user: null,
     role: null,
-    token: localStorage.getItem('userToken') || null,
+    token: localStorage.getItem('token') || null,
     step: 'LOGIN', // LOGIN ou '2FA'
     loading: false,
     error: null,
@@ -54,8 +54,9 @@ const LoginSlice = createSlice({
       state.step = 'LOGIN';
       state.tempUsername = null;
       state.error = null;
-      localStorage.removeItem('userToken');
+      localStorage.removeItem('token');
     },
+
     resetAuthError: (state) => {
       state.error = null;
     }

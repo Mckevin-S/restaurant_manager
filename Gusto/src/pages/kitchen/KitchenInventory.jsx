@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Package, AlertTriangle, RefreshCw, Search } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../../services/apiClient';
 import { toast } from 'react-hot-toast';
 
 const KitchenInventory = () => {
@@ -8,25 +8,22 @@ const KitchenInventory = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006/api';
-
     useEffect(() => {
         fetchInventory();
     }, []);
 
     const fetchInventory = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/ingredients`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await apiClient.get('/ingredients');
             setIngredients(response.data);
         } catch (error) {
-            toast.error('Erreur chargement inventaire');
+            // L'apiClient gère déjà le toast d'erreur par défaut,
+            // mais on peut en ajouter un spécifique si besoin.
         } finally {
             setLoading(false);
         }
     };
+
 
     const handleSignalLowStock = async (id, currentStock) => {
         // Dans un cas réel, cela enverrait une notification au manager

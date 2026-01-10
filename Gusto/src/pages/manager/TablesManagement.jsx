@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Users, MapPin } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../../services/apiClient';
 import { toast } from 'react-hot-toast';
+
 
 const TablesManagement = () => {
   const [tables, setTables] = useState([]);
@@ -24,7 +25,6 @@ const TablesManagement = () => {
     description: ''
   });
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006/api';
 
   // Charger les tables et zones
   useEffect(() => {
@@ -34,10 +34,7 @@ const TablesManagement = () => {
 
   const fetchTables = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/tables`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await apiClient.get('/tables');
       setTables(response.data);
     } catch (error) {
       toast.error('Erreur lors du chargement des tables');
@@ -47,31 +44,25 @@ const TablesManagement = () => {
     }
   };
 
+
   const fetchZones = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/zones`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await apiClient.get('/zones');
       setZones(response.data);
     } catch (error) {
       console.error('Erreur zones:', error);
     }
   };
 
+
   const handleCreateTable = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
       if (editingTable) {
-        await axios.put(`${API_URL}/tables/${editingTable.id}`, tableForm, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await apiClient.put(`/tables/${editingTable.id}`, tableForm);
         toast.success('Table modifiée avec succès');
       } else {
-        await axios.post(`${API_URL}/tables`, tableForm, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await apiClient.post('/tables', tableForm);
         toast.success('Table créée avec succès');
       }
       fetchTables();
@@ -82,14 +73,12 @@ const TablesManagement = () => {
     }
   };
 
+
   const handleDeleteTable = async (id) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette table ?')) return;
-    
+
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API_URL}/tables/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiClient.delete(`/tables/${id}`);
       toast.success('Table supprimée');
       fetchTables();
     } catch (error) {
@@ -97,13 +86,11 @@ const TablesManagement = () => {
     }
   };
 
+
   const handleCreateZone = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(`${API_URL}/zones`, zoneForm, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiClient.post('/zones', zoneForm);
       toast.success('Zone créée avec succès');
       fetchZones();
       setShowZoneForm(false);
@@ -112,6 +99,7 @@ const TablesManagement = () => {
       toast.error('Erreur lors de la création de la zone');
     }
   };
+
 
   const resetTableForm = () => {
     setTableForm({ numero: '', capacite: 2, zoneId: '', statut: 'LIBRE' });
@@ -130,8 +118,8 @@ const TablesManagement = () => {
     setShowTableForm(true);
   };
 
-  const filteredTables = selectedZone === 'all' 
-    ? tables 
+  const filteredTables = selectedZone === 'all'
+    ? tables
     : tables.filter(t => t.zone?.id === parseInt(selectedZone));
 
   const getStatusColor = (statut) => {
@@ -378,7 +366,7 @@ const TablesManagement = () => {
                   type="text"
                   required
                   value={tableForm.numero}
-                  onChange={(e) => setTableForm({...tableForm, numero: e.target.value})}
+                  onChange={(e) => setTableForm({ ...tableForm, numero: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                   placeholder="Ex: T1, A1, VIP1..."
                 />
@@ -394,7 +382,7 @@ const TablesManagement = () => {
                   min="1"
                   max="20"
                   value={tableForm.capacite}
-                  onChange={(e) => setTableForm({...tableForm, capacite: parseInt(e.target.value)})}
+                  onChange={(e) => setTableForm({ ...tableForm, capacite: parseInt(e.target.value) })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -405,7 +393,7 @@ const TablesManagement = () => {
                 </label>
                 <select
                   value={tableForm.zoneId}
-                  onChange={(e) => setTableForm({...tableForm, zoneId: e.target.value})}
+                  onChange={(e) => setTableForm({ ...tableForm, zoneId: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="">Sans zone</option>
@@ -421,7 +409,7 @@ const TablesManagement = () => {
                 </label>
                 <select
                   value={tableForm.statut}
-                  onChange={(e) => setTableForm({...tableForm, statut: e.target.value})}
+                  onChange={(e) => setTableForm({ ...tableForm, statut: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="LIBRE">Libre</option>
@@ -465,7 +453,7 @@ const TablesManagement = () => {
                   type="text"
                   required
                   value={zoneForm.nom}
-                  onChange={(e) => setZoneForm({...zoneForm, nom: e.target.value})}
+                  onChange={(e) => setZoneForm({ ...zoneForm, nom: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                   placeholder="Ex: Terrasse, Salle principale, VIP..."
                 />
@@ -477,7 +465,7 @@ const TablesManagement = () => {
                 </label>
                 <textarea
                   value={zoneForm.description}
-                  onChange={(e) => setZoneForm({...zoneForm, description: e.target.value})}
+                  onChange={(e) => setZoneForm({ ...zoneForm, description: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                   rows="3"
                   placeholder="Description de la zone..."

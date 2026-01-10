@@ -1,20 +1,24 @@
 import { useState, useEffect } from 'react';
 import { Bell, Check, X, Filter } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../../services/apiClient';
 import { toast } from 'react-hot-toast';
+
 
 const NotificationsCenter = () => {
     const [notifications, setNotifications] = useState([]);
     const [filter, setFilter] = useState('all');
     const [loading, setLoading] = useState(true);
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006/api';
 
     useEffect(() => {
         fetchNotifications();
 
         // WebSocket pour temps réel
-        const ws = new WebSocket('ws://localhost:3006/ws/notifications');
+        const wsUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3006/api')
+            .replace('http', 'ws')
+            .replace('/api', '/ws/notifications');
+
+        const ws = new WebSocket(wsUrl);
 
         ws.onmessage = (event) => {
             const notification = JSON.parse(event.data);
@@ -25,12 +29,10 @@ const NotificationsCenter = () => {
         return () => ws.close();
     }, []);
 
+
     const fetchNotifications = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/notifications`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await apiClient.get('/notifications');
             setNotifications(response.data);
         } catch (error) {
             console.error('Erreur notifications:', error);
@@ -39,24 +41,20 @@ const NotificationsCenter = () => {
         }
     };
 
+
     const markAsRead = async (id) => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.patch(`${API_URL}/notifications/${id}/read`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await apiClient.patch(`/notifications/${id}/read`);
             setNotifications(prev => prev.map(n => n.id === id ? { ...n, lu: true } : n));
         } catch (error) {
             toast.error('Erreur');
         }
     };
 
+
     const markAllAsRead = async () => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.patch(`${API_URL}/notifications/read-all`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await apiClient.patch('/notifications/read-all');
             setNotifications(prev => prev.map(n => ({ ...n, lu: true })));
             toast.success('Toutes les notifications marquées comme lues');
         } catch (error) {
@@ -64,18 +62,17 @@ const NotificationsCenter = () => {
         }
     };
 
+
     const deleteNotification = async (id) => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`${API_URL}/notifications/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await apiClient.delete(`/notifications/${id}`);
             setNotifications(prev => prev.filter(n => n.id !== id));
             toast.success('Notification supprimée');
         } catch (error) {
             toast.error('Erreur');
         }
     };
+
 
     const getNotificationIcon = (type) => {
         const icons = {

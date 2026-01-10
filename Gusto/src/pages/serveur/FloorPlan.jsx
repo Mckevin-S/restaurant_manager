@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Users, Clock, ChefHat, CheckCircle, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { toast } from 'react-hot-toast';
+import apiClient from '../../services/apiClient';
 
 const FloorPlan = () => {
     const [tables, setTables] = useState([]);
@@ -10,8 +10,6 @@ const FloorPlan = () => {
     const [selectedZone, setSelectedZone] = useState('all');
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
-
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006/api';
 
     useEffect(() => {
         fetchData();
@@ -22,10 +20,9 @@ const FloorPlan = () => {
 
     const fetchData = async () => {
         try {
-            const token = localStorage.getItem('token');
             const [tablesRes, zonesRes] = await Promise.all([
-                axios.get(`${API_URL}/tables`, { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get(`${API_URL}/zones`, { headers: { Authorization: `Bearer ${token}` } })
+                apiClient.get('/tables'),
+                apiClient.get('/zones')
             ]);
             setTables(tablesRes.data);
             setZones(zonesRes.data);
@@ -99,8 +96,8 @@ const FloorPlan = () => {
                 <button
                     onClick={() => setSelectedZone('all')}
                     className={`px-4 py-2 rounded-full whitespace-nowrap transition-colors ${selectedZone === 'all'
-                            ? 'bg-indigo-600 text-white'
-                            : 'bg-white text-gray-700 hover:bg-gray-100 border'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-white text-gray-700 hover:bg-gray-100 border'
                         }`}
                 >
                     Tout le restaurant
@@ -110,8 +107,8 @@ const FloorPlan = () => {
                         key={zone.id}
                         onClick={() => setSelectedZone(zone.id)}
                         className={`px-4 py-2 rounded-full whitespace-nowrap transition-colors ${selectedZone === zone.id
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-white text-gray-700 hover:bg-gray-100 border'
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-white text-gray-700 hover:bg-gray-100 border'
                             }`}
                     >
                         {zone.nom}
