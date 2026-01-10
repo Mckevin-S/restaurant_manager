@@ -75,8 +75,8 @@ class CommandeServiceImplementationTest {
 
         commandeDto = new CommandeDto();
         commandeDto.setTypeCommande(TypeCommande.SUR_PLACE);
-        commandeDto.setServeur(serveur);
-        commandeDto.setTable(table);
+        commandeDto.setServeurId(serveur.getId());
+        commandeDto.setTableId(table.getId());
     }
 
     // ==================== TESTS DE SAUVEGARDE ====================

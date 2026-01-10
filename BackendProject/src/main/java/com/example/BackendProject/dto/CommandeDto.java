@@ -4,6 +4,7 @@ import com.example.BackendProject.entities.TableRestaurant;
 import com.example.BackendProject.entities.Utilisateur;
 import com.example.BackendProject.utils.StatutCommande;
 import com.example.BackendProject.utils.TypeCommande;
+import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -13,12 +14,25 @@ import java.sql.Timestamp;
 public class CommandeDto {
 
     private Long id;
+    
+    @NotNull(message = "La table est obligatoire")
     private Long tableId;   // Renommé pour correspondre au Mapper
+    
+    @NotNull(message = "Le serveur est obligatoire")
     private Long serveurId; // Renommé pour correspondre au Mapper
+    
     private Timestamp dateHeureCommande;
+    
+    @NotNull(message = "Le statut est obligatoire")
     private StatutCommande statut;
+    
+    @NotNull(message = "Le type de commande est obligatoire")
     private TypeCommande typeCommande;
+    
+    @DecimalMin(value = "0.0", message = "Le total HT doit être positif ou nul")
     private BigDecimal totalHt;
+    
+    @DecimalMin(value = "0.0", message = "Le total TTC doit être positif ou nul")
     private BigDecimal totalTtc;;
 
     public CommandeDto(Long id, Long tableId, Long serveurId, Timestamp dateHeureCommande, StatutCommande statut, TypeCommande typeCommande, BigDecimal totalHt, BigDecimal totalTtc) {

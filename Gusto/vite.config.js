@@ -8,4 +8,8 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
+  // ✅ Ajout pour corriger "global is not defined" (SockJS)
+  define: {
+    global: 'window',
+  },
 })

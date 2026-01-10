@@ -28,7 +28,8 @@ public class UtilisateurDetailService implements UserDetailsService {
 
         // 1. Cherche l'entité Personnel correspondante dans la base de données
         // L'entité Personnel est récupérée via une méthode personnalisée dans le repository.
-        Utilisateur utilisateur = utilisateurRepository.findByEmail(Email);
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(Email).orElse(null);
+
 
 
         // 2. Vérification de l'existence de l'utilisateur

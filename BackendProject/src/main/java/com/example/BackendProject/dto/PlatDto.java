@@ -2,6 +2,7 @@ package com.example.BackendProject.dto;
 
 import com.example.BackendProject.entities.Category;
 import com.example.BackendProject.entities.Recette;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,10 +14,22 @@ import java.math.BigDecimal;
 public class PlatDto {
 
     private Long id;
+    
+    @NotNull(message = "La catégorie est obligatoire")
     private Long category;
+    
+    @NotBlank(message = "Le nom du plat est obligatoire")
+    @Size(min = 2, max = 100, message = "Le nom doit contenir entre 2 et 100 caractères")
     private String nom;
+    
+    @Size(max = 500, message = "La description ne peut pas dépasser 500 caractères")
     private String description;
+    
+    @NotNull(message = "Le prix est obligatoire")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Le prix doit être supérieur à 0")
+    @Digits(integer = 10, fraction = 2, message = "Le prix doit avoir au maximum 2 décimales")
     private BigDecimal prix;
+    
     private String photoUrl;
     private RecetteDto recette;
     private boolean disponibilite;

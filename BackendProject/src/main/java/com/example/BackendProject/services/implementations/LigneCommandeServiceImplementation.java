@@ -11,6 +11,8 @@ import com.example.BackendProject.mappers.LigneCommandeMapper;
 import com.example.BackendProject.repository.CommandeRepository;
 import com.example.BackendProject.repository.LigneCommandeRepository;
 import com.example.BackendProject.repository.PlatRepository;
+import com.example.BackendProject.repository.PlatRepository;
+import com.example.BackendProject.services.interfaces.IngredientServiceInterface;
 import com.example.BackendProject.services.interfaces.LigneCommandeServiceInterface;
 import com.example.BackendProject.utils.LoggingUtils;
 import org.slf4j.Logger;
@@ -34,6 +36,7 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
     private final PlatRepository platRepository;
     private final CommandeMapper commandeMapper;
     private final SimpMessagingTemplate messagingTemplate;
+    private final IngredientServiceInterface ingredientService;
     private RestaurantDto restaurantDto;
 
     public LigneCommandeServiceImplementation(LigneCommandeMapper ligneCommandeMapper,
@@ -41,13 +44,15 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
                                               CommandeRepository commandeRepository,
                                               PlatRepository platRepository,
                                               CommandeMapper commandeMapper,
-                                              SimpMessagingTemplate messagingTemplate) {
+                                              SimpMessagingTemplate messagingTemplate,
+                                              IngredientServiceInterface ingredientService) {
         this.ligneCommandeMapper = ligneCommandeMapper;
         this.ligneCommandeRepository = ligneCommandeRepository;
         this.commandeRepository = commandeRepository;
         this.platRepository = platRepository;
         this.commandeMapper = commandeMapper;
         this.messagingTemplate = messagingTemplate;
+        this.ingredientService = ingredientService;
     }
 
     @Override
@@ -101,6 +106,14 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
 
         LigneCommande saved = ligneCommandeRepository.save(ligneCommande);
         logger.info("{} Ligne de commande sauvegardée ID: {}", context, saved.getId());
+
+        // DÉDUCTION STOCK
+        try {
+            ingredientService.deduireStockPourPlat(platId, ligneCommandeDto.getQuantite());
+        } catch (Exception e) {
+            logger.error("{} Erreur stock: {}", context, e.getMessage());
+            // On ne bloque pas la commande, mais on log l'erreur
+        }
 
         mettreAJourEtNotifierAddition(commandeId);
 
@@ -189,8 +202,18 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
                 });
 
         Long commandeId = ligneCommande.getCommande().getId();
+        Long platId = ligneCommande.getPlat().getId();
+        Integer quantite = ligneCommande.getQuantite();
+        
         ligneCommandeRepository.delete(ligneCommande);
         logger.info("{} Ligne de commande ID: {} supprimée", context, id);
+
+        // RESTAURATION STOCK
+        try {
+            ingredientService.restaurerStockPourPlat(platId, quantite);
+        } catch (Exception e) {
+            logger.error("{} Erreur restauration stock: {}", context, e.getMessage());
+        }
 
         mettreAJourEtNotifierAddition(commandeId);
     }
@@ -251,6 +274,13 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
 
         LigneCommande saved = ligneCommandeRepository.save(ligneCommande);
         
+        // DÉDUCTION STOCK
+        try {
+            ingredientService.deduireStockPourPlat(platId, quantite);
+        } catch (Exception e) {
+            logger.error("{} Erreur stock: {}", context, e.getMessage());
+        }
+
         mettreAJourEtNotifierAddition(commandeId);
         
         return ligneCommandeMapper.toDto(saved);
@@ -268,8 +298,20 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
         LigneCommande ligneCommande = ligneCommandeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ligne de commande non trouvée avec l'ID : " + id));
 
+        Integer ancienneQuantite = ligneCommande.getQuantite();
         ligneCommande.setQuantite(nouvelleQuantite);
         LigneCommande updated = ligneCommandeRepository.save(ligneCommande);
+
+        // AJUSTEMENT STOCK
+        try {
+            if (nouvelleQuantite > ancienneQuantite) {
+                ingredientService.deduireStockPourPlat(ligneCommande.getPlat().getId(), nouvelleQuantite - ancienneQuantite);
+            } else if (nouvelleQuantite < ancienneQuantite) {
+                ingredientService.restaurerStockPourPlat(ligneCommande.getPlat().getId(), ancienneQuantite - nouvelleQuantite);
+            }
+        } catch (Exception e) {
+            logger.error("{} Erreur ajustement stock: {}", context, e.getMessage());
+        }
 
         mettreAJourEtNotifierAddition(updated.getCommande().getId());
 
@@ -296,6 +338,16 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
         
         if (!commandeRepository.existsById(commandeId)) {
             throw new RuntimeException("Commande non trouvée avec l'ID : " + commandeId);
+        }
+
+        // RESTAURATION STOCK POUR CHAQUE LIGNE
+        try {
+            List<LigneCommande> lignes = ligneCommandeRepository.findByCommandeId(commandeId);
+            for (LigneCommande ligne : lignes) {
+                ingredientService.restaurerStockPourPlat(ligne.getPlat().getId(), ligne.getQuantite());
+            }
+        } catch (Exception e) {
+            logger.error("{} Erreur restauration stock massive: {}", context, e.getMessage());
         }
 
         ligneCommandeRepository.deleteByCommandeId(commandeId);
@@ -325,7 +377,13 @@ public class LigneCommandeServiceImplementation implements LigneCommandeServiceI
         logger.info("{} Totaux mis à jour - HT: {}, TTC: {}", context, totalHt, totalTtc);
 
         CommandeDto commandeDto = commandeMapper.toDto(commande);
+        
+        // Notifier Serveur (Addition)
         messagingTemplate.convertAndSend("/topic/serveurs/addition/" + commandeId, commandeDto);
-        logger.info("{} Notification envoyée sur /topic/serveurs/addition/{}", context, commandeId);
+        
+        // Notifier Cuisine (Mise à jour commande)
+        messagingTemplate.convertAndSend("/topic/cuisine/commandes", commandeDto);
+        
+        logger.info("{} Notification envoyée sur /topic/serveurs/addition/{} et /topic/cuisine/commandes", context, commandeId);
     }
 }

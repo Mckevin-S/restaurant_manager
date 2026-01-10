@@ -308,5 +308,20 @@ public class UtilisateurServiceImplementation implements UtilisateurServiceInter
         logger.info("{} Mot de passe réinitialisé avec succès pour l'utilisateur ID: {}", context, id);
     }
 
+    @Override
+    public UtilisateurDto findByEmail(String email) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Récupération de l'utilisateur avec l'email: {}", context, email);
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    logger.error("{} Utilisateur non trouvé avec l'email: {}", context, email);
+                    return new RuntimeException("Utilisateur avec l'email " + email + " est introuvable");
+                });
+
+        UtilisateurDto dto = utilisateurMapper.toDto(utilisateur);
+        dto.setMotDePasse(null);
+        return dto;
+    }
+
 
 }

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCommandes, updateStatutCommande } from '../../features/ServeurDashboardSlice';
+import websocketService from '../../services/websocketService';
 import { Box, Typography, Paper, Button, Divider, Chip, Stack, CircularProgress, Grid, Avatar } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -14,18 +15,32 @@ const ServeurDashboard = () => {
   const dispatch = useDispatch();
   const { commandes = [], loading } = useSelector((state) => state.serveur);
 
-useEffect(() => {
-  // 1. Premier chargement
-  dispatch(fetchCommandes());
+  useEffect(() => {
+    // 1. Premier chargement
+    dispatch(fetchCommandes());
 
-  // 2. Mise à jour automatique toutes les 5 secondes
-  const interval = setInterval(() => {
-    // On n'affiche pas le gros spinner central lors des mises à jour en arrière-plan
-    dispatch(fetchCommandes()); 
-  }, 5000);
+    // 2. Connexion WebSocket pour notifications temps réel
+    websocketService.connect(
+      () => {
+        // Écouter si un plat est prêt (Notif Cuisine -> Salle)
+        websocketService.subscribe('/topic/salle/prete', (commande) => {
+          // Rafraîchir la liste ou mettre à jour l'état local
+          dispatch(fetchCommandes());
+          // Toast ou son ici
+        });
 
-  return () => clearInterval(interval);
-}, [dispatch]);
+        // Écouter les mises à jour de prix (Addition)
+        websocketService.subscribe('/topic/serveurs/addition', () => {
+          dispatch(fetchCommandes());
+        });
+      },
+      (err) => console.error(err)
+    );
+
+    return () => {
+      websocketService.disconnect();
+    };
+  }, [dispatch]);
 
   const getStatusConfig = (statut) => {
     const configs = {
@@ -44,12 +59,12 @@ useEffect(() => {
           <Typography variant="h4" sx={{ fontWeight: 900, color: '#1e293b' }}>Tableau de Service</Typography>
           <Typography color="text.secondary">Gérez les commandes en temps réel</Typography>
         </Box>
-        
+
         {/* Badge d'alerte pour les commandes PRÊTES */}
-        <Button 
-          variant="contained" 
+        <Button
+          variant="contained"
           startIcon={<NotificationsActiveIcon />}
-          sx={{ 
+          sx={{
             bgcolor: '#10b981', borderRadius: 3, px: 3, py: 1.5, fontWeight: 800,
             '&:hover': { bgcolor: '#059669' }
           }}
@@ -64,13 +79,13 @@ useEffect(() => {
             const config = getStatusConfig(cmd.statut);
             return (
               <Grid item xs={12} md={6} lg={4} key={cmd.id}>
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }} 
-                  animate={{ opacity: 1, y: 0 }} 
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.5 }}
                 >
                   <Paper elevation={0} sx={{ borderRadius: 5, border: `2px solid ${config.bg}`, overflow: 'hidden', position: 'relative' }}>
-                    
+
                     {/* Header de la carte */}
                     <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: config.bg }}>
                       <Stack direction="row" spacing={2} alignItems="center">
@@ -82,14 +97,14 @@ useEffect(() => {
                           <Stack direction="row" alignItems="center" spacing={0.5}>
                             <AccessTimeIcon sx={{ fontSize: 14, color: '#64748b' }} />
                             <Typography variant="caption" color="text.secondary">
-                              {new Date(cmd.dateHeureCommande).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                              {new Date(cmd.dateHeureCommande).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </Typography>
                           </Stack>
                         </Box>
                       </Stack>
-                      <Chip 
-                        label={config.label} 
-                        sx={{ bgcolor: '#fff', color: config.color, fontWeight: 900, fontSize: '0.7rem' }} 
+                      <Chip
+                        label={config.label}
+                        sx={{ bgcolor: '#fff', color: config.color, fontWeight: 900, fontSize: '0.7rem' }}
                         variant="outlined"
                       />
                     </Box>
@@ -105,9 +120,9 @@ useEffect(() => {
                           </Stack>
                         ))}
                       </Stack>
-                      
+
                       <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
-                      
+
                       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
                         <Typography variant="caption" color="text.secondary">Total à régler</Typography>
                         <Typography variant="h6" sx={{ fontWeight: 900 }}>{cmd.totalTtc?.toLocaleString()} FCFA</Typography>
@@ -115,8 +130,8 @@ useEffect(() => {
 
                       {/* Actions Dynamiques */}
                       {cmd.statut === 'EN_ATTENTE' && (
-                        <Button 
-                          fullWidth variant="contained" 
+                        <Button
+                          fullWidth variant="contained"
                           onClick={() => dispatch(updateStatutCommande({ id: cmd.id, nouveauStatut: 'EN_PREPARATION' }))}
                           sx={{ bgcolor: '#1e293b', borderRadius: 3, py: 1.5, fontWeight: 800, textTransform: 'none' }}
                         >
@@ -125,11 +140,11 @@ useEffect(() => {
                       )}
 
                       {cmd.statut === 'PRETE' && (
-                        <Button 
-                          fullWidth variant="contained" 
+                        <Button
+                          fullWidth variant="contained"
                           startIcon={<CheckCircleIcon />}
                           onClick={() => dispatch(updateStatutCommande({ id: cmd.id, nouveauStatut: 'PAYEE' }))}
-                          sx={{ 
+                          sx={{
                             bgcolor: '#10b981', borderRadius: 3, py: 1.5, fontWeight: 800, textTransform: 'none',
                             animation: config.pulse ? 'pulse 2s infinite' : 'none'
                           }}
@@ -151,7 +166,7 @@ useEffect(() => {
           })}
         </AnimatePresence>
       </Grid>
-      
+
       {/* CSS pour l'animation d'urgence */}
       <style>{`
         @keyframes pulse {

@@ -28,6 +28,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
+
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -77,7 +79,8 @@ public class AuthControllerTest {
     void login_Success() throws Exception {
         // Simuler l'authentification réussie
         when(authManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(null);
-        when(utilisateurRepository.findByEmail("test@example.com")).thenReturn(mockUser);
+        when(utilisateurRepository.findByEmail("test@example.com")).thenReturn(Optional.of(mockUser));
+
 
         mockMvc.perform(post("/api/Auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -104,42 +107,43 @@ public class AuthControllerTest {
                 .andExpect(content().string("Email ou mot de passe incorrect"));
     }
 
-//    @Test
-//    @DisplayName("Verify 2FA - Succès")
-//    void verify2fa_Success() throws Exception {
-//        // 1. Préparer l'utilisateur avec un code valide
-//        String validCode = "1234";
-//        mockUser.setVerificationCode(validCode);
-//        mockUser.setExpiryCode(LocalDateTime.now().plusMinutes(5));
-//
-//        // On doit simuler le fait que le login a déjà eu lieu (remplir la map interne via réflexion ou en appelant login)
-//        // Mais comme c'est un test unitaire, on va simuler les appels repository
-//        when(utilisateurRepository.findByNom("Jean Dupont")).thenReturn(mockUser);
-//
-//        UserDetails userDetails = new User(mockUser.getEmail(), mockUser.getMotDePasse(), Collections.emptyList());
-//        when(utilisateurDetailService.loadUserByUsername(mockUser.getEmail())).thenReturn(userDetails);
-//        when(jwtUtils.generateToken(userDetails)).thenReturn("mock-jwt-token");
-//
-//        // Simuler que le nom est présent dans pendingVerifications
-//        // Note: Dans un test standalone, on peut appeler login juste avant ou injecter la map si elle était protected
-//        // Ici, on va d'abord appeler login pour remplir la map
-//        when(authManager.authenticate(any())).thenReturn(null);
-//        when(utilisateurRepository.findByEmail(any())).thenReturn(mockUser);
-//        mockMvc.perform(post("/api/Auth/login").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(loginRequest)));
-//
-//        // 2. Tester la vérification
-//        Map<String, String> verifyRequest = Map.of(
-//                "username", "Jean Dupont",
-//                "code", validCode
-//        );
-//
-//        mockMvc.perform(post("/api/Auth/verify-2fa")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(objectMapper.writeValueAsString(verifyRequest)))
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$.token").value("mock-jwt-token"))
-//                .andExpect(jsonPath("$.username").value("Jean Dupont"));
-//    }
+    @Test
+    @DisplayName("Verify 2FA - Succès")
+    void verify2fa_Success() throws Exception {
+        // 1. Préparer l'utilisateur avec un code valide
+        String validCode = "1234";
+        mockUser.setVerificationCode(validCode);
+        mockUser.setExpiryCode(LocalDateTime.now().plusMinutes(5));
+
+        // On doit simuler le fait que le login a déjà eu lieu (remplir la map interne via réflexion ou en appelant login)
+        // Mais comme c'est un test unitaire, on va simuler les appels repository
+        when(utilisateurRepository.findByNom("Jean Dupont")).thenReturn(mockUser);
+
+        UserDetails userDetails = new User(mockUser.getEmail(), mockUser.getMotDePasse(), Collections.emptyList());
+        when(utilisateurDetailService.loadUserByUsername(mockUser.getEmail())).thenReturn(userDetails);
+        when(jwtUtils.generateToken(userDetails)).thenReturn("mock-jwt-token");
+
+        // Simuler que le nom est présent dans pendingVerifications
+        // Note: Dans un test standalone, on peut appeler login juste avant ou injecter la map si elle était protected
+        // Ici, on va d'abord appeler login pour remplir la map
+        when(authManager.authenticate(any())).thenReturn(null);
+        when(utilisateurRepository.findByEmail(any())).thenReturn(Optional.of(mockUser));
+        mockMvc.perform(post("/api/Auth/login").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(loginRequest)));
+
+        // 2. Tester la vérification
+        Map<String, String> verifyRequest = Map.of(
+                "username", "Jean Dupont",
+                "code", validCode
+        );
+
+        mockMvc.perform(post("/api/Auth/verify-2fa")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(verifyRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("mock-jwt-token"))
+                .andExpect(jsonPath("$.username").value("Jean Dupont"));
+    }
+
 
     @Test
     @DisplayName("Verify 2FA - Code Incorrect")
@@ -151,7 +155,7 @@ public class AuthControllerTest {
 
         // On remplit la map via un appel login
         when(authManager.authenticate(any())).thenReturn(null);
-        when(utilisateurRepository.findByEmail(any())).thenReturn(mockUser);
+        when(utilisateurRepository.findByEmail(any())).thenReturn(Optional.of(mockUser));
         mockMvc.perform(post("/api/Auth/login").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(loginRequest)));
 
         Map<String, String> verifyRequest = Map.of(

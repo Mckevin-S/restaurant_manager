@@ -87,7 +87,7 @@ public class StockControllerTest {
         // Initialisation des données de test
         stockMovementDto = new StockMovementDto(
                 1L,
-                ingredient,
+                ingredient.getId(),
                 TypeMouvement.ENTREE,
                 new BigDecimal("100.00"),
                 new Timestamp(System.currentTimeMillis()),
@@ -113,7 +113,7 @@ public class StockControllerTest {
                 .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.ingredient.id").value(1))
+                .andExpect(jsonPath("$.ingredient.id").value(ingredient.getId()))
                 .andExpect(jsonPath("$.typeMouvement").value("ENTREE"))
                 .andExpect(jsonPath("$.quantite").value(100.00))
                 .andExpect(jsonPath("$.raison").value("Approvisionnement initial"));

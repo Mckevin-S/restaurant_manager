@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchKitchenOrders, updateKitchenStatus } from '../../features/KitchenDashboardSlice';
-import { 
-  Box, Typography, Paper, Grid, Button, Divider, 
-  useTheme, useMediaQuery, Chip, Stack, CircularProgress 
+import websocketService from '../../services/websocketService';
+import {
+  Box, Typography, Paper, Grid, Button, Divider,
+  useTheme, useMediaQuery, Chip, Stack, CircularProgress
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -36,23 +37,41 @@ const KitchenDashboard = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   const dispatch = useDispatch();
   // Sécurité sur le useSelector
   const { orders = [], loading = false, error = null } = useSelector((state) => state.kitchen || {});
 
   useEffect(() => {
+    // Initial fetch
     dispatch(fetchKitchenOrders());
-    // Polling toutes les 7 secondes
-    const interval = setInterval(() => dispatch(fetchKitchenOrders()), 30000);
-    return () => clearInterval(interval);
+
+    // WebSocket Connection
+    websocketService.connect(
+      () => {
+        // Subscribe to kitchen updates
+        websocketService.subscribe('/topic/cuisine/commandes', (newOrder) => {
+          // Dispatch action to add/update order in Redux
+          // Si c'est une nouvelle commande ou une mise à jour, on recharge tout pour l'instant
+          // pour garantir la cohérence (ou on pourrait faire une action addOrder)
+          dispatch(fetchKitchenOrders());
+
+          // Optionnel : Jouer un son ou afficher une notif
+        });
+      },
+      (error) => console.error("WS Error", error)
+    );
+
+    return () => {
+      websocketService.disconnect();
+    };
   }, [dispatch]);
 
   const handleStatusChange = (orderId, currentStatus) => {
     let nextStatus = '';
     if (currentStatus === 'EN_ATTENTE') nextStatus = 'EN_PREPARATION';
     else if (currentStatus === 'EN_PREPARATION') nextStatus = 'PRETE';
-    
+
     if (nextStatus) {
       dispatch(updateKitchenStatus({ id: orderId, nouveauStatut: nextStatus }));
     }
@@ -71,9 +90,9 @@ const KitchenDashboard = () => {
       exit={{ opacity: 0, scale: 0.9 }}
       key={order.id}
     >
-      <Paper elevation={0} sx={{ 
-        p: 2.5, mb: 2, borderRadius: 4, bgcolor: '#1e293b', 
-        border: '1px solid', 
+      <Paper elevation={0} sx={{
+        p: 2.5, mb: 2, borderRadius: 4, bgcolor: '#1e293b',
+        border: '1px solid',
         borderColor: order.statut === 'EN_PREPARATION' ? '#f59e0b' : 'rgba(255,255,255,0.05)',
       }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
@@ -85,9 +104,9 @@ const KitchenDashboard = () => {
               Table {order.table?.numero || '?'}
             </Typography>
           </Box>
-          <Chip 
+          <Chip
             icon={<AccessTimeIcon sx={{ fontSize: '14px !important', color: '#6366f1 !important' }} />}
-            label={getMinutesAgo(order.dateHeureCommande)} 
+            label={getMinutesAgo(order.dateHeureCommande)}
             sx={{ bgcolor: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', fontWeight: 800 }}
           />
         </Stack>
@@ -105,12 +124,12 @@ const KitchenDashboard = () => {
           ))}
         </Box>
 
-        <Button 
-          fullWidth variant="contained" 
+        <Button
+          fullWidth variant="contained"
           startIcon={order.statut === 'EN_ATTENTE' ? <LocalFireDepartmentIcon /> : <CheckCircleOutlineIcon />}
           onClick={() => handleStatusChange(order.id, order.statut)}
-          sx={{ 
-            bgcolor: order.statut === 'EN_ATTENTE' ? '#f59e0b' : '#10b981', 
+          sx={{
+            bgcolor: order.statut === 'EN_ATTENTE' ? '#f59e0b' : '#10b981',
             borderRadius: 3, fontWeight: 800, py: 1.5,
             '&:hover': { bgcolor: order.statut === 'EN_ATTENTE' ? '#d97706' : '#059669' }
           }}
@@ -139,7 +158,7 @@ const KitchenDashboard = () => {
           </Typography>
           <Typography variant="body2" sx={{ color: '#94a3b8' }}>Suivi des préparations en temps réel</Typography>
         </Box>
-        
+
         <Stack direction="row" spacing={2}>
           <StatCard label="EN ATTENTE" value={orders.filter(o => o.statut === 'EN_ATTENTE').length} color="#94a3b8" />
           <StatCard label="EN CUISSON" value={orders.filter(o => o.statut === 'EN_PREPARATION').length} color="#f59e0b" />
@@ -151,12 +170,12 @@ const KitchenDashboard = () => {
           <SectionHeader label="QUEUE" count={orders.filter(o => o.statut === 'EN_ATTENTE').length} color="#94a3b8" />
           <AnimatePresence>{orders.filter(o => o.statut === 'EN_ATTENTE').map(renderOrderCard)}</AnimatePresence>
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={4}>
           <SectionHeader label="PRÉPARATION" count={orders.filter(o => o.statut === 'EN_PREPARATION').length} color="#f59e0b" />
           <AnimatePresence>{orders.filter(o => o.statut === 'EN_PREPARATION').map(renderOrderCard)}</AnimatePresence>
         </Grid>
-        
+
         <Grid item xs={12} md={4}>
           <SectionHeader label="TERMINÉ" count={orders.filter(o => o.statut === 'PRETE').length} color="#10b981" />
           <AnimatePresence>

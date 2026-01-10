@@ -67,7 +67,8 @@ public class AuthController {
             ));
 
             // 2. On récupère l'utilisateur pour obtenir son NOM
-            Utilisateur user = utilisateurRepository.findByEmail(request.getEmail());
+            Utilisateur user = utilisateurRepository.findByEmail(request.getEmail()).orElse(null);
+
 
             if (user == null) {
                 logger.warn("{} Utilisateur non trouvé après authentification pour: {}", logContext, request.getEmail());

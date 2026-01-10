@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -43,7 +44,7 @@ public class UtilisateurController {
      */
     @PostMapping
     @Operation(summary = "Créer un utilisateur")
-    public ResponseEntity<UtilisateurDto> create(@RequestBody UtilisateurDto dto, HttpServletRequest request) {
+    public ResponseEntity<UtilisateurDto> create(@Valid @RequestBody UtilisateurDto dto, HttpServletRequest request) {
         String context = LoggingUtils.getLogContext(request);
         logger.info("{} Tentative de création d'un utilisateur - Email: {}", context, dto.getEmail());
         try {
@@ -180,7 +181,7 @@ public class UtilisateurController {
                     description = "Nouvelles informations de l'utilisateur",
                     required = true
             )
-            @RequestBody UtilisateurDto utilisateurDto,
+            @Valid @RequestBody UtilisateurDto utilisateurDto,
             HttpServletRequest request) {
         String context = LoggingUtils.getLogContext(request);
         logger.info("{} Tentative de mise à jour de l'utilisateur ID: {}", context, id);

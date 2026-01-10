@@ -11,10 +11,12 @@ public class RecetteDto {
 
     private Long id;
     private String nom;
+    private Long platId;
 
-    public RecetteDto(Long id, String nom) {
+    public RecetteDto(Long id, String nom, Long platId) {
         this.id = id;
         this.nom = nom;
+        this.platId = platId;
     }
 
     public RecetteDto() {
@@ -34,5 +36,13 @@ public class RecetteDto {
 
     public void setNom(String nom) {
         this.nom = nom;
+    }
+
+    public Long getPlatId() {
+        return platId;
+    }
+
+    public void setPlatId(Long platId) {
+        this.platId = platId;
     }
 }

@@ -12,17 +12,17 @@ const getAuthHeader = () => ({
 export const fetchKitchenOrders = createAsyncThunk('kitchen/fetchAll', async (_, { rejectWithValue }) => {
   try {
     const token = localStorage.getItem('token');
-    
+
     // Si pas de token, on ne tente même pas la requête
     if (!token) return rejectWithValue("Pas de token trouvé");
 
     const response = await axios.get(API_URL, {
-      headers: { 
+      headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
-    
+
     // Filtrage pour la cuisine
     return response.data.filter(order => order.statut !== 'PAYEE' && order.statut !== 'ANNULEE');
   } catch (error) {
@@ -31,12 +31,15 @@ export const fetchKitchenOrders = createAsyncThunk('kitchen/fetchAll', async (_,
 });
 
 // Mettre à jour le statut (ex: EN_PREPARATION -> PRETE)
+// Mettre à jour le statut (ex: EN_PREPARATION -> PRETE)
 export const updateKitchenStatus = createAsyncThunk(
   'kitchen/updateStatus',
   async ({ id, nouveauStatut }) => {
+    // Correction : Le backend attend le statut dans le corps (body) ou en Query Param selon Controller.
+    // D'après api.jsx: axios.patch(`${API_URL}/commandes/${id}/statut`, { statut });
     const response = await axios.patch(
-      `${API_URL}/${id}/statut?statut=${nouveauStatut}`,
-      {},
+      `${API_URL}/${id}/statut`,
+      { statut: nouveauStatut },
       getAuthHeader()
     );
     return response.data;

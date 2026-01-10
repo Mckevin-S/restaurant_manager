@@ -39,10 +39,14 @@ public class CommandeController {
     private static final Logger logger = LoggerFactory.getLogger(CommandeController.class);
     private final CommandeServiceImplementation commandeServiceImplementation;
     private final UtilisateurServiceImplementation utilisateurServiceImplementation;
+    private final com.example.BackendProject.services.implementations.PdfService pdfService;
 
-    public CommandeController(CommandeServiceImplementation commandeServiceImplementation, UtilisateurServiceImplementation utilisateurServiceImplementation) {
+    public CommandeController(CommandeServiceImplementation commandeServiceImplementation, 
+                              UtilisateurServiceImplementation utilisateurServiceImplementation,
+                              com.example.BackendProject.services.implementations.PdfService pdfService) {
         this.commandeServiceImplementation = commandeServiceImplementation;
         this.utilisateurServiceImplementation = utilisateurServiceImplementation;
+        this.pdfService = pdfService;
     }
 
     /**
@@ -421,5 +425,23 @@ public class CommandeController {
         List<UtilisateurDto> serveurs = utilisateurServiceImplementation.findByRoleType(RoleType.SERVEUR);
         logger.info("{} {} serveurs récupérés", context, serveurs.size());
         return ResponseEntity.ok(serveurs);
+    }
+    /**
+     * Télécharger le ticket de caisse (PDF)
+     */
+    @GetMapping("/{id}/ticket")
+    @Operation(summary = "Télécharger le ticket de caisse", description = "Génère un PDF pour la commande")
+    public ResponseEntity<byte[]> downloadTicket(@PathVariable Long id, HttpServletRequest request) {
+        logger.info("{} Téléchargement du ticket pour la commande ID: {}", LoggingUtils.getLogContext(request), id);
+        try {
+            byte[] pdfContent = pdfService.generateTicket(id);
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=ticket_" + id + ".pdf")
+                    .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                    .body(pdfContent);
+        } catch (Exception e) {
+            logger.error("Erreur download ticket", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

@@ -2,8 +2,11 @@ package com.example.BackendProject.services.implementations;
 
 import com.example.BackendProject.dto.IngredientDto;
 import com.example.BackendProject.entities.Ingredient;
+import com.example.BackendProject.entities.Recette;
+import com.example.BackendProject.entities.RecetteItem;
 import com.example.BackendProject.mappers.IngredientMapper;
 import com.example.BackendProject.repository.IngredientRepository;
+import com.example.BackendProject.repository.RecetteRepository;
 import com.example.BackendProject.services.interfaces.IngredientServiceInterface;
 import com.example.BackendProject.utils.LoggingUtils;
 import org.slf4j.Logger;
@@ -25,13 +28,16 @@ public class IngredientServiceImplementation implements IngredientServiceInterfa
     private static final Logger logger = LoggerFactory.getLogger(IngredientServiceImplementation.class);
     private final IngredientMapper ingredientMapper;
     private final IngredientRepository ingredientRepository;
+    private final RecetteRepository recetteRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     public IngredientServiceImplementation(IngredientMapper ingredientMapper,
                                            IngredientRepository ingredientRepository,
+                                           RecetteRepository recetteRepository,
                                            SimpMessagingTemplate messagingTemplate) {
         this.ingredientMapper = ingredientMapper;
         this.ingredientRepository = ingredientRepository;
+        this.recetteRepository = recetteRepository;
         this.messagingTemplate = messagingTemplate;
     }
 
@@ -213,5 +219,48 @@ public class IngredientServiceImplementation implements IngredientServiceInterfa
         logger.info("{} Nouveau seuil d'alerte pour {}: {}", context, updated.getNom(), nouveauSeuil);
         verifierEtAlerter(updated);
         return ingredientMapper.toDto(updated);
+    }
+    
+    @Override
+    public void deduireStockPourPlat(Long platId, Integer nombreDePlats) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Déduction de stock pour Plat ID: {} (x{})", context, platId, nombreDePlats);
+
+        List<Recette> recettes = recetteRepository.findByPlatId(platId);
+        if (recettes.isEmpty()) {
+            logger.warn("{} Pas de recette trouvée pour le plat ID: {}. Aucun stock déduit.", context, platId);
+            return;
+        }
+
+        // On prend la première recette trouvée (par défaut)
+        Recette recette = recettes.get(0);
+        
+        for (RecetteItem item : recette.getItems()) {
+            BigDecimal quantiteRequise = item.getQuantiteRequise().multiply(new BigDecimal(nombreDePlats));
+            
+            // Appel interne à retirerQuantite pour gérer la logique de retrait et alerte
+            try {
+                this.retirerQuantite(item.getIngredient().getId(), quantiteRequise);
+                logger.info("{} Déduit {} {} de {}", context, quantiteRequise, item.getIngredient().getUniteMesure(), item.getIngredient().getNom());
+            } catch (Exception e) {
+                logger.error("{} Erreur deduction ingrédient {} : {}", context, item.getIngredient().getNom(), e.getMessage());
+                // On continue pour les autres ingrédients même si un échoue (ou on pourrait throw)
+            }
+        }
+    }
+
+    @Override
+    public void restaurerStockPourPlat(Long platId, Integer nombreDePlats) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Restauration de stock pour Plat ID: {} (x{})", context, platId, nombreDePlats);
+
+        List<Recette> recettes = recetteRepository.findByPlatId(platId);
+        if (recettes.isEmpty()) return;
+
+        Recette recette = recettes.get(0);
+        for (RecetteItem item : recette.getItems()) {
+            BigDecimal quantiteARendre = item.getQuantiteRequise().multiply(new BigDecimal(nombreDePlats));
+            this.ajouterQuantite(item.getIngredient().getId(), quantiteARendre);
+        }
     }
 }

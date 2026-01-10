@@ -61,7 +61,7 @@ class CategoryServiceImplementationTest {
         categoryDto = new CategoryDto();
         categoryDto.setId(1L);
         categoryDto.setNom("Entrées");
-        categoryDto.setMenu(menu);
+        categoryDto.setMenuId(menu.getId());
     }
 
     // ==================== TESTS SAVE ====================

@@ -2,6 +2,7 @@ package com.example.BackendProject.dto;
 
 import com.example.BackendProject.utils.RoleType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
 
@@ -15,24 +16,34 @@ public class UtilisateurDto {
     private Long restaurantId;
 
     @Schema(description = "Rôle de l'utilisateur", example = "SERVEUR", required = true)
+    @NotNull(message = "Le rôle est obligatoire")
     private RoleType role;
 
     @Schema(description = "Nom de famille de l'utilisateur", example = "Dupont", required = true)
+    @NotBlank(message = "Le nom est obligatoire")
+    @Size(min = 2, max = 50, message = "Le nom doit contenir entre 2 et 50 caractères")
     private String nom;
 
     @Schema(description = "Prénom de l'utilisateur", example = "Jean", required = true)
+    @NotBlank(message = "Le prénom est obligatoire")
+    @Size(min = 2, max = 50, message = "Le prénom doit contenir entre 2 et 50 caractères")
     private String prenom;
 
     @Schema(description = "Adresse email de l'utilisateur", example = "jean.dupont@restaurant.com", required = true)
+    @NotBlank(message = "L'email est obligatoire")
+    @Email(message = "L'email doit être valide")
     private String email;
 
     @Schema(description = "Mot de passe de l'utilisateur (non retourné dans les réponses)", example = "password123", accessMode = Schema.AccessMode.WRITE_ONLY)
+    @Size(min = 6, message = "Le mot de passe doit contenir au moins 6 caractères")
     private String motDePasse;
 
     @Schema(description = "Numéro de téléphone", example = "+237123456789")
+    @Pattern(regexp = "^\\+?[0-9]{9,15}$", message = "Le numéro de téléphone doit être valide")
     private String telephone;
 
     @Schema(description = "Date d'embauche de l'utilisateur", example = "2024-01-15")
+    @PastOrPresent(message = "La date d'embauche ne peut pas être dans le futur")
     private LocalDate dateEmbauche;
 
     public UtilisateurDto(Long id, Long restaurantId, RoleType role, String nom, String prenom, String email, String motDePasse, String telephone, LocalDate dateEmbauche) {

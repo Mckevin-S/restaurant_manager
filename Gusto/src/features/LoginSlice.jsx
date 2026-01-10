@@ -1,14 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-
-const BASE_URL = 'http://localhost:3006/api/Auth';
+import apiClient from '../services/apiClient';
 
 // 1. Étape de connexion initiale
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async (credentials, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${BASE_URL}/login`, {
+      const response = await apiClient.post('/Auth/login', {
         email: credentials.email,
         motDePasse: credentials.password // Correction du nom du champ ici
       });
@@ -24,11 +22,11 @@ export const verifyTwoFactor = createAsyncThunk(
   'auth/verifyTwoFactor',
   async ({ username, code }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${BASE_URL}/verify-2fa`, {
+      const response = await apiClient.post('/Auth/verify-2fa', {
         username: username,
         code: code
       });
-      
+
       // Ici on reçoit enfin le token !
       localStorage.setItem('userToken', response.data.token);
       return response.data; // Contient { token, username, role }
@@ -49,19 +47,19 @@ const LoginSlice = createSlice({
     error: null,
     tempUsername: null, // Pour garder le nom entre les deux étapes
   },
- reducers: {
+  reducers: {
     logout: (state) => {
-        state.user = null;
-        state.token = null;
-        state.step = 'LOGIN';
-        state.tempUsername = null;
-        state.error = null;
-        localStorage.removeItem('userToken');
+      state.user = null;
+      state.token = null;
+      state.step = 'LOGIN';
+      state.tempUsername = null;
+      state.error = null;
+      localStorage.removeItem('userToken');
     },
     resetAuthError: (state) => {
-        state.error = null;
+      state.error = null;
     }
-},
+  },
   extraReducers: (builder) => {
     builder
       // Gestion Login

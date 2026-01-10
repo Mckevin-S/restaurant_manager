@@ -67,7 +67,7 @@ class RecetteControllerTest {
         // Initialisation avec vos champs réels
         recetteDto = new RecetteDto();
         recetteDto.setId(1L);
-        recetteDto.setPlat(10L); // ID du plat associé
+        recetteDto.setPlatId(10L); // ID du plat associé
         recetteDto.setNom("Recette du Burger Classic");
     }
 
@@ -82,7 +82,7 @@ class RecetteControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.nom").value("Recette du Burger Classic"))
-                .andExpect(jsonPath("$.plat").value(10));
+                .andExpect(jsonPath("$.platId").value(10));
     }
 
     @Test
@@ -103,7 +103,7 @@ class RecetteControllerTest {
         mockMvc.perform(get("/api/recettes/plat/10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].plat").value(10));
+                .andExpect(jsonPath("$[0].platId").value(10));
     }
 
     @Test

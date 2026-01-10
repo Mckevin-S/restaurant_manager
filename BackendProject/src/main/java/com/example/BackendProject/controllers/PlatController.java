@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -65,7 +66,7 @@ public class PlatController {
                     required = true,
                     content = @Content(schema = @Schema(implementation = PlatDto.class))
             )
-            @RequestBody PlatDto platDto,
+            @Valid @RequestBody PlatDto platDto,
             HttpServletRequest request) {
         String context = LoggingUtils.getLogContext(request);
         logger.info("{} Tentative de création d'un plat", context);
@@ -122,7 +123,7 @@ public class PlatController {
     public ResponseEntity<PlatDto> update(
             @Parameter(description = "ID du plat à modifier", example = "1")
             @PathVariable Long id,
-            @RequestBody PlatDto platDto,
+            @Valid @RequestBody PlatDto platDto,
             HttpServletRequest request) {
         String context = LoggingUtils.getLogContext(request);
         logger.info("{} Tentative de mise à jour du plat ID: {}", context, id);

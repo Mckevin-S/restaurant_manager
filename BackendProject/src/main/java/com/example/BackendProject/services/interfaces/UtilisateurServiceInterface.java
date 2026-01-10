@@ -22,6 +22,8 @@ public interface UtilisateurServiceInterface {
 
     void changePassword(Long id, String oldPassword, String newPassword);
 
-    public void resetPassword(Long id, String newPassword);
+    void resetPassword(Long id, String newPassword);
+    
+    UtilisateurDto findByEmail(String email);
 
 }

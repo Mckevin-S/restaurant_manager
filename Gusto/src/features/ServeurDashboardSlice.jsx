@@ -26,8 +26,8 @@ export const updateStatutCommande = createAsyncThunk(
       const token = getState().auth.token;
       // CORRECTION URL & PARAM : Correspondance avec @PatchMapping("/{id}/statut")
       const response = await axios.patch(
-        `${API_URL}/${id}/statut?statut=${nouveauStatut}`, 
-        {}, 
+        `${API_URL}/${id}/statut`,
+        { statut: nouveauStatut },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       // On retourne l'id et le nouveau statut pour mettre à jour le store
@@ -40,15 +40,15 @@ export const updateStatutCommande = createAsyncThunk(
 
 const serveurSlice = createSlice({
   name: 'serveur',
-  initialState: { 
-    commandes: [], 
-    loading: false, 
-    error: null 
+  initialState: {
+    commandes: [],
+    loading: false,
+    error: null
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchCommandes.pending, (state) => { 
-        state.loading = true; 
+      .addCase(fetchCommandes.pending, (state) => {
+        state.loading = true;
         state.error = null;
       })
       .addCase(fetchCommandes.fulfilled, (state, action) => {
@@ -62,7 +62,7 @@ const serveurSlice = createSlice({
       /* --- CORRECTION ICI --- */
       .addCase(updateStatutCommande.fulfilled, (state, action) => {
         // Dans createAsyncThunk, les données retournées sont dans action.payload
-        const { id, nouveauStatut } = action.payload; 
+        const { id, nouveauStatut } = action.payload;
         const cmd = state.commandes.find(c => c.id === id);
         if (cmd) {
           cmd.statut = nouveauStatut; // On met à jour le champ statut

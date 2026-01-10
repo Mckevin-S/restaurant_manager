@@ -9,6 +9,7 @@ import com.example.BackendProject.utils.StatutCommande;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -22,10 +23,14 @@ public class CuisineServiceImplementation {
     private static final Logger logger = LoggerFactory.getLogger(CuisineServiceImplementation.class);
     private final CommandeRepository commandeRepository;
     private final CommandeMapper commandeMapper;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public CuisineServiceImplementation(CommandeRepository commandeRepository, CommandeMapper commandeMapper) {
+    public CuisineServiceImplementation(CommandeRepository commandeRepository, 
+                                        CommandeMapper commandeMapper,
+                                        SimpMessagingTemplate messagingTemplate) {
         this.commandeRepository = commandeRepository;
         this.commandeMapper = commandeMapper;
+        this.messagingTemplate = messagingTemplate;
     }
 
     /**
@@ -87,7 +92,11 @@ public class CuisineServiceImplementation {
         commande.setStatut(StatutCommande.PRETE);
         Commande saved = commandeRepository.save(commande);
         
-        logger.info("{} Commande ID: {} marquée comme PRETE et prête pour le service en salle", context, commandeId);
-        return commandeMapper.toDto(saved);
+        // Notifier la salle que la commande est PRÊTE
+        CommandeDto commandeDto = commandeMapper.toDto(saved);
+        messagingTemplate.convertAndSend("/topic/salle/prete", commandeDto);
+        
+        logger.info("{} Commande ID: {} marquée comme PRETE et notifiée à la salle", context, commandeId);
+        return commandeDto;
     }
 }

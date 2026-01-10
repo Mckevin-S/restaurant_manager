@@ -1,5 +1,6 @@
 package com.example.BackendProject.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,9 +26,13 @@ public class SecurityConfig implements WebMvcConfigurer {
 
     private final JwtFilter jwtFilter;
 
+    @Value("${app.cors.allowed-origins:http://localhost:5173}")
+    private String allowedOrigins;
+
     public SecurityConfig(JwtFilter jwtFilter) {
         this.jwtFilter = jwtFilter;
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -44,8 +49,9 @@ public class SecurityConfig implements WebMvcConfigurer {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 1. Origine autorisée (votre React)
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        // 1. Origine autorisée (Récupérée dynamiquement)
+        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+
 
         // 2. Méthodes autorisées (Bien inclure PATCH pour vos changements de statut)
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
@@ -78,8 +84,10 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/Auth/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers("/api/images/**").permitAll()
+                        .requestMatchers("/ws-restaurant/**").permitAll()
                         .requestMatchers("/api/plats/**","/api/tables/**","/api/commandes/**",
                                 "/api/categories/**").permitAll()
+
                         .anyRequest().authenticated()
                 );
 

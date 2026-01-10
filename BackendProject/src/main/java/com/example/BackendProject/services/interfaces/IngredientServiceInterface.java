@@ -29,4 +29,8 @@ public interface IngredientServiceInterface {
     IngredientDto retirerQuantite(Long id, BigDecimal quantite);
 
     IngredientDto updateSeuilAlerte(Long id, BigDecimal nouveauSeuil);
+    
+    // METHODE DE GESTION DE STOCK AUTOMATIQUE
+    void deduireStockPourPlat(Long platId, Integer nombreDePlats);
+    void restaurerStockPourPlat(Long platId, Integer nombreDePlats);
 }
