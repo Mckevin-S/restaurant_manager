@@ -1,4 +1,3 @@
-
 package com.example.BackendProject.services.implementations;
 
 import com.example.BackendProject.dto.RestaurantDto;
@@ -9,9 +8,10 @@ import com.example.BackendProject.services.interfaces.RestaurantServiceInterface
 import com.example.BackendProject.utils.LoggingUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,9 +59,15 @@ public class RestaurantServiceImplementation implements RestaurantServiceInterfa
             existingRestaurant.setNom(restaurantDto.getNom());
             existingRestaurant.setAdresse(restaurantDto.getAdresse());
             existingRestaurant.setTelephone(restaurantDto.getTelephone());
-            existingRestaurant.setDevise(restaurantDto.getDevise());
-            existingRestaurant.setDateCreation(restaurantDto.getDateCreation());
+            existingRestaurant.setEmail(restaurantDto.getEmail());
+            existingRestaurant.setLogo(restaurantDto.getLogo());
+            existingRestaurant.setDescription(restaurantDto.getDescription());
             existingRestaurant.setTauxTva(restaurantDto.getTauxTva());
+            existingRestaurant.setFraisService(restaurantDto.getFraisService());
+            existingRestaurant.setDevise(restaurantDto.getDevise());
+            existingRestaurant.setDeviseSymbole(restaurantDto.getDeviseSymbole());
+            existingRestaurant.setHeuresOuverture(restaurantMapper.toEntity(restaurantDto).getHeuresOuverture());
+            existingRestaurant.setDateCreation(restaurantDto.getDateCreation());
             Restaurant updated = restaurantRepository.save(existingRestaurant);
             logger.info("{} Restaurant ID: {} mis à jour avec succès - Nom: {}", context, id, updated.getNom());
             return restaurantMapper.toDto(updated);
@@ -93,6 +99,48 @@ public class RestaurantServiceImplementation implements RestaurantServiceInterfa
                     logger.error("{} Restaurant non trouvé avec l'ID: {}", context, id);
                     return new RuntimeException("Restaurant introuvable avec l'ID : " + id);
                 });
+    }
+
+    @Override
+    public RestaurantDto getSettings() {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Récupération des paramètres du restaurant", context);
+        return restaurantRepository.findAll().stream()
+                .findFirst()
+                .map(restaurantMapper::toDto)
+                .orElseGet(() -> {
+                    logger.info("{} Aucun restaurant trouvé, création d'un singleton par défaut", context);
+                    Restaurant defaultResto = new Restaurant();
+                    defaultResto.setNom("Mon Restaurant");
+                    defaultResto.setAdresse("Adresse par défaut");
+                    defaultResto.setTelephone("00000000");
+                    defaultResto.setEmail("contact@restaurant.com");
+                    defaultResto.setTauxTva(new BigDecimal("18.0"));
+                    defaultResto.setFraisService(new BigDecimal("10.0"));
+                    defaultResto.setDevise("FCFA");
+                    defaultResto.setDeviseSymbole("FCFA");
+                    // Initialisation des horaires par défaut en JSON
+                    defaultResto.setHeuresOuverture("{\"lundi\":{\"ouvert\":true,\"debut\":\"09:00\",\"fin\":\"22:00\"},\"mardi\":{\"ouvert\":true,\"debut\":\"09:00\",\"fin\":\"22:00\"},\"mercredi\":{\"ouvert\":true,\"debut\":\"09:00\",\"fin\":\"22:00\"},\"jeudi\":{\"ouvert\":true,\"debut\":\"09:00\",\"fin\":\"22:00\"},\"vendredi\":{\"ouvert\":true,\"debut\":\"09:00\",\"fin\":\"23:00\"},\"samedi\":{\"ouvert\":true,\"debut\":\"10:00\",\"fin\":\"23:00\"},\"dimanche\":{\"ouvert\":false,\"debut\":\"10:00\",\"fin\":\"22:00\"}}");
+                    
+                    return restaurantMapper.toDto(restaurantRepository.save(defaultResto));
+                });
+    }
+
+    @Override
+    public RestaurantDto updateSettings(RestaurantDto restaurantDto) {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Mise à jour des paramètres du restaurant", context);
+        Restaurant restaurant = restaurantRepository.findAll().stream()
+                .findFirst()
+                .orElseGet(() -> new Restaurant());
+        
+        Restaurant updatedEntity = restaurantMapper.toEntity(restaurantDto);
+        // On garde l'ID existant si on met à jour
+        if (restaurant.getId() != null) {
+            updatedEntity.setId(restaurant.getId());
+        }
+        
+        return restaurantMapper.toDto(restaurantRepository.save(updatedEntity));
     }
 
     @Override

@@ -67,15 +67,15 @@ public class RestaurantControllerTest {
         objectMapper = new ObjectMapper();
 
         // Création du RestaurantDto avec le constructeur complet
-        restaurantDto = new RestaurantDto(
-                1L,
-                "Restaurant Test",
-                "Abidjan",
-                "01020304",
-                new BigDecimal("18.00"),
-                "XOF",
-                new Timestamp(System.currentTimeMillis())
-        );
+        // Création du RestaurantDto avec le constructeur par défaut et setters
+        restaurantDto = new RestaurantDto();
+        restaurantDto.setId(1L);
+        restaurantDto.setNom("Restaurant Test");
+        restaurantDto.setAdresse("Abidjan");
+        restaurantDto.setTelephone("01020304");
+        restaurantDto.setTauxTva(new BigDecimal("18.00"));
+        restaurantDto.setDevise("XOF");
+        restaurantDto.setDateCreation(new Timestamp(System.currentTimeMillis()));
     }
 
     @Test

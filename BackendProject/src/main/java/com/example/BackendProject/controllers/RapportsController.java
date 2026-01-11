@@ -98,4 +98,18 @@ public class RapportsController {
             throw e;
         }
     }
+
+    // ================= STATISTIQUES =================
+    @GetMapping("/statistiques")
+    public ResponseEntity<Object> getStatistiques(@RequestParam(defaultValue = "month") String period, HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération des statistiques globales. Période: {}", context, period);
+        try {
+            Object stats = rapportService.getStatistiques(period);
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            logger.error("{} Erreur lors de la récupération des statistiques: {}", context, e.getMessage(), e);
+            throw e;
+        }
+    }
 }

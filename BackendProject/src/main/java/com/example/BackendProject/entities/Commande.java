@@ -33,6 +33,7 @@ public class Commande {
 
     private BigDecimal totalHt;
     private BigDecimal totalTtc;
+    private Integer nombrePersonnes;
 
     @OneToMany(mappedBy = "commande")
     private List<LigneCommande> lignes;
@@ -48,7 +49,7 @@ public class Commande {
     )
     private List<Promotion> promotions;
 
-    public Commande(Long id, TableRestaurant table, Utilisateur serveur, Timestamp dateHeureCommande, StatutCommande statut, TypeCommande typeCommande, BigDecimal totalHt, BigDecimal totalTtc, List<LigneCommande> lignes, List<Paiement> paiements, List<Promotion> promotions) {
+    public Commande(Long id, TableRestaurant table, Utilisateur serveur, Timestamp dateHeureCommande, StatutCommande statut, TypeCommande typeCommande, BigDecimal totalHt, BigDecimal totalTtc, Integer nombrePersonnes, List<LigneCommande> lignes, List<Paiement> paiements, List<Promotion> promotions) {
         this.id = id;
         this.table = table;
         this.serveur = serveur;
@@ -57,6 +58,7 @@ public class Commande {
         this.typeCommande = typeCommande;
         this.totalHt = totalHt;
         this.totalTtc = totalTtc;
+        this.nombrePersonnes = nombrePersonnes;
         this.lignes = lignes;
         this.paiements = paiements;
         this.promotions = promotions;
@@ -151,5 +153,13 @@ public class Commande {
 
     public void setPromotions(List<Promotion> promotions) {
         this.promotions = promotions;
+    }
+
+    public Integer getNombrePersonnes() {
+        return nombrePersonnes;
+    }
+
+    public void setNombrePersonnes(Integer nombrePersonnes) {
+        this.nombrePersonnes = nombrePersonnes;
     }
 }

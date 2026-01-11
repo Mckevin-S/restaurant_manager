@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Upload, Eye, EyeOff, Search } from 'lucide-react';
+import {
+    Plus, Edit2, Trash2, Upload, Search,
+    Utensils, LayoutGrid, Filter, TrendingUp, AlertCircle
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../services/apiClient';
 import { toast } from 'react-hot-toast';
 
@@ -58,16 +62,15 @@ const MenuManagement = () => {
 
             if (editingPlat) {
                 await apiClient.put(`/plats/${editingPlat.id}`, data);
-                toast.success('Plat modifié avec succès');
+                toast.success('Plat modifié');
             } else {
                 await apiClient.post('/plats', data);
-                toast.success('Plat créé avec succès');
+                toast.success('Plat créé');
             }
             loadData();
             resetPlatForm();
         } catch (error) {
             toast.error('Erreur lors de la sauvegarde');
-            console.error(error);
         }
     };
 
@@ -82,56 +85,36 @@ const MenuManagement = () => {
             await apiClient.post(`/plats/${platId}/upload-image`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            toast.success('Image uploadée avec succès');
+            toast.success('Image uploadée');
             loadData();
         } catch (error) {
-            toast.error('Erreur lors de l\'upload');
+            toast.error('Erreur upload');
         }
     };
 
     const handleDeletePlat = async (id) => {
-        if (!confirm('Êtes-vous sûr de vouloir supprimer ce plat ?')) return;
+        if (!confirm('Supprimer ce plat ?')) return;
         try {
             await apiClient.delete(`/plats/${id}`);
             toast.success('Plat supprimé');
             loadData();
         } catch (error) {
-            toast.error('Erreur lors de la suppression');
+            toast.error('Erreur suppression');
         }
     };
 
     const toggleDisponibilite = async (plat) => {
         try {
             await apiClient.patch(`/plats/${plat.id}/statut-disponibilite?disponible=${!plat.disponibilite}`);
-            toast.success('Disponibilité mise à jour');
+            toast.success('Statut mis à jour');
             loadData();
         } catch (error) {
-            toast.error('Erreur lors de la mise à jour');
-        }
-    };
-
-    const handleCreateCategory = async (e) => {
-        e.preventDefault();
-        try {
-            await apiClient.post('/categories', categoryForm);
-            toast.success('Catégorie créée avec succès');
-            loadData();
-            setShowCategoryForm(false);
-            setCategoryForm({ nom: '', description: '' });
-        } catch (error) {
-            toast.error('Erreur lors de la création');
+            toast.error('Erreur');
         }
     };
 
     const resetPlatForm = () => {
-        setPlatForm({
-            nom: '',
-            description: '',
-            prix: '',
-            category: '',
-            disponibilite: true,
-            photoUrl: ''
-        });
+        setPlatForm({ nom: '', description: '', prix: '', category: '', disponibilite: true, photoUrl: '' });
         setEditingPlat(null);
         setShowPlatForm(false);
         setImagePreview(null);
@@ -142,7 +125,7 @@ const MenuManagement = () => {
             nom: plat.nom,
             description: plat.description || '',
             prix: plat.prix.toString(),
-            category: plat.category || '',
+            category: plat.category?.id || '',
             disponibilite: plat.disponibilite,
             photoUrl: plat.photoUrl || ''
         });
@@ -152,213 +135,240 @@ const MenuManagement = () => {
     };
 
     const filteredPlats = plats.filter(plat => {
-        const matchCategory = selectedCategory === 'all' || plat.category === parseInt(selectedCategory);
+        const matchCategory = selectedCategory === 'all' || plat.category?.id === parseInt(selectedCategory);
         const matchSearch = plat.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (plat.description && plat.description.toLowerCase().includes(searchTerm.toLowerCase()));
         return matchCategory && matchSearch;
     });
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-            </div>
-        );
-    }
+    if (loading) return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+        </div>
+    );
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestion du Menu</h1>
-                <p className="text-gray-600">Gérez les plats et catégories de votre carte</p>
-            </div>
-
-            {/* Actions Bar */}
-            <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-                <div className="flex flex-wrap gap-4 items-center justify-between">
-                    <div className="flex gap-3">
-                        <button
-                            onClick={() => setShowPlatForm(true)}
-                            className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
-                        >
-                            <Plus size={20} />
-                            Nouveau Plat
-                        </button>
-                        <button
-                            onClick={() => setShowCategoryForm(true)}
-                            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
-                        >
-                            <Plus size={20} />
-                            Nouvelle Catégorie
-                        </button>
-                    </div>
-
-                    <div className="flex gap-3 flex-1 max-w-2xl">
-                        <div className="relative flex-1">
-                            <Plus className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 rotate-45" size={20} />
-                            <input
-                                type="text"
-                                placeholder="Rechercher un plat..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                            />
-                        </div>
-
-                        <select
-                            value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        >
-                            <option value="all">Toutes catégories</option>
-                            {categories.map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.nom}</option>
-                            ))}
-                        </select>
-                    </div>
+        <div className="min-h-screen bg-[#f8fafc] animate-in fade-in duration-500">
+            {/* Header Section */}
+            <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+                <div>
+                    <h1 className="text-4xl font-black tracking-tight text-slate-900 flex items-center gap-3">
+                        <Utensils className="text-indigo-600" size={36} />
+                        Gestion du Menu
+                    </h1>
+                    <p className="mt-1 text-slate-500 font-medium">Gérez vos plats et catégories avec précision.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setShowCategoryForm(true)}
+                        className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    >
+                        <LayoutGrid size={18} className="text-indigo-600" /> Catégories
+                    </button>
+                    <button
+                        onClick={() => setShowPlatForm(true)}
+                        className="flex items-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-100 transition hover:bg-indigo-700 hover:scale-[1.02] active:scale-95"
+                    >
+                        <Plus size={18} /> Nouveau Plat
+                    </button>
                 </div>
             </div>
 
-            {/* Statistiques */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <p className="text-sm text-gray-600">Total Plats</p>
-                    <p className="text-2xl font-bold text-gray-900">{plats.length}</p>
-                </div>
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <p className="text-sm text-gray-600">Disponibles</p>
-                    <p className="text-2xl font-bold text-green-600">
-                        {plats.filter(p => p.disponibilite).length}
-                    </p>
-                </div>
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <p className="text-sm text-gray-600">Indisponibles</p>
-                    <p className="text-2xl font-bold text-red-600">
-                        {plats.filter(p => !p.disponibilite).length}
-                    </p>
-                </div>
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <p className="text-sm text-gray-600">Catégories</p>
-                    <p className="text-2xl font-bold text-gray-900">{categories.length}</p>
-                </div>
-            </div>
-
-            {/* Liste des plats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredPlats.map(plat => (
-                    <div key={plat.id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition">
-                        <div className="relative h-48 bg-gray-200">
-                            {plat.photoUrl ? (
-                                <img
-                                    src={plat.photoUrl}
-                                    alt={plat.nom}
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <div className="flex items-center justify-center h-full text-gray-400">
-                                    <Upload size={48} />
-                                </div>
-                            )}
-
-                            <div className="absolute top-2 right-2">
-                                <button
-                                    onClick={() => toggleDisponibilite(plat)}
-                                    className={`px-3 py-1 rounded-full text-xs font-medium ${plat.disponibilite
-                                        ? 'bg-green-100 text-green-800'
-                                        : 'bg-red-100 text-red-800'
-                                        }`}
-                                >
-                                    {plat.disponibilite ? 'Disponible' : 'Indisponible'}
-                                </button>
-                            </div>
-
-                            <label className="absolute bottom-2 right-2 bg-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-gray-50">
-                                <Upload size={16} className="text-gray-600" />
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={(e) => handleImageUpload(e, plat.id)}
-                                />
-                            </label>
-                        </div>
-
-                        <div className="p-4">
-                            <h3 className="font-bold text-lg text-gray-900 mb-1">{plat.nom}</h3>
-                            {plat.description && (
-                                <p className="text-sm text-gray-600 mb-3 line-clamp-2">{plat.description}</p>
-                            )}
-
-                            <div className="flex items-center justify-between mb-3">
-                                <span className="text-2xl font-bold text-indigo-600">
-                                    {plat.prix.toFixed(2)} FCFA
-                                </span>
-                            </div>
-
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => editPlat(plat)}
-                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition"
-                                >
-                                    <Edit2 size={16} />
-                                    Modifier
-                                </button>
-                                <button
-                                    onClick={() => handleDeletePlat(plat.id)}
-                                    className="flex items-center justify-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            </div>
+            {/* Stats Summary */}
+            <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                {[
+                    { label: 'Total Plats', val: plats.length, color: 'text-slate-600', bg: 'bg-slate-100', icon: <Utensils size={20} /> },
+                    { label: 'Disponibles', val: plats.filter(p => p.disponibilite).length, color: 'text-emerald-600', bg: 'bg-emerald-100', icon: <TrendingUp size={20} /> },
+                    { label: 'Indisponibles', val: plats.filter(p => !p.disponibilite).length, color: 'text-rose-600', bg: 'bg-rose-100', icon: <AlertCircle size={20} /> },
+                    { label: 'Catégories', val: categories.length, color: 'text-indigo-600', bg: 'bg-indigo-100', icon: <LayoutGrid size={20} /> },
+                ].map((s, i) => (
+                    <div key={i} className="flex items-center gap-4 rounded-[24px] bg-white p-5 shadow-sm border border-slate-100">
+                        <div className={`rounded-xl ${s.bg} ${s.color} p-3`}>{s.icon}</div>
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{s.label}</p>
+                            <p className="text-2xl font-black text-slate-800">{s.val}</p>
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* Modal Formulaire Plat */}
-            {showPlatForm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-                    <div className="bg-white rounded-lg max-w-2xl w-full p-6 my-8">
-                        <h3 className="text-xl font-bold mb-4">{editingPlat ? 'Modifier le plat' : 'Nouveau plat'}</h3>
-                        <form onSubmit={handleCreatePlat} className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Nom du plat *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={platForm.nom}
-                                        onChange={(e) => setPlatForm({ ...platForm, nom: e.target.value })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                    />
+            {/* Filters Bar */}
+            <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center">
+                <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                    <input
+                        type="text"
+                        placeholder="Rechercher par nom ou description..."
+                        className="w-full rounded-[20px] border-slate-100 bg-white py-4 pl-12 pr-4 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-500 focus:ring-0"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar md:pb-0">
+                    <button
+                        onClick={() => setSelectedCategory('all')}
+                        className={`whitespace-nowrap rounded-full px-6 py-2.5 text-xs font-black uppercase tracking-widest transition ${selectedCategory === 'all' ? 'bg-slate-900 text-white shadow-lg' : 'bg-white text-slate-500 border border-slate-100 hover:bg-slate-50'}`}
+                    >
+                        Tous
+                    </button>
+                    {categories.map(cat => (
+                        <button
+                            key={cat.id}
+                            onClick={() => setSelectedCategory(cat.id.toString())}
+                            className={`whitespace-nowrap rounded-full px-6 py-2.5 text-xs font-black uppercase tracking-widest transition ${selectedCategory === cat.id.toString() ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-white text-slate-500 border border-slate-100 hover:bg-slate-50'}`}
+                        >
+                            {cat.nom}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Menu Grid */}
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <AnimatePresence mode="popLayout">
+                    {filteredPlats.map(plat => (
+                        <motion.div
+                            layout
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            key={plat.id}
+                            className="group relative flex flex-col rounded-[32px] bg-white p-4 shadow-sm border border-slate-100 transition hover:shadow-2xl hover:-translate-y-2"
+                        >
+                            {/* Image Container */}
+                            <div className="relative h-48 overflow-hidden rounded-[24px] bg-slate-100">
+                                {plat.photoUrl ? (
+                                    <img src={plat.photoUrl} alt={plat.nom} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center text-slate-300">
+                                        <Utensils size={48} />
+                                    </div>
+                                )}
+
+                                {/* Status Badge */}
+                                <div className="absolute top-3 left-3">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); toggleDisponibilite(plat); }}
+                                        className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest shadow-lg ${plat.disponibilite ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}
+                                    >
+                                        {plat.disponibilite ? 'En Stock' : 'Épuisé'}
+                                    </button>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Prix (FCFA) *</label>
-                                    <input
-                                        type="number"
-                                        required
-                                        value={platForm.prix}
-                                        onChange={(e) => setPlatForm({ ...platForm, prix: e.target.value })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                    />
+
+                                {/* Upload Toggle */}
+                                <label className="absolute bottom-3 right-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-xl backdrop-blur-sm transition hover:bg-white hover:text-indigo-600">
+                                    <Upload size={18} />
+                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, plat.id)} />
+                                </label>
+                            </div>
+
+                            {/* Content */}
+                            <div className="mt-5 px-1 pb-2">
+                                <div className="flex items-start justify-between">
+                                    <div className="max-w-[70%]">
+                                        <h3 className="text-xl font-black leading-tight text-slate-900 group-hover:text-indigo-600 transition">{plat.nom}</h3>
+                                        <p className="mt-1 text-xs font-bold uppercase text-slate-400">{plat.category?.nom || 'Sans catégorie'}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-lg font-black text-indigo-600">{plat.prix.toLocaleString()} <span className="text-[10px] ml-0.5 italic">FCFA</span></p>
+                                    </div>
+                                </div>
+
+                                <p className="mt-3 line-clamp-2 text-sm font-medium text-slate-500 leading-relaxed">
+                                    {plat.description || "Aucune description fournie pour ce plat premium."}
+                                </p>
+
+                                {/* Action Buttons */}
+                                <div className="mt-5 flex gap-2">
+                                    <button
+                                        onClick={() => editPlat(plat)}
+                                        className="flex-1 rounded-[16px] bg-slate-900 py-3 text-xs font-black uppercase tracking-widest text-white transition hover:bg-indigo-600 active:scale-95"
+                                    >
+                                        Modifier
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeletePlat(plat.id)}
+                                        className="rounded-[16px] bg-rose-50 px-4 text-rose-600 transition hover:bg-rose-600 hover:text-white active:scale-95"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+            </div>
+
+            {/* Modal Form Plat */}
+            {showPlatForm && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 overflow-y-auto">
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="my-auto w-full max-w-2xl rounded-[40px] bg-white p-8 shadow-2xl lg:p-12"
+                    >
+                        <h3 className="text-3xl font-black text-slate-900 mb-8">{editingPlat ? 'Modifier Plat' : 'Nouveau Plat'}</h3>
+                        <form onSubmit={handleCreatePlat} className="space-y-6">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Nom du Chef-d'œuvre</label>
+                                    <input
+                                        required className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                        value={platForm.nom} onChange={(e) => setPlatForm({ ...platForm, nom: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Prix de Vente (FCFA)</label>
+                                    <input
+                                        type="number" required className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                        value={platForm.prix} onChange={(e) => setPlatForm({ ...platForm, prix: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Catégorie</label>
+                                    <select
+                                        className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                        value={platForm.category} onChange={(e) => setPlatForm({ ...platForm, category: e.target.value })}
+                                    >
+                                        <option value="">Sélectionner</option>
+                                        {categories.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Disponibilité</label>
+                                    <div className="flex bg-slate-50 rounded-[20px] p-2 gap-2 border border-slate-200">
+                                        <button
+                                            type="button"
+                                            onClick={() => setPlatForm({ ...platForm, disponibilite: true })}
+                                            className={`flex-1 rounded-[14px] py-2.5 text-[10px] font-black uppercase tracking-widest transition ${platForm.disponibilite ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500'}`}
+                                        >
+                                            En Stock
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPlatForm({ ...platForm, disponibilite: false })}
+                                            className={`flex-1 rounded-[14px] py-2.5 text-[10px] font-black uppercase tracking-widest transition ${!platForm.disponibilite ? 'bg-rose-500 text-white shadow-md' : 'text-slate-500'}`}
+                                        >
+                                            Épuisé
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Description Savoureuse</label>
                                 <textarea
-                                    value={platForm.description}
-                                    onChange={(e) => setPlatForm({ ...platForm, description: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                    rows="3"
+                                    className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                    rows="3" value={platForm.description} onChange={(e) => setPlatForm({ ...platForm, description: e.target.value })}
                                 />
                             </div>
-                            <div className="flex gap-3 pt-4">
-                                <button type="button" onClick={resetPlatForm} className="flex-1 px-4 py-2 border rounded-lg">Annuler</button>
-                                <button type="submit" className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg">{editingPlat ? 'Modifier' : 'Créer'}</button>
+                            <div className="flex gap-4 pt-4">
+                                <button type="button" onClick={resetPlatForm} className="flex-1 rounded-2xl py-5 font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition">Annuler</button>
+                                <button type="submit" className="flex-1 rounded-[24px] bg-indigo-600 py-5 font-black uppercase tracking-widest text-white shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition active:scale-95">
+                                    {editingPlat ? 'Mettre à jour' : 'Confirmer'}
+                                </button>
                             </div>
                         </form>
-                    </div>
+                    </motion.div>
                 </div>
             )}
         </div>

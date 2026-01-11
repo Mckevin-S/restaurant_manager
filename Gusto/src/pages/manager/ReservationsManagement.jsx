@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, Plus, Search, User, Users, Phone, Mail, CheckCircle, XCircle, Trash2, Edit2, Ban } from 'lucide-react';
+import {
+    Calendar, Clock, Plus, Search, Users,
+    CheckCircle, Trash2, Mail, Phone, MapPin, ChevronRight, Filter
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import apiClient from '../../services/apiClient';
 
 const ReservationsManagement = () => {
     const [reservations, setReservations] = useState([]);
@@ -8,34 +13,6 @@ const ReservationsManagement = () => {
     const [showForm, setShowForm] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-
-    // Mock data
-    const mockReservations = [
-        {
-            id: 1,
-            customerName: 'Jean Dupont',
-            email: 'jean.dupont@email.com',
-            phone: '0123456789',
-            guests: 4,
-            date: new Date().toISOString().split('T')[0],
-            time: '19:30',
-            status: 'CONFIRMED', // CONFIRMED, PENDING, CANCELLED, NOSHOW
-            table: 'T12',
-            notes: 'Anniversaire'
-        },
-        {
-            id: 2,
-            customerName: 'Marie Martin',
-            email: 'marie.m@email.com',
-            phone: '0987654321',
-            guests: 2,
-            date: new Date().toISOString().split('T')[0],
-            time: '20:00',
-            status: 'PENDING',
-            table: null,
-            notes: ''
-        }
-    ];
 
     const [formData, setFormData] = useState({
         customerName: '',
@@ -48,24 +25,33 @@ const ReservationsManagement = () => {
     });
 
     useEffect(() => {
-        // Simulate fetch
-        setTimeout(() => {
-            setReservations(mockReservations);
-            setLoading(false);
-        }, 500);
+        fetchData();
     }, []);
 
+    const fetchData = async () => {
+        try {
+            // Mock data for now until backend is ready
+            const mockRes = [
+                { id: 1, customerName: 'Jean Dupont', phone: '0123456789', guests: 4, date: new Date().toISOString().split('T')[0], time: '19:30', status: 'CONFIRMED', table: 'T12' },
+                { id: 2, customerName: 'Marie Martin', phone: '0987654321', guests: 2, date: new Date().toISOString().split('T')[0], time: '20:00', status: 'PENDING', table: null }
+            ];
+            setReservations(mockRes);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleUpdateStatus = (id, newStatus) => {
-        // NOTE: Le backend n'a pas encore de endpoint Réservation.
-        // Simulons la mise à jour locale.
         setReservations(reservations.map(res =>
             res.id === id ? { ...res, status: newStatus } : res
         ));
-        toast.success(`Statut mis à jour : ${newStatus}`);
+        toast.success(`Statut : ${newStatus}`);
     };
 
     const handleDelete = (id) => {
-        if (confirm('Supprimer cette réservation ?')) {
+        if (window.confirm('Supprimer cette réservation ?')) {
             setReservations(reservations.filter(res => res.id !== id));
             toast.success('Réservation supprimée');
         }
@@ -82,191 +68,175 @@ const ReservationsManagement = () => {
         setReservations([...reservations, newReservation]);
         setShowForm(false);
         toast.success('Réservation ajoutée');
-        setFormData({
-            customerName: '',
-            email: '',
-            phone: '',
-            guests: 2,
-            date: selectedDate,
-            time: '',
-            notes: ''
-        });
     };
 
     const filteredReservations = reservations.filter(res => {
         const matchesDate = res.date === selectedDate;
-        const matchesSearch = res.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            res.phone.includes(searchTerm);
+        const matchesSearch = (res.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (res.phone || '').includes(searchTerm);
         return matchesDate && matchesSearch;
     });
 
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case 'CONFIRMED': return <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">Confirmée</span>;
-            case 'PENDING': return <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-semibold">En attente</span>;
-            case 'CANCELLED': return <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-semibold">Annulée</span>;
-            case 'NOSHOW': return <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-semibold">No-Show</span>;
-            default: return null;
-        }
-    };
+    if (loading) return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+        </div>
+    );
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestion des Réservations</h1>
-                <p className="text-gray-600">Suivi des réservations et attributions de tables</p>
+        <div className="min-h-screen bg-[#f8fafc] animate-in fade-in duration-500 px-4 py-8">
+            {/* Header Section */}
+            <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+                <div>
+                    <h1 className="text-4xl font-black tracking-tight text-slate-900 flex items-center gap-3">
+                        <Calendar className="text-indigo-600" size={36} />
+                        Réservations
+                    </h1>
+                    <p className="mt-1 text-slate-500 font-medium">Planifiez l'accueil de vos clients VIP.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setShowForm(true)}
+                        className="flex items-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-100 transition hover:bg-indigo-700 hover:scale-[1.02] active:scale-95"
+                    >
+                        <Plus size={18} /> Nouvelle Réservation
+                    </button>
+                </div>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-6">
-                {/* Sidebar Calendrier (Simplified) */}
-                <div className="md:w-1/4">
-                    <div className="bg-white rounded-lg shadow-sm p-4">
-                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                            <Calendar size={20} />
-                            Date
-                        </h3>
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+                {/* Left: Day Selector & Stats */}
+                <div className="lg:col-span-4 space-y-6">
+                    <div className="rounded-[32px] bg-white p-8 shadow-sm border border-slate-100">
+                        <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight italic mb-6">Sélecteur de Date</h2>
                         <input
                             type="date"
                             value={selectedDate}
                             onChange={(e) => setSelectedDate(e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 mb-4"
+                            className="w-full rounded-2xl border-slate-100 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0 mb-6"
                         />
 
-                        <div className="space-y-2">
-                            <div className="text-sm font-medium text-gray-500">Statistiques du jour</div>
-                            <div className="flex justify-between items-center bg-indigo-50 p-2 rounded">
-                                <span>Total</span>
-                                <span className="font-bold text-indigo-700">{filteredReservations.length}</span>
-                            </div>
-                            <div className="flex justify-between items-center bg-green-50 p-2 rounded">
-                                <span>Confirmées</span>
-                                <span className="font-bold text-green-700">
-                                    {filteredReservations.filter(r => r.status === 'CONFIRMED').length}
-                                </span>
-                            </div>
-                            <div className="flex justify-between items-center bg-yellow-50 p-2 rounded">
-                                <span>En attente</span>
-                                <span className="font-bold text-yellow-700">
-                                    {filteredReservations.filter(r => r.status === 'PENDING').length}
-                                </span>
-                            </div>
+                        <div className="space-y-3">
+                            {[
+                                { label: 'Total Inscriptions', val: filteredReservations.length, color: 'text-slate-600', bg: 'bg-slate-100' },
+                                { label: 'Confirmées', val: filteredReservations.filter(r => r.status === 'CONFIRMED').length, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+                                { label: 'En Attente', val: filteredReservations.filter(r => r.status === 'PENDING').length, color: 'text-amber-600', bg: 'bg-amber-100' },
+                            ].map((s, i) => (
+                                <div key={i} className={`flex items-center justify-between p-4 rounded-2xl ${s.bg} border border-white`}>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${s.color}`}>{s.label}</span>
+                                    <span className={`text-xl font-black ${s.color}`}>{s.val}</span>
+                                </div>
+                            ))}
                         </div>
+                    </div>
+
+                    {/* Proactive Help */}
+                    <div className="rounded-[32px] bg-slate-900 p-8 text-white">
+                        <div className="h-12 w-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 mb-4">
+                            <Users size={24} />
+                        </div>
+                        <h3 className="text-xl font-black mb-2 leading-tight">Optimisation Salles</h3>
+                        <p className="text-slate-400 text-sm font-medium mb-4">Attribuez les tables stratégiquement pour maximiser la capacité de rotation.</p>
+                        <button className="text-indigo-400 text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">
+                            Voir Plan de Salle <ChevronRight size={14} />
+                        </button>
                     </div>
                 </div>
 
-                {/* Main Content */}
-                <div className="md:w-3/4">
-                    <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <div className="relative flex-1 max-w-md">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                {/* Right: Reservations List */}
+                <div className="lg:col-span-8 space-y-6">
+                    <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-100 sm:p-8">
+                        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                 <input
-                                    type="text"
-                                    placeholder="Rechercher client ou téléphone..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    type="text" placeholder="Rechercher client ou téléphone..."
+                                    className="w-full rounded-[20px] border-slate-100 bg-slate-50 py-3.5 pl-12 pr-4 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 shadow-inner"
+                                    value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                            <button
-                                onClick={() => setShowForm(true)}
-                                className="ml-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition flex items-center gap-2"
-                            >
-                                <Plus size={20} />
-                                Nouvelle Réservation
-                            </button>
                         </div>
 
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="bg-gray-50 border-b">
-                                    <tr>
-                                        <th className="px-4 py-3 text-sm font-semibold text-gray-600">Heure</th>
-                                        <th className="px-4 py-3 text-sm font-semibold text-gray-600">Client</th>
-                                        <th className="px-4 py-3 text-sm font-semibold text-gray-600">Couverts</th>
-                                        <th className="px-4 py-3 text-sm font-semibold text-gray-600">Table</th>
-                                        <th className="px-4 py-3 text-sm font-semibold text-gray-600">Statut</th>
-                                        <th className="px-4 py-3 text-sm font-semibold text-gray-600">Actions</th>
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b border-slate-50">
+                                        <th className="px-4 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Heure</th>
+                                        <th className="px-4 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Client</th>
+                                        <th className="px-4 py-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Couverts</th>
+                                        <th className="px-4 py-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Table</th>
+                                        <th className="px-4 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Statut</th>
+                                        <th className="px-4 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {filteredReservations.length > 0 ? (
-                                        filteredReservations.sort((a, b) => a.time.localeCompare(b.time)).map(res => (
-                                            <tr key={res.id} className="hover:bg-gray-50 transition">
-                                                <td className="px-4 py-3 font-medium text-gray-900">
-                                                    <div className="flex items-center gap-1">
-                                                        <Clock size={16} className="text-gray-400" />
-                                                        {res.time}
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="font-medium text-gray-900">{res.customerName}</div>
-                                                    <div className="text-sm text-gray-500 flex flex-col">
-                                                        <span className="flex items-center gap-1"><Phone size={12} /> {res.phone}</span>
-                                                        {res.email && <span className="flex items-center gap-1"><Mail size={12} /> {res.email}</span>}
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center gap-1 text-gray-600">
-                                                        <Users size={16} />
-                                                        {res.guests}
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    {res.table ? (
-                                                        <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-sm font-medium">
-                                                            {res.table}
+                                <tbody className="divide-y divide-slate-50">
+                                    <AnimatePresence mode="popLayout">
+                                        {filteredReservations.length > 0 ? (
+                                            filteredReservations.sort((a, b) => a.time.localeCompare(b.time)).map(res => (
+                                                <motion.tr
+                                                    layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                                    key={res.id} className="group hover:bg-slate-50 transition-colors"
+                                                >
+                                                    <td className="px-4 py-5 whitespace-nowrap">
+                                                        <span className="flex items-center gap-1.5 text-sm font-black text-slate-900 bg-slate-100 px-3 py-1 rounded-lg">
+                                                            <Clock size={14} className="text-indigo-600" /> {res.time}
                                                         </span>
-                                                    ) : (
-                                                        <span className="text-gray-400 text-sm italic">Non attribuée</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    {getStatusBadge(res.status)}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center gap-2">
-                                                        {res.status === 'PENDING' && (
-                                                            <>
-                                                                <button
-                                                                    onClick={() => handleUpdateStatus(res.id, 'CONFIRMED')}
-                                                                    className="p-1 text-green-600 hover:bg-green-50 rounded" title="Confirmer"
-                                                                >
+                                                    </td>
+                                                    <td className="px-4 py-5">
+                                                        <div>
+                                                            <p className="text-sm font-black text-slate-900 line-clamp-1">{res.customerName}</p>
+                                                            <div className="flex gap-2 text-[8px] font-bold text-slate-400 uppercase mt-0.5">
+                                                                <span className="flex items-center gap-0.5"><Phone size={8} /> {res.phone}</span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-5 text-center">
+                                                        <div className="flex flex-col items-center">
+                                                            <span className="text-sm font-black text-slate-800">{res.guests}</span>
+                                                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Personnes</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-5 text-center">
+                                                        {res.table ? (
+                                                            <span className="flex items-center justify-center gap-1 text-[10px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg px-2 py-1">
+                                                                <MapPin size={10} /> {res.table}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-[9px] font-black text-slate-300 italic uppercase">Non assigné</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-5 text-right">
+                                                        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[9px] font-black tracking-widest uppercase ${res.status === 'CONFIRMED' ? 'bg-emerald-50 text-emerald-600' :
+                                                                res.status === 'PENDING' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'
+                                                            }`}>
+                                                            {res.status === 'CONFIRMED' ? 'Confirmé' : res.status === 'PENDING' ? 'Attente' : 'Annulé'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-5 text-right whitespace-nowrap">
+                                                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition">
+                                                            {res.status === 'PENDING' && (
+                                                                <button onClick={() => handleUpdateStatus(res.id, 'CONFIRMED')} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition">
                                                                     <CheckCircle size={18} />
                                                                 </button>
-                                                                <button
-                                                                    onClick={() => handleUpdateStatus(res.id, 'CANCELLED')}
-                                                                    className="p-1 text-red-600 hover:bg-red-50 rounded" title="Annuler"
-                                                                >
-                                                                    <XCircle size={18} />
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                        {res.status === 'CONFIRMED' && (
-                                                            <button
-                                                                onClick={() => handleUpdateStatus(res.id, 'NOSHOW')}
-                                                                className="p-1 text-gray-600 hover:bg-gray-50 rounded" title="Marquer No-Show"
-                                                            >
-                                                                <Ban size={18} />
+                                                            )}
+                                                            <button onClick={() => handleDelete(res.id)} className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition">
+                                                                <Trash2 size={18} />
                                                             </button>
-                                                        )}
-                                                        <button
-                                                            onClick={() => handleDelete(res.id)}
-                                                            className="p-1 text-gray-400 hover:text-red-500 rounded" title="Supprimer"
-                                                        >
-                                                            <Trash2 size={18} />
-                                                        </button>
+                                                        </div>
+                                                    </td>
+                                                </motion.tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="6" className="py-20 text-center">
+                                                    <div className="flex flex-col items-center opacity-20">
+                                                        <Calendar size={64} className="text-slate-900 mb-4" />
+                                                        <p className="text-lg font-black uppercase tracking-widest italic">Aucun Client attendu</p>
                                                     </div>
                                                 </td>
                                             </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan="6" className="px-4 py-12 text-center text-gray-500">
-                                                Aucune réservation pour cette date
-                                            </td>
-                                        </tr>
-                                    )}
+                                        )}
+                                    </AnimatePresence>
                                 </tbody>
                             </table>
                         </div>
@@ -274,114 +244,71 @@ const ReservationsManagement = () => {
                 </div>
             </div>
 
-            {/* Modal de création */}
+            {/* Modal Form */}
             {showForm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg max-w-md w-full p-6">
-                        <h3 className="text-xl font-bold mb-4">Nouvelle Réservation</h3>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Client</label>
-                                <div className="flex items-center border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
-                                    <div className="bg-gray-50 p-2 border-r"><User size={20} className="text-gray-500" /></div>
-                                    <input
-                                        type="text"
-                                        required
-                                        className="w-full px-3 py-2 outline-none"
-                                        placeholder="Nom complet"
-                                        value={formData.customerName}
-                                        onChange={e => setFormData({ ...formData, customerName: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                                    <input
-                                        type="tel"
-                                        required
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                        placeholder="06..."
-                                        value={formData.phone}
-                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Couverts</label>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        required
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                        value={formData.guests}
-                                        onChange={e => setFormData({ ...formData, guests: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                                    <input
-                                        type="date"
-                                        required
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                        value={formData.date}
-                                        onChange={e => setFormData({ ...formData, date: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Heure</label>
-                                    <input
-                                        type="time"
-                                        required
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                        value={formData.time}
-                                        onChange={e => setFormData({ ...formData, time: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Email (Optionnel)</label>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 overflow-y-auto">
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="my-auto w-full max-w-xl rounded-[40px] bg-white p-8 shadow-2xl lg:p-12"
+                    >
+                        <h3 className="text-3xl font-black text-slate-900 mb-8 uppercase tracking-tight italic">Nouveau Client VIP</h3>
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Nom du Client</label>
                                 <input
-                                    type="email"
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                    placeholder="client@email.com"
-                                    value={formData.email}
-                                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                    required className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                    value={formData.customerName} onChange={e => setFormData({ ...formData, customerName: e.target.value })}
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Téléphone</label>
+                                    <input
+                                        required className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                        value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Couverts</label>
+                                    <input
+                                        type="number" required min="1" className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                        value={formData.guests} onChange={e => setFormData({ ...formData, guests: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Date</label>
+                                    <input
+                                        type="date" required className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                        value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Heure</label>
+                                    <input
+                                        type="time" required className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                        value={formData.time} onChange={e => setFormData({ ...formData, time: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Notes Particulières</label>
                                 <textarea
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                    placeholder="Allergies, anniversaire, etc."
-                                    rows="2"
-                                    value={formData.notes}
-                                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                    className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                    rows="2" value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })}
                                 />
                             </div>
 
-                            <div className="flex gap-3 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowForm(false)}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                                >
-                                    Annuler
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                                >
-                                    Enregistrer
+                            <div className="flex gap-4 pt-4">
+                                <button type="button" onClick={() => setShowForm(false)} className="flex-1 rounded-2xl py-5 font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition">Fermer</button>
+                                <button type="submit" className="flex-1 rounded-[24px] bg-indigo-600 py-5 font-black uppercase tracking-widest text-white shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition active:scale-95">
+                                    Confirmer
                                 </button>
                             </div>
                         </form>
-                    </div>
+                    </motion.div>
                 </div>
             )}
         </div>

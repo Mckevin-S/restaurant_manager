@@ -13,14 +13,32 @@ const Reports = () => {
     const [period, setPeriod] = useState('month');
     const [loading, setLoading] = useState(true);
 
+    useEffect(() => {
+        const loadData = async () => {
+            setLoading(true);
+            await Promise.all([
+                fetchStats(),
+                fetchTopPlats()
+            ]);
+            setLoading(false);
+        };
+        loadData();
+    }, [period]);
+
     const fetchStats = async () => {
         try {
             const response = await apiClient.get(`/rapports/statistiques?period=${period}`);
             setStats(response.data);
         } catch (error) {
-            //ApiClient gère déjà les erreurs
-        } finally {
-            setLoading(false);
+            console.error('Erreur stats:', error);
+            // On peut mettre des données à 0 par défaut si l'API échoue ou n'existe pas encore
+            setStats({
+                ca: 0,
+                nbCommandes: 0,
+                ticketMoyen: 0,
+                nbClients: 0,
+                evolutionCA: []
+            });
         }
     };
 

@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/restaurants")
+@RequestMapping({"api/restaurants", "api/restaurant"})
 @Tag(name = "Gestion des Restaurants", description = "API pour la gestion des restaurants")
 public class RestaurantController {
 
@@ -91,6 +91,30 @@ public class RestaurantController {
             return ResponseEntity.ok(restaurant);
         } catch (Exception e) {
             logger.error("{} Erreur lors de la récupération du restaurant ID: {} - {}", context, id, e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    @GetMapping("/settings")
+    @Operation(summary = "Récupérer les paramètres globaux du restaurant")
+    public ResponseEntity<RestaurantDto> getSettings(HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Récupération des paramètres du restaurant", context);
+        return ResponseEntity.ok(restaurantService.getSettings());
+    }
+
+    @PutMapping("/settings")
+    @Operation(summary = "Mettre à jour les paramètres globaux du restaurant")
+    public ResponseEntity<RestaurantDto> updateSettings(
+            @RequestBody RestaurantDto restaurantDto,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Mise à jour des paramètres du restaurant", context);
+        try {
+            RestaurantDto updated = restaurantService.updateSettings(restaurantDto);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            logger.error("{} Erreur settings: {}", context, e.getMessage());
             throw e;
         }
     }

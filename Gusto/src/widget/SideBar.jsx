@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { 
-  Drawer, List, ListItem, ListItemButton, 
-  ListItemIcon, ListItemText, Toolbar, Divider, 
-  Typography, Box, IconButton, useMediaQuery, useTheme 
+import {
+  Drawer, List, ListItem, ListItemButton,
+  ListItemIcon, ListItemText, Toolbar, Divider,
+  Typography, Box, IconButton, useMediaQuery, useTheme
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 // Nouvelles icônes
@@ -22,12 +22,12 @@ export default function SideBar({ userRole, onLogout }) {
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   const drawerContent = (
-    <Box sx={{ 
-      height: '100%', 
-      backgroundColor: '#121212', 
-      color: '#fff', 
-      display: 'flex', 
-      flexDirection: 'column' 
+    <Box sx={{
+      height: '100%',
+      backgroundColor: '#121212',
+      color: '#fff',
+      display: 'flex',
+      flexDirection: 'column'
     }}>
       {/* HEADER LOGO */}
       <Toolbar sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -43,8 +43,8 @@ export default function SideBar({ userRole, onLogout }) {
             const isActive = location.pathname === item.path;
             return (
               <ListItem key={item.title} disablePadding sx={{ mb: 1 }}>
-                <ListItemButton 
-                  component={NavLink} 
+                <ListItemButton
+                  component={NavLink}
                   to={item.path}
                   onClick={() => isMobile && setMobileOpen(false)}
                   sx={{
@@ -68,12 +68,12 @@ export default function SideBar({ userRole, onLogout }) {
       {/* BAS DE LA SIDEBAR : PROFIL PUIS DECONNEXION */}
       <Box sx={{ px: 2, pb: 4 }}>
         <Divider sx={{ backgroundColor: 'rgba(255,255,255,0.05)', mb: 2 }} />
-        
+
         <List>
           {/* MON PROFIL (Remplace l'ancien login de déconnexion) */}
           <ListItem disablePadding sx={{ mb: 1 }}>
-            <ListItemButton 
-              component={NavLink} 
+            <ListItemButton
+              component={NavLink}
               to="/profile"
               onClick={() => isMobile && setMobileOpen(false)}
               sx={{
@@ -91,7 +91,7 @@ export default function SideBar({ userRole, onLogout }) {
 
           {/* DÉCONNEXION (Tout en bas) */}
           <ListItem disablePadding>
-            <ListItemButton 
+            <ListItemButton
               onClick={onLogout}
               sx={{
                 borderRadius: '12px',
@@ -118,11 +118,11 @@ export default function SideBar({ userRole, onLogout }) {
         onClose={handleDrawerToggle}
         ModalProps={{ keepMounted: true }}
         sx={{
-          '& .MuiDrawer-paper': { 
-            boxSizing: 'border-box', 
-            width: drawerWidth, 
-            backgroundColor: '#121212', 
-            borderRight: '1px solid rgba(255,255,255,0.05)' 
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
+            width: drawerWidth,
+            backgroundColor: '#121212',
+            borderRight: '1px solid rgba(255,255,255,0.05)'
           },
         }}
       >

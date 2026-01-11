@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Tag, Calendar, Clock, Percent, DollarSign, Search, CheckCircle, XCircle } from 'lucide-react';
+import {
+    Plus, Edit2, Trash2, Tag, Calendar, Clock,
+    Percent, DollarSign, Search, CheckCircle, XCircle, ChevronRight
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
-import { getPromotions, createPromotion, updatePromotion, deletePromotion } from '../../services/api';
+import apiClient from '../../services/apiClient';
 
 const PromotionsManagement = () => {
     const [promotions, setPromotions] = useState([]);
@@ -13,14 +17,14 @@ const PromotionsManagement = () => {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        type: 'PERCENTAGE', // PERCENTAGE, FIXED_AMOUNT, MENU_SPECIAL
+        type: 'PERCENTAGE',
         value: '',
         startDate: '',
         endDate: '',
         startTime: '',
         endTime: '',
         active: true,
-        daysOfWeek: [], // ['MONDAY', 'TUESDAY', ...]
+        daysOfWeek: [],
         conditions: ''
     });
 
@@ -30,10 +34,10 @@ const PromotionsManagement = () => {
 
     const fetchPromotions = async () => {
         try {
-            const response = await getPromotions();
-            setPromotions(response.data);
+            const response = await apiClient.get('/promotions');
+            setPromotions(response.data || []);
         } catch (error) {
-            toast.error('Erreur lors du chargement des promotions');
+            console.error(error);
         } finally {
             setLoading(false);
         }
@@ -43,365 +47,247 @@ const PromotionsManagement = () => {
         e.preventDefault();
         try {
             const data = { ...formData, value: parseFloat(formData.value) };
-
             if (editingPromo) {
-                await updatePromotion(editingPromo.id, data);
-                toast.success('Promotion modifiée avec succès');
+                await apiClient.put(`/promotions/${editingPromo.id}`, data);
+                toast.success('Promotion mise à jour');
             } else {
-                await createPromotion(data);
-                toast.success('Promotion créée avec succès');
+                await apiClient.post('/promotions', data);
+                toast.success('Promotion créée');
             }
             fetchPromotions();
             resetForm();
-        } catch (error) {
-            toast.error('Erreur lors de la sauvegarde');
-            console.error(error);
-        }
+        } catch (error) { }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette promotion ?')) return;
-
+        if (!window.confirm('Supprimer cette promotion ?')) return;
         try {
-            await deletePromotion(id);
-            toast.success('Promotion supprimée');
+            await apiClient.delete(`/promotions/${id}`);
+            toast.success('Supprimée');
             fetchPromotions();
-        } catch (error) {
-            toast.error('Erreur lors de la suppression');
-        }
+        } catch (error) { }
     };
 
     const toggleStatus = async (promo) => {
         try {
             const updatedPromo = { ...promo, active: !promo.active };
-            await updatePromotion(promo.id, updatedPromo);
-            toast.success(updatedPromo.active ? 'Promotion activée' : 'Promotion désactivée');
-            fetchPromotions(); // Refresh to keep state consistent
-        } catch (error) {
-            toast.error('Erreur lors du changement de statut');
-        }
+            await apiClient.put(`/promotions/${promo.id}`, updatedPromo);
+            toast.success(updatedPromo.active ? 'Activée' : 'Désactivée');
+            fetchPromotions();
+        } catch (error) { }
     };
 
     const resetForm = () => {
         setFormData({
-            name: '',
-            description: '',
-            type: 'PERCENTAGE',
-            value: '',
-            startDate: '',
-            endDate: '',
-            startTime: '',
-            endTime: '',
-            active: true,
-            daysOfWeek: [],
-            conditions: ''
+            name: '', description: '', type: 'PERCENTAGE', value: '',
+            startDate: '', endDate: '', startTime: '', endTime: '',
+            active: true, daysOfWeek: [], conditions: ''
         });
         setEditingPromo(null);
         setShowForm(false);
     };
 
-    const handleEdit = (promo) => {
-        setFormData({
-            ...promo,
-            value: promo.value.toString()
-        });
-        setEditingPromo(promo);
-        setShowForm(true);
-    };
-
-    const handleDayToggle = (day) => {
-        const days = formData.daysOfWeek.includes(day)
-            ? formData.daysOfWeek.filter(d => d !== day)
-            : [...formData.daysOfWeek, day];
-        setFormData({ ...formData, daysOfWeek: days });
-    };
-
     const filteredPromotions = promotions.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.description.toLowerCase().includes(searchTerm.toLowerCase())
+        (p.name || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const DAYS = [
-        { key: 'MONDAY', label: 'Lun' },
-        { key: 'TUESDAY', label: 'Mar' },
-        { key: 'WEDNESDAY', label: 'Mer' },
-        { key: 'THURSDAY', label: 'Jeu' },
-        { key: 'FRIDAY', label: 'Ven' },
-        { key: 'SATURDAY', label: 'Sam' },
+        { key: 'MONDAY', label: 'Lun' }, { key: 'TUESDAY', label: 'Mar' },
+        { key: 'WEDNESDAY', label: 'Mer' }, { key: 'THURSDAY', label: 'Jeu' },
+        { key: 'FRIDAY', label: 'Ven' }, { key: 'SATURDAY', label: 'Sam' },
         { key: 'SUNDAY', label: 'Dim' }
     ];
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-            </div>
-        );
-    }
+    if (loading) return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+        </div>
+    );
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestion des Promotions</h1>
-                <p className="text-gray-600">Configurez les offres spéciales et réductions</p>
-            </div>
-
-            {/* Actions Bar */}
-            <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-                <div className="flex flex-wrap gap-4 items-center justify-between">
+        <div className="min-h-screen bg-[#f8fafc] animate-in fade-in duration-500 px-4 py-8 lg:px-8">
+            {/* Header Section */}
+            <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+                <div>
+                    <h1 className="text-4xl font-black tracking-tight text-slate-900 flex items-center gap-3">
+                        <Tag className="text-indigo-600" size={36} />
+                        Offres & Promos
+                    </h1>
+                    <p className="mt-1 text-slate-500 font-medium">Attirez plus de clients avec des campagnes ciblées.</p>
+                </div>
+                <div className="flex items-center gap-3">
                     <button
                         onClick={() => setShowForm(true)}
-                        className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
+                        className="flex items-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-100 transition hover:bg-indigo-700 hover:scale-[1.02] active:scale-95"
                     >
-                        <Plus size={20} />
-                        Nouvelle Promotion
+                        <Plus size={18} /> Nouvelle Campagne
                     </button>
-
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Rechercher une promotion..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        />
-                    </div>
                 </div>
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-indigo-500">
-                    <div className="text-gray-500 text-sm">Total Promotions</div>
-                    <div className="text-2xl font-bold">{promotions.length}</div>
-                </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-green-500">
-                    <div className="text-gray-500 text-sm">Actives</div>
-                    <div className="text-2xl font-bold">{promotions.filter(p => p.active).length}</div>
-                </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-gray-500">
-                    <div className="text-gray-500 text-sm">Inactives</div>
-                    <div className="text-2xl font-bold">{promotions.filter(p => !p.active).length}</div>
-                </div>
-            </div>
-
-            {/* Liste des promotions */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {filteredPromotions.map(promo => (
-                    <div key={promo.id} className={`bg-white rounded-lg shadow-sm p-6 border transition hover:shadow-md ${promo.active ? 'border-green-200' : 'border-gray-200 opacity-75'}`}>
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="flex items-start gap-3">
-                                <div className={`p-3 rounded-full ${promo.type === 'PERCENTAGE' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
-                                    {promo.type === 'PERCENTAGE' ? <Percent size={24} /> : <DollarSign size={24} />}
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-lg text-gray-900">{promo.name}</h3>
-                                    <p className="text-gray-600 text-sm">{promo.description}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => toggleStatus(promo)}
-                                    className={`p-2 rounded-full transition ${promo.active ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
-                                    title={promo.active ? 'Désactiver' : 'Activer'}
-                                >
-                                    {promo.active ? <CheckCircle size={20} /> : <XCircle size={20} />}
-                                </button>
-                                <button
-                                    onClick={() => handleEdit(promo)}
-                                    className="p-2 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition"
-                                >
-                                    <Edit2 size={20} />
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(promo.id)}
-                                    className="p-2 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition"
-                                >
-                                    <Trash2 size={20} />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <Tag size={16} />
-                                <span className="font-medium">
-                                    {promo.type === 'PERCENTAGE' ? `-${promo.value}%` : `-${promo.value} FCFA`}
-                                </span>
-                            </div>
-
-                            {(promo.startDate || promo.endDate) && (
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                    <Calendar size={16} />
-                                    <span>
-                                        {promo.startDate ? new Date(promo.startDate).toLocaleDateString() : '...'}
-                                        {' à '}
-                                        {promo.endDate ? new Date(promo.endDate).toLocaleDateString() : '...'}
-                                    </span>
-                                </div>
-                            )}
-
-                            {(promo.startTime || promo.endTime) && (
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                    <Clock size={16} />
-                                    <span>{promo.startTime} - {promo.endTime}</span>
-                                </div>
-                            )}
-
-                            {promo.daysOfWeek && promo.daysOfWeek.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-2">
-                                    {promo.daysOfWeek.map(day => {
-                                        const dayObj = DAYS.find(d => d.key === day);
-                                        return (
-                                            <span key={day} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                                                {dayObj ? dayObj.label : day}
-                                            </span>
-                                        );
-                                    })}
-                                </div>
-                            )}
+            <div className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                {[
+                    { label: 'Total', val: promotions.length, color: 'text-slate-600', bg: 'bg-slate-100', icon: <Tag size={20} /> },
+                    { label: 'Actives', val: promotions.filter(p => p.active).length, color: 'text-emerald-600', bg: 'bg-emerald-100', icon: <CheckCircle size={20} /> },
+                    { label: 'Inactives', val: promotions.filter(p => !p.active).length, color: 'text-rose-600', bg: 'bg-rose-100', icon: <XCircle size={20} /> },
+                    { label: 'Engagement', val: '24%', color: 'text-indigo-600', bg: 'bg-indigo-100', icon: <Percent size={20} /> },
+                ].map((s, i) => (
+                    <div key={i} className="flex items-center gap-4 rounded-[32px] bg-white p-6 shadow-sm border border-slate-50 transition hover:shadow-md">
+                        <div className={`rounded-2xl ${s.bg} ${s.color} p-4`}>{s.icon}</div>
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{s.label}</p>
+                            <p className="text-2xl font-black text-slate-900">{s.val}</p>
                         </div>
                     </div>
                 ))}
             </div>
 
+            {/* Main Content */}
+            <div className="space-y-6">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="relative flex-1 max-w-md">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                            type="text" placeholder="Rechercher une offre..."
+                            className="w-full rounded-2xl border-slate-100 bg-white py-3.5 pl-12 pr-4 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:ring-0 shadow-sm"
+                            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    <AnimatePresence mode="popLayout">
+                        {filteredPromotions.map(promo => (
+                            <motion.div
+                                layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                                key={promo.id}
+                                className={`group relative rounded-[32px] border-2 bg-white p-8 transition shadow-sm hover:shadow-xl ${promo.active ? 'border-indigo-50' : 'border-slate-100 opacity-60 grayscale'}`}
+                            >
+                                <div className="mb-6 flex items-start justify-between">
+                                    <div className={`rounded-2xl p-4 ${promo.type === 'PERCENTAGE' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                        {promo.type === 'PERCENTAGE' ? <Percent size={28} /> : <DollarSign size={28} />}
+                                    </div>
+                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
+                                        <button onClick={() => toggleStatus(promo)} className="p-2 rounded-xl border border-slate-100 hover:bg-slate-50 transition text-slate-600">
+                                            {promo.active ? <XCircle size={18} /> : <CheckCircle size={18} />}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setFormData({ ...promo, value: promo.value?.toString() });
+                                                setEditingPromo(promo);
+                                                setShowForm(true);
+                                            }}
+                                            className="p-2 rounded-xl bg-slate-900 text-white hover:bg-indigo-600 transition"
+                                        >
+                                            <Edit2 size={18} />
+                                        </button>
+                                        <button onClick={() => handleDelete(promo.id)} className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition">
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <h3 className="text-xl font-black text-slate-900 mb-2 leading-tight">{promo.name}</h3>
+                                <p className="text-sm font-medium text-slate-500 line-clamp-2 mb-6">{promo.description}</p>
+
+                                <div className="space-y-3 pt-6 border-t border-slate-50">
+                                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
+                                        <span className="text-slate-400">Réduction</span>
+                                        <span className="text-indigo-600 text-lg">
+                                            {promo.type === 'PERCENTAGE' ? `-${promo.value}%` : `-${promo.value} FCFA`}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                        <span className="flex items-center gap-1.5"><Calendar size={12} /> Validité</span>
+                                        <span className="text-slate-800">{promo.endDate ? new Date(promo.endDate).toLocaleDateString() : 'Illimité'}</span>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                </div>
+            </div>
+
             {/* Modal Form */}
             {showForm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-                    <div className="bg-white rounded-lg max-w-2xl w-full p-6 my-8">
-                        <h3 className="text-xl font-bold mb-4">
-                            {editingPromo ? 'Modifier la promotion' : 'Nouvelle promotion'}
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 overflow-y-auto">
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="my-auto w-full max-w-2xl rounded-[40px] bg-white p-8 shadow-2xl lg:p-12"
+                    >
+                        <h3 className="text-3xl font-black text-slate-900 mb-8 uppercase tracking-tight italic">
+                            {editingPromo ? 'Cibler Campagne' : 'Nouvelle Promo'}
                         </h3>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Titre de l'offre</label>
                                     <input
-                                        type="text"
-                                        required
-                                        value={formData.name}
-                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                        placeholder="Ex: Happy Hour"
+                                        required className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                        value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                        placeholder="Ex: Gold Happy Hour"
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Type de remise</label>
                                     <select
-                                        value={formData.type}
-                                        onChange={e => setFormData({ ...formData, type: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                        value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })}
                                     >
                                         <option value="PERCENTAGE">Pourcentage (%)</option>
                                         <option value="FIXED_AMOUNT">Montant fixe (FCFA)</option>
-                                        <option value="MENU_SPECIAL">Menu Spécial</option>
                                     </select>
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Valeur *</label>
-                                <input
-                                    type="number"
-                                    required
-                                    min="0"
-                                    value={formData.value}
-                                    onChange={e => setFormData({ ...formData, value: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                    placeholder={formData.type === 'PERCENTAGE' ? "Ex: 20" : "Ex: 1000"}
-                                />
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Valeur de la réduction</label>
+                                <div className="relative">
+                                    <input
+                                        type="number" required className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                        value={formData.value} onChange={e => setFormData({ ...formData, value: e.target.value })}
+                                    />
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 font-black">
+                                        {formData.type === 'PERCENTAGE' ? '%' : 'FCFA'}
+                                    </div>
+                                </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Description accrocheuse</label>
                                 <textarea
-                                    value={formData.description}
-                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                    rows="2"
+                                    className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                    rows="2" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })}
                                 />
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Date début</label>
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Date début</label>
                                     <input
-                                        type="date"
-                                        value={formData.startDate}
-                                        onChange={e => setFormData({ ...formData, startDate: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        type="date" className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                        value={formData.startDate} onChange={e => setFormData({ ...formData, startDate: e.target.value })}
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Date fin</label>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Date Fin</label>
                                     <input
-                                        type="date"
-                                        value={formData.endDate}
-                                        onChange={e => setFormData({ ...formData, endDate: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        type="date" className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                        value={formData.endDate} onChange={e => setFormData({ ...formData, endDate: e.target.value })}
                                     />
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Heure début</label>
-                                    <input
-                                        type="time"
-                                        value={formData.startTime}
-                                        onChange={e => setFormData({ ...formData, startTime: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Heure fin</label>
-                                    <input
-                                        type="time"
-                                        value={formData.endTime}
-                                        onChange={e => setFormData({ ...formData, endTime: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Jours d'application</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {DAYS.map(day => (
-                                        <button
-                                            key={day.key}
-                                            type="button"
-                                            onClick={() => handleDayToggle(day.key)}
-                                            className={`px-3 py-1 rounded-full text-sm font-medium transition ${formData.daysOfWeek.includes(day.key)
-                                                ? 'bg-indigo-600 text-white'
-                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                                }`}
-                                        >
-                                            {day.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="flex gap-3 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={resetForm}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                                >
-                                    Annuler
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                                >
-                                    {editingPromo ? 'Modifier' : 'Créer'}
+                            <div className="flex gap-4 pt-4">
+                                <button type="button" onClick={resetForm} className="flex-1 rounded-2xl py-5 font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition">Fermer</button>
+                                <button type="submit" className="flex-1 rounded-[24px] bg-slate-900 py-5 font-black uppercase tracking-widest text-white shadow-xl shadow-slate-200 hover:bg-indigo-600 transition active:scale-95">
+                                    {editingPromo ? 'Mettre à jour' : 'Lancer Campagne'}
                                 </button>
                             </div>
                         </form>
-                    </div>
+                    </motion.div>
                 </div>
             )}
         </div>

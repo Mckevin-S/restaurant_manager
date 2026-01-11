@@ -22,6 +22,7 @@ const RestaurantSettings = () => {
             dimanche: { ouvert: false, debut: '10:00', fin: '22:00' }
         },
         tva: 18,
+        tauxTva: 18,
         fraisService: 10,
         deviseSymbole: 'FCFA'
     });
@@ -37,9 +38,35 @@ const RestaurantSettings = () => {
     const fetchSettings = async () => {
         try {
             const response = await apiClient.get('/restaurant/settings');
-            setSettings(response.data);
+            const data = response.data;
+
+            // On s'assure que les champs obligatoires existent
+            const normalizedData = {
+                nom: data?.nom || '',
+                adresse: data?.adresse || '',
+                telephone: data?.telephone || '',
+                email: data?.email || '',
+                description: data?.description || '',
+                logo: data?.logo || '',
+                heuresOuverture: (data && data.heuresOuverture && typeof data.heuresOuverture === 'object') ? data.heuresOuverture : {
+                    lundi: { ouvert: true, debut: '09:00', fin: '22:00' },
+                    mardi: { ouvert: true, debut: '09:00', fin: '22:00' },
+                    mercredi: { ouvert: true, debut: '09:00', fin: '22:00' },
+                    jeudi: { ouvert: true, debut: '09:00', fin: '22:00' },
+                    vendredi: { ouvert: true, debut: '09:00', fin: '23:00' },
+                    samedi: { ouvert: true, debut: '10:00', fin: '23:00' },
+                    dimanche: { ouvert: false, debut: '10:00', fin: '22:00' }
+                },
+                // On mappe tauxTva du backend vers tva du frontend si nécessaire
+                tva: (data?.tauxTva !== undefined && data.tauxTva !== null) ? data.tauxTva : 18,
+                fraisService: (data?.fraisService !== undefined && data.fraisService !== null) ? data.fraisService : 10,
+                deviseSymbole: data?.deviseSymbole || 'FCFA'
+            };
+
+            setSettings(normalizedData);
         } catch (error) {
             console.error('Erreur settings:', error);
+            toast.error('Erreur lors du chargement des paramètres');
         } finally {
             setLoading(false);
         }
@@ -50,7 +77,12 @@ const RestaurantSettings = () => {
         e.preventDefault();
         setSaving(true);
         try {
-            await apiClient.put('/restaurant/settings', settings);
+            // On s'assure d'envoyer tauxTva au backend
+            const dataToSave = {
+                ...settings,
+                tauxTva: settings.tva
+            };
+            await apiClient.put('/restaurant/settings', dataToSave);
             toast.success('Paramètres sauvegardés avec succès');
         } catch (error) {
             toast.error('Erreur lors de la sauvegarde');
@@ -80,12 +112,15 @@ const RestaurantSettings = () => {
 
 
     const updateHoraire = (jour, field, value) => {
+        const currentHeures = settings.heuresOuverture || {};
+        const currentJour = currentHeures[jour] || { ouvert: true, debut: '09:00', fin: '22:00' };
+
         setSettings({
             ...settings,
             heuresOuverture: {
-                ...settings.heuresOuverture,
+                ...currentHeures,
                 [jour]: {
-                    ...settings.heuresOuverture[jour],
+                    ...currentJour,
                     [field]: value
                 }
             }
@@ -216,41 +251,44 @@ const RestaurantSettings = () => {
                         </h2>
 
                         <div className="space-y-3">
-                            {jours.map(jour => (
-                                <div key={jour} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                                    <div className="w-24">
-                                        <label className="flex items-center gap-2">
-                                            <input
-                                                type="checkbox"
-                                                checked={settings.heuresOuverture[jour]?.ouvert}
-                                                onChange={(e) => updateHoraire(jour, 'ouvert', e.target.checked)}
-                                                className="rounded text-indigo-600 focus:ring-indigo-500"
-                                            />
-                                            <span className="font-medium capitalize">{jour}</span>
-                                        </label>
-                                    </div>
-
-                                    {settings.heuresOuverture[jour]?.ouvert ? (
-                                        <div className="flex items-center gap-2 flex-1">
-                                            <input
-                                                type="time"
-                                                value={settings.heuresOuverture[jour]?.debut}
-                                                onChange={(e) => updateHoraire(jour, 'debut', e.target.value)}
-                                                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                            />
-                                            <span className="text-gray-500">à</span>
-                                            <input
-                                                type="time"
-                                                value={settings.heuresOuverture[jour]?.fin}
-                                                onChange={(e) => updateHoraire(jour, 'fin', e.target.value)}
-                                                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                            />
+                            {jours.map(jour => {
+                                const horaire = settings.heuresOuverture?.[jour] || { ouvert: false, debut: '09:00', fin: '22:00' };
+                                return (
+                                    <div key={jour} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                                        <div className="w-24">
+                                            <label className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={horaire.ouvert}
+                                                    onChange={(e) => updateHoraire(jour, 'ouvert', e.target.checked)}
+                                                    className="rounded text-indigo-600 focus:ring-indigo-500"
+                                                />
+                                                <span className="font-medium capitalize">{jour}</span>
+                                            </label>
                                         </div>
-                                    ) : (
-                                        <span className="text-gray-500 italic">Fermé</span>
-                                    )}
-                                </div>
-                            ))}
+
+                                        {horaire.ouvert ? (
+                                            <div className="flex items-center gap-2 flex-1">
+                                                <input
+                                                    type="time"
+                                                    value={horaire.debut}
+                                                    onChange={(e) => updateHoraire(jour, 'debut', e.target.value)}
+                                                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                />
+                                                <span className="text-gray-500">à</span>
+                                                <input
+                                                    type="time"
+                                                    value={horaire.fin}
+                                                    onChange={(e) => updateHoraire(jour, 'fin', e.target.value)}
+                                                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <span className="text-gray-500 italic">Fermé</span>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 

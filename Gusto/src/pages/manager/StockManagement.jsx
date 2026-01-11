@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Package, AlertTriangle, TrendingDown, Plus, Search } from 'lucide-react';
+import {
+    Package, AlertTriangle, TrendingDown, Plus, Search,
+    ChevronRight, ArrowUpRight, ArrowDownRight, History, Filter
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../services/apiClient';
 import { toast } from 'react-hot-toast';
-
 
 const StockManagement = () => {
     const [ingredients, setIngredients] = useState([]);
@@ -19,33 +22,24 @@ const StockManagement = () => {
         motif: ''
     });
 
-
     useEffect(() => {
-        fetchIngredients();
-        fetchMovements();
+        fetchData();
     }, []);
 
-    const fetchIngredients = async () => {
+    const fetchData = async () => {
         try {
-            const response = await apiClient.get('/ingredients');
-            setIngredients(response.data);
+            const [ingRes, movRes] = await Promise.all([
+                apiClient.get('/ingredients'),
+                apiClient.get('/stock-movements')
+            ]);
+            setIngredients(ingRes.data);
+            setMovements(movRes.data.slice(0, 15));
         } catch (error) {
-            //ApiClient gère déjà les erreurs
+            console.error(error);
         } finally {
             setLoading(false);
         }
     };
-
-
-    const fetchMovements = async () => {
-        try {
-            const response = await apiClient.get('/stock-movements');
-            setMovements(response.data.slice(0, 10)); // 10 derniers mouvements
-        } catch (error) {
-            console.error('Erreur mouvements:', error);
-        }
-    };
-
 
     const handleCreateMovement = async (e) => {
         e.preventDefault();
@@ -54,276 +48,288 @@ const StockManagement = () => {
                 ...movementForm,
                 quantite: parseFloat(movementForm.quantite)
             });
-            toast.success('Mouvement enregistré');
-            fetchIngredients();
-            fetchMovements();
+            toast.success('Stock mis à jour');
+            fetchData();
             setShowMovementForm(false);
             setMovementForm({ ingredientId: '', type: 'ENTREE', quantite: '', motif: '' });
         } catch (error) {
-            toast.error('Erreur lors de l\'enregistrement');
+            toast.error('Erreur enregistrement');
         }
     };
 
-
     const getStockStatus = (ingredient) => {
-        if (ingredient.quantiteStock <= ingredient.seuilAlerte) {
-            return { label: 'Critique', color: 'bg-red-100 text-red-800 border-red-300' };
-        } else if (ingredient.quantiteStock <= ingredient.seuilAlerte * 1.5) {
-            return { label: 'Faible', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' };
+        if (ingredient.stockActuel <= (ingredient.alerteStock || 5)) {
+            return { label: 'CRITIQUE', bg: 'bg-rose-50', text: 'text-rose-600', dot: 'bg-rose-500' };
+        } else if (ingredient.stockActuel <= (ingredient.alerteStock || 5) * 1.5) {
+            return { label: 'FAIBLE', bg: 'bg-amber-50', text: 'text-amber-600', dot: 'bg-amber-500' };
         }
-        return { label: 'Normal', color: 'bg-green-100 text-green-800 border-green-300' };
+        return { label: 'OPTIMAL', bg: 'bg-emerald-50', text: 'text-emerald-600', dot: 'bg-emerald-500' };
     };
 
     const filteredIngredients = ingredients.filter(ing => {
         const matchSearch = ing.nom.toLowerCase().includes(searchTerm.toLowerCase());
         const matchFilter = filterAlert === 'all' ||
-            (filterAlert === 'alert' && ing.quantiteStock <= ing.seuilAlerte) ||
-            (filterAlert === 'low' && ing.quantiteStock > ing.seuilAlerte && ing.quantiteStock <= ing.seuilAlerte * 1.5);
+            (filterAlert === 'alert' && ing.stockActuel <= (ing.alerteStock || 5)) ||
+            (filterAlert === 'low' && ing.stockActuel > (ing.alerteStock || 5) && ing.stockActuel <= (ing.alerteStock || 5) * 1.5);
         return matchSearch && matchFilter;
     });
 
-    const alertCount = ingredients.filter(i => i.quantiteStock <= i.seuilAlerte).length;
-    const lowCount = ingredients.filter(i => i.quantiteStock > i.seuilAlerte && i.quantiteStock <= i.seuilAlerte * 1.5).length;
+    const categories = Array.from(new Set(ingredients.map(i => i.categorie))).filter(Boolean);
 
-    if (loading) {
-        return <div className="flex items-center justify-center min-h-screen">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-        </div>;
-    }
+    if (loading) return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+        </div>
+    );
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestion du Stock</h1>
-                <p className="text-gray-600">Suivez vos ingrédients et mouvements de stock</p>
-            </div>
-
-            {/* Actions */}
-            <div className="bg-white rounded-lg shadow-sm p-4 mb-6 flex flex-wrap gap-4 items-center justify-between">
-                <button
-                    onClick={() => setShowMovementForm(true)}
-                    className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
-                >
-                    <Plus size={20} />
-                    Nouveau Mouvement
-                </button>
-
-                <div className="flex gap-3 flex-1 max-w-2xl">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Rechercher un ingrédient..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                        />
-                    </div>
-
-                    <select
-                        value={filterAlert}
-                        onChange={(e) => setFilterAlert(e.target.value)}
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+        <div className="min-h-screen bg-[#f8fafc] animate-in fade-in duration-500 px-4 py-8">
+            {/* Header */}
+            <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+                <div>
+                    <h1 className="text-4xl font-black tracking-tight text-slate-900 flex items-center gap-3">
+                        <Package className="text-indigo-600" size={36} />
+                        Inventaire Stock
+                    </h1>
+                    <p className="mt-1 text-slate-500 font-medium">Suivi des ingrédients et flux logistiques.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setShowMovementForm(true)}
+                        className="flex items-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-100 transition hover:bg-indigo-700 hover:scale-[1.02] active:scale-95"
                     >
-                        <option value="all">Tous</option>
-                        <option value="alert">Critique</option>
-                        <option value="low">Faible</option>
-                    </select>
+                        <Plus size={18} /> Mouvement de Stock
+                    </button>
                 </div>
             </div>
 
-            {/* Statistiques */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-center justify-between">
+            {/* Stats Summary */}
+            <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                {[
+                    { label: 'Total Ingrédients', val: ingredients.length, color: 'text-slate-600', bg: 'bg-slate-100', icon: <Package size={20} /> },
+                    { label: 'Alertes Critique', val: ingredients.filter(i => i.stockActuel <= (i.alerteStock || 5)).length, color: 'text-rose-600', bg: 'bg-rose-100', icon: <AlertTriangle size={20} /> },
+                    { label: 'Stock Faible', val: ingredients.filter(i => i.stockActuel > (i.alerteStock || 5) && i.stockActuel <= (i.alerteStock || 5) * 1.5).length, color: 'text-amber-600', bg: 'bg-amber-100', icon: <TrendingDown size={20} /> },
+                    { label: 'Mouvements', val: movements.length, color: 'text-indigo-600', bg: 'bg-indigo-100', icon: <History size={20} /> },
+                ].map((s, i) => (
+                    <div key={i} className="flex items-center gap-4 rounded-[24px] bg-white p-5 shadow-sm border border-slate-100">
+                        <div className={`rounded-xl ${s.bg} ${s.color} p-3`}>{s.icon}</div>
                         <div>
-                            <p className="text-sm text-gray-600">Total Ingrédients</p>
-                            <p className="text-2xl font-bold text-gray-900">{ingredients.length}</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{s.label}</p>
+                            <p className="text-2xl font-black text-slate-800">{s.val}</p>
                         </div>
-                        <Package className="text-indigo-600" size={32} />
                     </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Stock Critique</p>
-                            <p className="text-2xl font-bold text-red-600">{alertCount}</p>
-                        </div>
-                        <AlertTriangle className="text-red-600" size={32} />
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Stock Faible</p>
-                            <p className="text-2xl font-bold text-yellow-600">{lowCount}</p>
-                        </div>
-                        <TrendingDown className="text-yellow-600" size={32} />
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Mouvements (7j)</p>
-                            <p className="text-2xl font-bold text-gray-900">{movements.length}</p>
-                        </div>
-                        <Package className="text-gray-600" size={32} />
-                    </div>
-                </div>
+                ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Liste des ingrédients */}
-                <div className="lg:col-span-2">
-                    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                        <div className="p-4 border-b">
-                            <h2 className="text-lg font-bold">Ingrédients</h2>
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+                {/* Inventory Table Section */}
+                <div className="lg:col-span-8 space-y-6">
+                    <div className="rounded-[32px] bg-white p-6 shadow-sm border border-slate-100 overflow-hidden">
+                        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center justify-between">
+                            <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight italic">Liste des Produits</h2>
+                            <div className="flex gap-3 flex-1 max-w-md">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                    <input
+                                        type="text" placeholder="Rechercher..."
+                                        className="w-full rounded-xl border-slate-100 bg-slate-50 py-2.5 pl-9 pr-4 text-xs font-bold text-slate-700 focus:border-indigo-500 focus:ring-0"
+                                        value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                                <select
+                                    className="rounded-xl border-slate-100 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 outline-none"
+                                    value={filterAlert} onChange={(e) => setFilterAlert(e.target.value)}
+                                >
+                                    <option value="all">Tous les Statuts</option>
+                                    <option value="alert">Critique</option>
+                                    <option value="low">Faible</option>
+                                </select>
+                            </div>
                         </div>
+
                         <div className="overflow-x-auto">
                             <table className="w-full">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ingrédient</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unité</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Seuil</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                                <thead>
+                                    <tr className="border-b border-slate-50">
+                                        <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Article</th>
+                                        <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Quantité Actuelle</th>
+                                        <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Seuil Alerte</th>
+                                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Statut</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                    {filteredIngredients.map(ing => {
-                                        const status = getStockStatus(ing);
-                                        return (
-                                            <tr key={ing.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="font-medium text-gray-900">{ing.nom}</div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm font-bold text-gray-900">{ing.quantiteStock}</div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {ing.unite}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {ing.seuilAlerte}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${status.color}`}>
-                                                        {status.label}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
+                                <tbody className="divide-y divide-slate-50">
+                                    <AnimatePresence>
+                                        {filteredIngredients.map(ing => {
+                                            const status = getStockStatus(ing);
+                                            return (
+                                                <motion.tr
+                                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                                    key={ing.id} className="group hover:bg-slate-50 transition-colors"
+                                                >
+                                                    <td className="px-6 py-5">
+                                                        <div>
+                                                            <p className="text-sm font-black text-slate-900">{ing.nom}</p>
+                                                            <p className="text-[10px] font-bold text-slate-400 uppercase">{ing.categorie || 'Ingrédient'}</p>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-5 text-center">
+                                                        <span className="text-sm font-black text-slate-800 bg-slate-100 px-3 py-1 rounded-lg">
+                                                            {ing.stockActuel} <span className="text-[10px] text-slate-400 ml-1 italic">{ing.unite}</span>
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-5 text-center">
+                                                        <span className="text-xs font-bold text-slate-500">
+                                                            {ing.alerteStock || 5} {ing.unite}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-5 text-right">
+                                                        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black tracking-widest uppercase ${status.bg} ${status.text}`}>
+                                                            <span className={`h-1.5 w-1.5 rounded-full ${status.dot} ${status.label !== 'OPTIMAL' ? 'animate-pulse' : ''}`}></span>
+                                                            {status.label}
+                                                        </span>
+                                                    </td>
+                                                </motion.tr>
+                                            );
+                                        })}
+                                    </AnimatePresence>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
 
-                {/* Derniers mouvements */}
-                <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div className="p-4 border-b">
-                        <h2 className="text-lg font-bold">Derniers Mouvements</h2>
+                {/* Movements Sidebar */}
+                <div className="lg:col-span-4 space-y-6">
+                    <div className="rounded-[32px] bg-white p-8 shadow-sm border border-slate-100">
+                        <div className="mb-6 flex items-center justify-between">
+                            <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight italic">Journal des Flux</h2>
+                            <History className="text-indigo-600" size={24} />
+                        </div>
+                        <div className="space-y-4">
+                            {movements.length > 0 ? (
+                                movements.map((mov, idx) => (
+                                    <div key={idx} className="flex items-center gap-4 rounded-2xl bg-slate-50 p-4 border border-slate-100 group hover:border-indigo-200 transition">
+                                        <div className={`rounded-xl p-2 shadow-sm ${mov.type === 'ENTREE' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                                            {mov.type === 'ENTREE' ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
+                                        </div>
+                                        <div className="flex-1 overflow-hidden">
+                                            <p className="text-sm font-black text-slate-800 truncate">{mov.ingredient?.nom || 'Article Inconnu'}</p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase truncate">{mov.motif || 'Aucun motif'}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className={`text-sm font-black ${mov.type === 'ENTREE' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                {mov.type === 'ENTREE' ? '+' : '-'}{mov.quantite}
+                                            </p>
+                                            <p className="text-[8px] font-black text-slate-400 uppercase whitespace-nowrap">
+                                                {new Date(mov.dateHeure || Date.now()).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-8 text-slate-400 font-bold italic">
+                                    Aucun mouvement enregistré.
+                                </div>
+                            )}
+                        </div>
                     </div>
-                    <div className="p-4 space-y-3">
-                        {movements.map((mov, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <div className="flex-1">
-                                    <p className="font-medium text-sm">{mov.ingredient?.nom}</p>
-                                    <p className="text-xs text-gray-500">{mov.motif}</p>
-                                </div>
-                                <div className={`text-right ${mov.type === 'ENTREE' ? 'text-green-600' : 'text-red-600'}`}>
-                                    <p className="font-bold">{mov.type === 'ENTREE' ? '+' : '-'}{mov.quantite}</p>
-                                    <p className="text-xs">{new Date(mov.dateHeure).toLocaleDateString()}</p>
-                                </div>
-                            </div>
-                        ))}
+
+                    {/* Proactive Tip Card */}
+                    <div className="rounded-[32px] bg-slate-900 p-8 shadow-xl text-white overflow-hidden relative">
+                        <div className="relative z-10">
+                            <h2 className="text-2xl font-black mb-2 leading-tight">Optimisation IA</h2>
+                            <p className="text-slate-400 text-sm font-medium mb-6">Le stock de viandes sera épuisé dans 48h selon vos prévisions de ventes.</p>
+                            <button className="w-full rounded-2xl bg-indigo-600 py-4 font-bold text-white hover:bg-indigo-700 transition active:scale-95">
+                                Passer Commande
+                            </button>
+                        </div>
+                        <div className="absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-indigo-500/20 blur-3xl"></div>
                     </div>
                 </div>
             </div>
 
-            {/* Modal Mouvement */}
+            {/* Modal Form Movement */}
             {showMovementForm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg max-w-md w-full p-6">
-                        <h3 className="text-xl font-bold mb-4">Nouveau Mouvement de Stock</h3>
-                        <form onSubmit={handleCreateMovement} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Ingrédient *</label>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 overflow-y-auto">
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="my-auto w-full max-w-lg rounded-[40px] bg-white p-8 shadow-2xl lg:p-12"
+                    >
+                        <div className="mb-8 flex items-center justify-between">
+                            <h3 className="text-3xl font-black text-slate-900">Nouveau Flux</h3>
+                            <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-600">
+                                <Package size={24} />
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleCreateMovement} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Sélection Ingrédient</label>
                                 <select
-                                    required
-                                    value={movementForm.ingredientId}
-                                    onChange={(e) => setMovementForm({ ...movementForm, ingredientId: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    required className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                    value={movementForm.ingredientId} onChange={(e) => setMovementForm({ ...movementForm, ingredientId: e.target.value })}
                                 >
-                                    <option value="">Sélectionner un ingrédient</option>
+                                    <option value="">Sélectionner</option>
                                     {ingredients.map(ing => (
-                                        <option key={ing.id} value={ing.id}>{ing.nom} ({ing.quantiteStock} {ing.unite})</option>
+                                        <option key={ing.id} value={ing.id}>{ing.nom} ({ing.stockActuel} {ing.unite})</option>
                                     ))}
                                 </select>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
-                                <select
-                                    value={movementForm.type}
-                                    onChange={(e) => setMovementForm({ ...movementForm, type: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    <option value="ENTREE">Entrée (+)</option>
-                                    <option value="SORTIE">Sortie (-)</option>
-                                </select>
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Type d'Opération</label>
+                                    <div className="flex bg-slate-50 rounded-[20px] p-2 gap-2 border border-slate-200">
+                                        <button
+                                            type="button"
+                                            onClick={() => setMovementForm({ ...movementForm, type: 'ENTREE' })}
+                                            className={`flex-1 rounded-[14px] py-3 text-[10px] font-black uppercase tracking-widest transition ${movementForm.type === 'ENTREE' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-500'}`}
+                                        >
+                                            Entrée (+)
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setMovementForm({ ...movementForm, type: 'SORTIE' })}
+                                            className={`flex-1 rounded-[14px] py-3 text-[10px] font-black uppercase tracking-widest transition ${movementForm.type === 'SORTIE' ? 'bg-rose-500 text-white shadow-md' : 'text-slate-500'}`}
+                                        >
+                                            Sortie (-)
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Quantité</label>
+                                    <input
+                                        type="number" required step="0.01" className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                        placeholder="0.00" value={movementForm.quantite} onChange={(e) => setMovementForm({ ...movementForm, quantite: e.target.value })}
+                                    />
+                                </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Quantité *</label>
-                                <input
-                                    type="number"
-                                    required
-                                    min="0"
-                                    step="0.01"
-                                    value={movementForm.quantite}
-                                    onChange={(e) => setMovementForm({ ...movementForm, quantite: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Motif *</label>
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Motif / Commentaire</label>
                                 <textarea
-                                    required
-                                    value={movementForm.motif}
-                                    onChange={(e) => setMovementForm({ ...movementForm, motif: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                    rows="3"
-                                    placeholder="Raison du mouvement..."
+                                    required className="w-full rounded-[20px] border-slate-200 bg-slate-50 p-4 font-bold text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                    rows="2" placeholder="Réapprovisionnement hebdomadaire, perte, etc."
+                                    value={movementForm.motif} onChange={(e) => setMovementForm({ ...movementForm, motif: e.target.value })}
                                 />
                             </div>
 
-                            <div className="flex gap-3 pt-4">
+                            <div className="flex gap-4 pt-4">
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setShowMovementForm(false);
-                                        setMovementForm({ ingredientId: '', type: 'ENTREE', quantite: '', motif: '' });
-                                    }}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                    onClick={() => setShowMovementForm(false)}
+                                    className="flex-1 rounded-2xl py-5 font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition"
                                 >
-                                    Annuler
+                                    Fermer
                                 </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                                >
+                                <button type="submit" className="flex-1 rounded-[24px] bg-indigo-600 py-5 font-black uppercase tracking-widest text-white shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition active:scale-95">
                                     Enregistrer
                                 </button>
                             </div>
                         </form>
-                    </div>
+                    </motion.div>
                 </div>
             )}
         </div>

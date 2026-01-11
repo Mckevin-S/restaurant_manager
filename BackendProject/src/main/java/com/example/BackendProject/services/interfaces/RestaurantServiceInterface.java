@@ -15,6 +15,10 @@ public interface RestaurantServiceInterface {
 
     void deleteRestaurant(Long id);
 
+    RestaurantDto getSettings();
+
+    RestaurantDto updateSettings(RestaurantDto restaurantDto);
+
     RestaurantDto getRestaurantById(Long id);
 
     List<RestaurantDto> getAllRestaurants();

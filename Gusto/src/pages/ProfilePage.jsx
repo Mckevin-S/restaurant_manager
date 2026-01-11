@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { 
-  Box, Typography, Paper, TextField, Button, 
-  Avatar, Grid, Divider, IconButton, InputAdornment, 
-  Stack, Alert, Fade 
+import {
+  Box, Typography, Paper, TextField, Button,
+  Avatar, Grid, Divider, IconButton, InputAdornment,
+  Stack, Alert, Fade
 } from '@mui/material';
 import { useSelector } from 'react-redux';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
@@ -13,7 +13,7 @@ import SaveIcon from '@mui/icons-material/Save';
 const ProfilePage = () => {
   // On récupère les infos de l'utilisateur depuis le store Redux (auth)
   const { user } = useSelector((state) => state.auth);
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -44,19 +44,19 @@ const ProfilePage = () => {
           <Paper elevation={0} sx={{ p: 4, borderRadius: '24px', bgcolor: '#1e293b', border: '1px solid rgba(255,255,255,0.05)' }}>
             <Box sx={{ position: 'relative', display: 'inline-block' }}>
               <Avatar
-                sx={{ 
-                  width: 120, 
-                  height: 120, 
-                  fontSize: '3rem', 
+                sx={{
+                  width: 120,
+                  height: 120,
+                  fontSize: '3rem',
                   bgcolor: '#4caf50',
                   boxShadow: '0 0 20px rgba(76, 175, 80, 0.3)'
                 }}
               >
                 {user?.nom?.charAt(0) || 'U'}
               </Avatar>
-              <IconButton 
-                sx={{ 
-                  position: 'absolute', bottom: 0, right: 0, 
+              <IconButton
+                sx={{
+                  position: 'absolute', bottom: 0, right: 0,
                   bgcolor: '#121212', color: '#4caf50',
                   '&:hover': { bgcolor: '#000' },
                   border: '2px solid #1e293b'
@@ -81,7 +81,7 @@ const ProfilePage = () => {
               <Typography variant="subtitle1" sx={{ color: '#fff', mb: 3, fontWeight: 700 }}>
                 Informations Personnelles
               </Typography>
-              
+
               <Stack spacing={3}>
                 <TextField
                   fullWidth
@@ -90,7 +90,7 @@ const ProfilePage = () => {
                   variant="outlined"
                   sx={inputStyles}
                 />
-                
+
                 <TextField
                   fullWidth
                   label="Email"
@@ -124,14 +124,14 @@ const ProfilePage = () => {
                   }}
                 />
 
-                <Button 
+                <Button
                   type="submit"
-                  variant="contained" 
+                  variant="contained"
                   startIcon={<SaveIcon />}
-                  sx={{ 
-                    mt: 2, 
-                    bgcolor: '#4caf50', 
-                    py: 1.5, 
+                  sx={{
+                    mt: 2,
+                    bgcolor: '#4caf50',
+                    py: 1.5,
                     borderRadius: '12px',
                     fontWeight: 700,
                     textTransform: 'none',

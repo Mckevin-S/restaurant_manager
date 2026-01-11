@@ -32,6 +32,8 @@ import Help from './pages/common/Help';
 import NotificationsCenter from './pages/common/NotificationsCenter';
 import NotFound from './pages/common/NotFound';
 
+import ManagerLayout from './widget/ManagerLayout';
+
 function App() {
   return (
     <Routes>
@@ -50,16 +52,18 @@ function App() {
 
       {/* --- ROUTES MANAGER --- */}
       <Route element={<ProtectedRoute allowedRoles={['ROLE_MANAGER', 'admin', 'manager']} />}>
-        <Route path='/dashboard' element={<Dashboard />} />
-        <Route path='/users' element={<Users />} />
+        <Route element={<ManagerLayout />}>
+          <Route path='/dashboard' element={<Dashboard />} />
+          <Route path='/users' element={<Users />} />
 
-        <Route path='/manager/tables' element={<TablesManagement />} />
-        <Route path='/manager/menu' element={<MenuManagement />} />
-        <Route path='/manager/stock' element={<StockManagement />} />
-        <Route path='/manager/reports' element={<Reports />} />
-        <Route path='/manager/settings' element={<RestaurantSettings />} />
-        <Route path='/manager/promotions' element={<PromotionsManagement />} />
-        <Route path='/manager/reservations' element={<ReservationsManagement />} />
+          <Route path='/manager/tables' element={<TablesManagement />} />
+          <Route path='/manager/menu' element={<MenuManagement />} />
+          <Route path='/manager/stock' element={<StockManagement />} />
+          <Route path='/manager/reports' element={<Reports />} />
+          <Route path='/manager/settings' element={<RestaurantSettings />} />
+          <Route path='/manager/promotions' element={<PromotionsManagement />} />
+          <Route path='/manager/reservations' element={<ReservationsManagement />} />
+        </Route>
       </Route>
 
       {/* --- ROUTES SERVEUR --- */}

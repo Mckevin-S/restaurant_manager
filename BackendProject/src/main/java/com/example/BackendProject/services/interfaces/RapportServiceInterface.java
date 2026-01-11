@@ -20,6 +20,9 @@ public interface RapportServiceInterface {
 
     // Supprimer un rapport
     void deleteRapport(Long id);
+
+    // Récupérer les statistiques globales pour une période
+    Object getStatistiques(String period);
 }
 
 
