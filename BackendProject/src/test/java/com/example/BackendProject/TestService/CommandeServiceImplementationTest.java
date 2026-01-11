@@ -75,7 +75,7 @@ class CommandeServiceImplementationTest {
 
         commandeDto = new CommandeDto();
         commandeDto.setTypeCommande(TypeCommande.SUR_PLACE);
-        commandeDto.setServeurId(serveur.getId());
+        // commandeDto.setServeurId(serveur.getId());
         commandeDto.setTableId(table.getId());
     }
 

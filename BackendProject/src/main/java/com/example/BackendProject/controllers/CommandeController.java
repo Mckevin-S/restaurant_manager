@@ -73,7 +73,7 @@ public class CommandeController {
     })
     public ResponseEntity<?> createCommande(@RequestBody CommandeDto commandeDto, HttpServletRequest request) {
         String context = LoggingUtils.getLogContext(request);
-        logger.info("{} Tentative de création d'une commande pour le client: {}", context, commandeDto.getServeurId());
+        // logger.info("{} Tentative de création d'une commande pour le client: {}", context, commandeDto.getServeurId());
         try {
             CommandeDto savedCommande = commandeServiceImplementation.save(commandeDto);
             logger.info("{} Commande créée avec succès. ID: {}", context, savedCommande.getId());

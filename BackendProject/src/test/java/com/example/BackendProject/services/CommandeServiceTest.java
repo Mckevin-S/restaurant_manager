@@ -76,7 +76,7 @@ class CommandeServiceTest {
         commandeDto = new CommandeDto();
         commandeDto.setId(1L);
         commandeDto.setTableId(1L);
-        commandeDto.setServeurId(1L);
+        // commandeDto.setServeurId(1L);
         commandeDto.setStatut(StatutCommande.EN_ATTENTE);
         commandeDto.setTotalHt(BigDecimal.valueOf(10000));
         commandeDto.setTotalTtc(BigDecimal.valueOf(11800));

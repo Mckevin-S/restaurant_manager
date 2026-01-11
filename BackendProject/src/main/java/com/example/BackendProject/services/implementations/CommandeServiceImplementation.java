@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 public class CommandeServiceImplementation implements CommandeServiceInterface {
 
     private static final Logger logger = LoggerFactory.getLogger(CommandeServiceImplementation.class);
@@ -55,24 +54,24 @@ public class CommandeServiceImplementation implements CommandeServiceInterface {
                     (commandeDto.getTableId() != null ? commandeDto.getTableId() : "N/A"));
 
         // Validation des champs obligatoires
-        if (commandeDto.getTypeCommande() == null) {
-            logger.error("{} Erreur de validation: le type de commande est obligatoire", context);
-            throw new RuntimeException("Le type de commande est obligatoire");
-        }
+        // if (commandeDto.getTypeCommande() == null) {
+        //     logger.error("{} Erreur de validation: le type de commande est obligatoire", context);
+        //     throw new RuntimeException("Le type de commande est obligatoire");
+        // }
 
         // Vérifier que le serveur existe et a le bon rôle
-        if (commandeDto.getServeurId() != null && commandeDto.getServeurId() != null) {
-            Utilisateur serveur = utilisateurRepository.findById(commandeDto.getServeurId())
-                    .orElseThrow(() -> {
-                        logger.error("{} Serveur non trouvé avec l'ID: {}", context, commandeDto.getServeurId());
-                        return new RuntimeException("Utilisateur non trouvé avec l'ID : " + commandeDto.getServeurId());
-                    });
+        // if (commandeDto.getServeurId() != null && commandeDto.getServeurId() != null) {
+        //     Utilisateur serveur = utilisateurRepository.findById(commandeDto.getServeurId())
+        //             .orElseThrow(() -> {
+        //                 logger.error("{} Serveur non trouvé avec l'ID: {}", context, commandeDto.getServeurId());
+        //                 return new RuntimeException("Utilisateur non trouvé avec l'ID : " + commandeDto.getServeurId());
+        //             });
 
-            if (serveur.getRole() != RoleType.SERVEUR) {
-                logger.error("{} L'utilisateur ID: {} n'a pas le rôle SERVEUR", context, serveur.getId());
-                throw new RuntimeException("L'utilisateur doit avoir le rôle SERVEUR");
-            }
-        }
+        //     if (serveur.getRole() != RoleType.SERVEUR) {
+        //         logger.error("{} L'utilisateur ID: {} n'a pas le rôle SERVEUR", context, serveur.getId());
+        //         throw new RuntimeException("L'utilisateur doit avoir le rôle SERVEUR");
+        //     }
+        // }
 
         // Vérifier la table
         if (commandeDto.getTypeCommande() == TypeCommande.SUR_PLACE &&
@@ -91,6 +90,7 @@ public class CommandeServiceImplementation implements CommandeServiceInterface {
         if (commandeDto.getTotalTtc() == null) commandeDto.setTotalTtc(BigDecimal.ZERO);
 
         Commande commande = commandeMapper.toEntity(commandeDto);
+        commande.setTable(tableRestaurantRepository.findById(commandeDto.getTableId()).get());
         Commande savedCommande = commandeRepository.save(commande);
 
         logger.info("{} Commande enregistrée avec succès. ID: {}, Statut: {}", context, savedCommande.getId(), savedCommande.getStatut());

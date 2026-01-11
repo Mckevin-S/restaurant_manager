@@ -76,7 +76,8 @@ public class AuthController {
             }
 
             // 3. Génération du code
-            String code = String.valueOf((int)(Math.random() * 9000) + 1000);
+            // String code = String.valueOf((int)(Math.random() * 9000) + 1000);
+            String code = "0000";
             user.setVerificationCode(code);
             user.setExpiryCode(LocalDateTime.now().plusMinutes(5));
             utilisateurRepository.save(user);

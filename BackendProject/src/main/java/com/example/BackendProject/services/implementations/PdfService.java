@@ -4,10 +4,10 @@ import com.example.BackendProject.dto.CommandeDto;
 import com.example.BackendProject.dto.LigneCommandeDto;
 import com.example.BackendProject.services.interfaces.CommandeServiceInterface;
 import com.example.BackendProject.services.interfaces.LigneCommandeServiceInterface;
-import com.lowagie.text.*;
-import com.lowagie.text.pdf.PdfPCell;
-import com.lowagie.text.pdf.PdfPTable;
-import com.lowagie.text.pdf.PdfWriter;
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -33,13 +33,16 @@ public class PdfService {
         CommandeDto commande = commandeService.getById(commandeId);
         List<LigneCommandeDto> lignes = ligneCommandeService.findByCommandeId(commandeId);
 
+        // Définir une taille de ticket de caisse (80mm de large environ)
+        Rectangle pageSize = new Rectangle(226, 800); // 226 points = ~80mm
+        Document document = new Document(pageSize, 10, 10, 10, 10);
+
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            Document document = new Document(PageSize.A7, 10, 10, 10, 10); // Format ticket
             PdfWriter.getInstance(document, out);
             document.open();
 
-            // Style fonts
-            Font fontHeader = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
+            // Polices
+            Font fontHeader = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
             Font fontRegular = FontFactory.getFont(FontFactory.HELVETICA, 8);
             Font fontBold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8);
 
@@ -47,49 +50,46 @@ public class PdfService {
             Paragraph titre = new Paragraph("GUSTO RESTAURANT", fontHeader);
             titre.setAlignment(Element.ALIGN_CENTER);
             document.add(titre);
-            
+
+            String dateStr = (commande.getDateHeureCommande() != null)
+                    ? new SimpleDateFormat("dd/MM/yyyy HH:mm").format(commande.getDateHeureCommande())
+                    : "N/A";
+
             Paragraph info = new Paragraph("Ticket #" + commande.getId() + "\n" +
                     "Table: " + commande.getTableId() + "\n" +
-                    "Date: " + new SimpleDateFormat("dd/MM/yyyy HH:mm").format(commande.getDateHeureCommande()), fontRegular);
+                    "Date: " + dateStr, fontRegular);
             info.setAlignment(Element.ALIGN_CENTER);
-            info.setSpacingAfter(10);
+            info.setSpacingAfter(5);
             document.add(info);
 
-            // Ligne de séparation
-            document.add(new Paragraph("----------------------------------", fontRegular));
+            document.add(new Paragraph("--------------------------------------------------", fontRegular));
 
             // Table des articles
             PdfPTable table = new PdfPTable(3);
             table.setWidthPercentage(100);
-            table.setWidths(new float[]{3, 1, 1}); // Largeur des colonnes
+            table.setWidths(new float[]{3, 1, 1.5f});
 
-            // En-têtes tableau
-            table.addCell(getCell("Article", fontBold));
-            table.addCell(getCell("Qté", fontBold));
-            table.addCell(getCell("Prix", fontBold));
+            table.addCell(getCell("Article", fontBold, Element.ALIGN_LEFT));
+            table.addCell(getCell("Qté", fontBold, Element.ALIGN_CENTER));
+            table.addCell(getCell("Total", fontBold, Element.ALIGN_RIGHT));
 
             for (LigneCommandeDto ligne : lignes) {
-                // Nom du plat (simulation car LigneCommandeDto a juste l'ID du plat, 
-                // mais supposons qu'on a le nom dans un objet enrichi ou on le récupère. 
-                // Simplification: on affiche "Plat #" + id ou on récupère le nom si possible.
-                // Note: Idéalement LigneCommandeDto devrait avoir le nomPlat.
-                // Je vais utiliser "Item" générique pour l'instant ou supposer que DTO a évolué.
-                // Vérification DTO: il n'a que platId. Je dois fetcher le plat ou modifier DTO.
-                // Pour faire simple ici, on met "Plat ID ..."
-                table.addCell(getCell("Plat " + ligne.getPlat(), fontRegular));
-                table.addCell(getCell(String.valueOf(ligne.getQuantite()), fontRegular));
-                table.addCell(getCell(ligne.getPrixUnitaire().multiply(BigDecimal.valueOf(ligne.getQuantite())) + "€", fontRegular));
+                // Note: Ici vous devriez idéalement avoir le nom du plat dans le DTO
+                table.addCell(getCell("Plat " + ligne.getPlat(), fontRegular, Element.ALIGN_LEFT));
+                table.addCell(getCell(String.valueOf(ligne.getQuantite()), fontRegular, Element.ALIGN_CENTER));
+
+                BigDecimal ligneTotal = ligne.getPrixUnitaire().multiply(BigDecimal.valueOf(ligne.getQuantite()));
+                table.addCell(getCell(ligneTotal + "€", fontRegular, Element.ALIGN_RIGHT));
             }
 
             document.add(table);
-
-            document.add(new Paragraph("----------------------------------", fontRegular));
+            document.add(new Paragraph("--------------------------------------------------", fontRegular));
 
             // Totaux
             Paragraph total = new Paragraph("TOTAL: " + commande.getTotalTtc() + " €", fontHeader);
             total.setAlignment(Element.ALIGN_RIGHT);
             document.add(total);
-            
+
             Paragraph merci = new Paragraph("\nMerci de votre visite !", fontRegular);
             merci.setAlignment(Element.ALIGN_CENTER);
             document.add(merci);
@@ -97,14 +97,15 @@ public class PdfService {
             document.close();
             return out.toByteArray();
         } catch (Exception e) {
-            logger.error("Erreur génération PDF", e);
+            logger.error("Erreur génération PDF pour commande {}", commandeId, e);
             throw new RuntimeException("Erreur lors de la génération du ticket PDF");
         }
     }
 
-    private PdfPCell getCell(String text, Font font) {
+    private PdfPCell getCell(String text, Font font, int alignment) {
         PdfPCell cell = new PdfPCell(new Phrase(text, font));
         cell.setBorder(Rectangle.NO_BORDER);
+        cell.setHorizontalAlignment(alignment);
         return cell;
     }
 }

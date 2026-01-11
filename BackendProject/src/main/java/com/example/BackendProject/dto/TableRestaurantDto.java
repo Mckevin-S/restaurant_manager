@@ -1,5 +1,6 @@
 package com.example.BackendProject.dto;
 
+import com.example.BackendProject.utils.StatutTable;
 import com.example.BackendProject.entities.Zone;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,12 +12,14 @@ public class TableRestaurantDto {
     private Long zoneId; // Utilisation de l'ID uniquement pour casser la boucle
     private String numero;
     private Integer capacite;
+    private StatutTable statut;
 
-    public TableRestaurantDto(Long id, Long zoneId, String numero, Integer capacite) {
+    public TableRestaurantDto(Long id, Long zoneId, String numero, Integer capacite, StatutTable statut) {
         this.id = id;
         this.zoneId = zoneId;
         this.numero = numero;
         this.capacite = capacite;
+        this.statut = statut;
     }
 
     public TableRestaurantDto() {
@@ -52,5 +55,11 @@ public class TableRestaurantDto {
 
     public void setCapacite(Integer capacite) {
         this.capacite = capacite;
+    }
+    public void setStatut(StatutTable statut){
+        this.statut = statut;
+    }
+    public StatutTable getStatut(){
+        return statut;
     }
 }

@@ -49,7 +49,7 @@ class CommandeControllerIntegrationTest {
         commandeDto = new CommandeDto();
         commandeDto.setId(1L);
         commandeDto.setTableId(1L);
-        commandeDto.setServeurId(1L);
+        // commandeDto.setServeurId(1L);
         commandeDto.setDateHeureCommande(java.sql.Timestamp.valueOf(LocalDateTime.now()));
         commandeDto.setStatut(StatutCommande.EN_ATTENTE);
         commandeDto.setTotalHt(BigDecimal.valueOf(10000));

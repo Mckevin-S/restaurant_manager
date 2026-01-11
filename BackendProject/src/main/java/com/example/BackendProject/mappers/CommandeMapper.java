@@ -8,10 +8,10 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface CommandeMapper {
     @Mapping(target = "tableId", source = "table.id")
-    @Mapping(target = "serveurId", source = "serveur.id")
+    // @Mapping(target = "serveurId", source = "serveur.id")
     CommandeDto toDto(Commande commande);
 
     @Mapping(target = "table.id", source = "tableId")
-    @Mapping(target = "serveur.id", source = "serveurId")
+    // @Mapping(target = "serveur.id", source = "serveurId")
     Commande toEntity(CommandeDto commandeDto);
 }

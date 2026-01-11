@@ -10,7 +10,6 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 
-
 public class CommandeDto {
 
     private Long id;
@@ -18,8 +17,8 @@ public class CommandeDto {
     @NotNull(message = "La table est obligatoire")
     private Long tableId;   // Renommé pour correspondre au Mapper
     
-    @NotNull(message = "Le serveur est obligatoire")
-    private Long serveurId; // Renommé pour correspondre au Mapper
+    // @NotNull(message = "Le serveur est obligatoire")
+    // private Long serveurId; // Renommé pour correspondre au Mapper
     
     private Timestamp dateHeureCommande;
     
@@ -38,7 +37,7 @@ public class CommandeDto {
     public CommandeDto(Long id, Long tableId, Long serveurId, Timestamp dateHeureCommande, StatutCommande statut, TypeCommande typeCommande, BigDecimal totalHt, BigDecimal totalTtc) {
         this.id = id;
         this.tableId = tableId;
-        this.serveurId = serveurId;
+        // this.serveurId = serveurId;
         this.dateHeureCommande = dateHeureCommande;
         this.statut = statut;
         this.typeCommande = typeCommande;
@@ -66,13 +65,13 @@ public class CommandeDto {
         this.tableId = tableId;
     }
 
-    public Long getServeurId() {
-        return serveurId;
-    }
+    // public Long getServeurId() {
+    //     return serveurId;
+    // }
 
-    public void setServeurId(Long serveurId) {
-        this.serveurId = serveurId;
-    }
+    // public void setServeurId(Long serveurId) {
+    //     this.serveurId = serveurId;
+    // }
 
     public Timestamp getDateHeureCommande() {
         return dateHeureCommande;
