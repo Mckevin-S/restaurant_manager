@@ -6,6 +6,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../services/apiClient';
 import { toast } from 'react-hot-toast';
+import PageHeader from '../../widget/PageHeader';
 
 const MenuManagement = () => {
     const [plats, setPlats] = useState([]);
@@ -148,31 +149,28 @@ const MenuManagement = () => {
     );
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] animate-in fade-in duration-500">
-            {/* Header Section */}
-            <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-                <div>
-                    <h1 className="text-4xl font-black tracking-tight text-slate-900 flex items-center gap-3">
-                        <Utensils className="text-indigo-600" size={36} />
-                        Gestion du Menu
-                    </h1>
-                    <p className="mt-1 text-slate-500 font-medium">Gérez vos plats et catégories avec précision.</p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => setShowCategoryForm(true)}
-                        className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
-                    >
-                        <LayoutGrid size={18} className="text-indigo-600" /> Catégories
-                    </button>
-                    <button
-                        onClick={() => setShowPlatForm(true)}
-                        className="flex items-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-100 transition hover:bg-indigo-700 hover:scale-[1.02] active:scale-95"
-                    >
-                        <Plus size={18} /> Nouveau Plat
-                    </button>
-                </div>
-            </div>
+        <div className="min-h-screen bg-[#f8fafc] animate-in fade-in duration-500 pb-12">
+            <PageHeader
+                icon={Utensils}
+                title="Gestion du Menu"
+                subtitle="Gérez vos plats et catégories avec précision."
+                actions={
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setShowCategoryForm(true)}
+                            className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                        >
+                            <LayoutGrid size={18} className="text-indigo-600" /> Catégories
+                        </button>
+                        <button
+                            onClick={() => setShowPlatForm(true)}
+                            className="flex items-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-100 transition hover:bg-indigo-700 hover:scale-[1.02] active:scale-95"
+                        >
+                            <Plus size={18} /> Nouveau Plat
+                        </button>
+                    </div>
+                }
+            />
 
             {/* Stats Summary */}
             <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">

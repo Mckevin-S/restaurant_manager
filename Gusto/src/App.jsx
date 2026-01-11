@@ -41,11 +41,11 @@ function App() {
       <Route path='/login' element={<Login />} />
       <Route path='/confirmation' element={<Confirmation />} />
       <Route path='/' element={<Navigate to="/login" />} />
+        <Route path="/POS" element={<PointOfSale />} />
 
       {/* --- ROUTES COMMUNES AUTHENTIFIÉES --- */}
       <Route element={<ProtectedRoute allowedRoles={['ROLE_MANAGER', 'ROLE_SERVEUR', 'ROLE_CUISINIER', 'admin', 'manager', 'staff']} />}>
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/POS" element={<PointOfSale />} />
         <Route path="/help" element={<Help />} />
         <Route path="/notifications" element={<NotificationsCenter />} />
       </Route>

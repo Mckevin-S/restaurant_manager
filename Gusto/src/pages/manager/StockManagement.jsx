@@ -6,6 +6,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../services/apiClient';
 import { toast } from 'react-hot-toast';
+import PageHeader from '../../widget/PageHeader';
 
 const StockManagement = () => {
     const [ingredients, setIngredients] = useState([]);
@@ -83,25 +84,20 @@ const StockManagement = () => {
     );
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] animate-in fade-in duration-500 px-4 py-8">
-            {/* Header */}
-            <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-                <div>
-                    <h1 className="text-4xl font-black tracking-tight text-slate-900 flex items-center gap-3">
-                        <Package className="text-indigo-600" size={36} />
-                        Inventaire Stock
-                    </h1>
-                    <p className="mt-1 text-slate-500 font-medium">Suivi des ingrédients et flux logistiques.</p>
-                </div>
-                <div className="flex items-center gap-3">
+        <div className="min-h-screen bg-[#f8fafc] animate-in fade-in duration-500 pb-12">
+            <PageHeader
+                icon={Package}
+                title="Inventaire Stock"
+                subtitle="Suivi des ingrédients et flux logistiques"
+                actions={
                     <button
                         onClick={() => setShowMovementForm(true)}
-                        className="flex items-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-100 transition hover:bg-indigo-700 hover:scale-[1.02] active:scale-95"
+                        className="flex items-center gap-2 rounded-2xl bg-indigo-600 px-8 py-3 text-sm font-black text-white shadow-lg shadow-indigo-100 transition hover:bg-indigo-700 hover:scale-[1.02] active:scale-95"
                     >
                         <Plus size={18} /> Mouvement de Stock
                     </button>
-                </div>
-            </div>
+                }
+            />
 
             {/* Stats Summary */}
             <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">

@@ -27,14 +27,13 @@ const Dashboard = () => {
           apiClient.get('/commandes/aujourd-hui').catch(() => ({ data: [] })),
           apiClient.get('/tables').catch(() => ({ data: [] })),
           apiClient.get('/ingredients').catch(() => ({ data: [] })),
-          apiClient.get('/rapports/statistiques?period=day').catch(() => ({ data: {} }))
+          apiClient.get('/rapports/statistiques').catch(() => ({ data: {} }))
         ]);
 
         const ordersToday = ordersTodayRes.data || [];
         const tables = tablesRes.data || [];
         const ingredients = ingredientsRes.data || [];
         const globalStats = statsRes.data || {};
-
         // 1. Revenue & Orders (Preferez les stats globales si dispos)
         const revenue = globalStats.ca || ordersToday.reduce((sum, order) => sum + (order.total || 0), 0);
         const ordersCount = globalStats.nbCommandes || ordersToday.length;

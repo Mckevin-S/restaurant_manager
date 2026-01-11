@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, DollarSign, Users, Download } from 'lucide-react';
+import {
+    BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+    AreaChart, Area
+} from 'recharts';
+import { TrendingUp, DollarSign, Users, Download, Calendar, Pizza, ShoppingBag } from 'lucide-react';
 import apiClient from '../../services/apiClient';
-
 import { toast } from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import PageHeader from '../../widget/PageHeader';
+import StatCard from '../../widget/StatCard';
 
 const Reports = () => {
     const [stats, setStats] = useState(null);
@@ -31,7 +36,6 @@ const Reports = () => {
             setStats(response.data);
         } catch (error) {
             console.error('Erreur stats:', error);
-            // On peut mettre des données à 0 par défaut si l'API échoue ou n'existe pas encore
             setStats({
                 ca: 0,
                 nbCommandes: 0,
@@ -45,205 +49,273 @@ const Reports = () => {
     const fetchTopPlats = async () => {
         try {
             const response = await apiClient.get('/plats/plus-vendus');
-            setTopPlats(response.data);
+            setTopPlats(response.data || []);
         } catch (error) {
             console.error('Erreur top plats:', error);
         }
     };
 
-
     const exportPDF = () => {
         const doc = new jsPDF();
-
         doc.setFontSize(20);
-        doc.text('Rapport Restaurant', 14, 22);
+        doc.text('Rapport Restaurant Gusto', 14, 22);
         doc.setFontSize(11);
-        doc.text(`Période: ${period === 'day' ? 'Aujourd\'hui' : period === 'week' ? 'Cette semaine' : 'Ce mois'}`, 14, 30);
+        doc.text(`Période: ${period === 'day' ? 'Aujourd\'hui' : period === 'week' ? 'Cette semaine' : period === 'month' ? 'Ce mois' : 'Cette année'}`, 14, 30);
 
-        // Statistiques
         doc.autoTable({
             startY: 40,
             head: [['Métrique', 'Valeur']],
             body: [
-                ['Chiffre d\'affaires', `${stats?.ca || 0} FCFA`],
+                ['Chiffre d\'affaires', `${(stats?.ca || 0).toLocaleString()} FCFA`],
                 ['Nombre de commandes', stats?.nbCommandes || 0],
-                ['Ticket moyen', `${stats?.ticketMoyen || 0} FCFA`],
+                ['Ticket moyen', `${(stats?.ticketMoyen || 0).toLocaleString()} FCFA`],
+                ['Clients servis', stats?.nbClients || 0],
             ],
+            theme: 'grid',
+            headStyles: { fillColor: [79, 70, 229] }
         });
 
-        // Top plats
-        doc.autoTable({
-            startY: doc.lastAutoTable.finalY + 10,
-            head: [['Plat', 'Quantité vendue']],
-            body: topPlats.map(p => [p.nom, p.quantite]),
-        });
+        if (topPlats.length > 0) {
+            doc.autoTable({
+                startY: doc.lastAutoTable.finalY + 10,
+                head: [['Plat', 'Quantité vendue', 'CA Généré']],
+                body: topPlats.map(p => [p.nom, p.quantite, `${(p.ca || 0).toLocaleString()} FCFA`]),
+                theme: 'grid',
+                headStyles: { fillColor: [79, 70, 229] }
+            });
+        }
 
         doc.save(`rapport-${period}-${new Date().toISOString().split('T')[0]}.pdf`);
-        toast.success('Rapport exporté');
+        toast.success('Rapport exporté avec succès');
     };
 
     const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
     if (loading) {
-        return <div className="flex items-center justify-center min-h-screen">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-        </div>;
+        return (
+            <div className="flex h-[60vh] items-center justify-center">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+            </div>
+        );
     }
 
+    const headerActions = (
+        <div className="flex items-center gap-3">
+            <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-600" size={18} />
+                <select
+                    value={period}
+                    onChange={(e) => setPeriod(e.target.value)}
+                    className="pl-10 pr-4 py-2.5 bg-white border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none appearance-none cursor-pointer min-w-[160px]"
+                >
+                    <option value="day">Aujourd'hui</option>
+                    <option value="week">Cette semaine</option>
+                    <option value="month">Ce mois</option>
+                    <option value="year">Cette année</option>
+                </select>
+            </div>
+
+            <button
+                onClick={exportPDF}
+                className="flex items-center gap-2 bg-slate-900 text-white px-6 py-2.5 rounded-2xl font-bold text-sm shadow-lg hover:bg-indigo-600 transition active:scale-95"
+            >
+                <Download size={18} />
+                Exporter PDF
+            </button>
+        </div>
+    );
+
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <div className="mb-8 flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Rapports & Statistiques</h1>
-                    <p className="text-gray-600">Analysez les performances de votre restaurant</p>
+        <div className="min-h-screen bg-[#f8fafc] animate-in fade-in duration-500 pb-12">
+            <PageHeader
+                icon={TrendingUp}
+                title="Rapports & Statistiques"
+                subtitle="Analysez et optimisez les performances de votre établissement"
+                actions={headerActions}
+            />
+
+            <div className="px-4">
+                {/* KPIs */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <StatCard
+                        icon={<DollarSign size={24} />}
+                        label="Chiffre d'Affaires"
+                        value={`${(stats?.ca || 0).toLocaleString()} FCFA`}
+                        trend="+12%"
+                        trendUp={true}
+                        color="indigo"
+                    />
+                    <StatCard
+                        icon={<ShoppingBag size={24} />}
+                        label="Commandes"
+                        value={(stats?.nbCommandes || 0).toString()}
+                        trend="+8%"
+                        trendUp={true}
+                        color="emerald"
+                    />
+                    <StatCard
+                        icon={<TrendingUp size={24} />}
+                        label="Ticket Moyen"
+                        value={`${(stats?.ticketMoyen || 0).toLocaleString()} FCFA`}
+                        trend="+5%"
+                        trendUp={true}
+                        color="amber"
+                    />
+                    <StatCard
+                        icon={<Users size={24} />}
+                        label="Clients Servis"
+                        value={(stats?.nbClients || 0).toString()}
+                        trend="+15%"
+                        trendUp={true}
+                        color="rose"
+                    />
                 </div>
 
-                <div className="flex gap-3">
-                    <select
-                        value={period}
-                        onChange={(e) => setPeriod(e.target.value)}
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                    >
-                        <option value="day">Aujourd'hui</option>
-                        <option value="week">Cette semaine</option>
-                        <option value="month">Ce mois</option>
-                        <option value="year">Cette année</option>
-                    </select>
-
-                    <button
-                        onClick={exportPDF}
-                        className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
-                    >
-                        <Download size={20} />
-                        Exporter PDF
-                    </button>
-                </div>
-            </div>
-
-            {/* KPIs */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Chiffre d'Affaires</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats?.ca?.toLocaleString() || 0} FCFA</p>
-                            <p className="text-xs text-green-600 mt-1">+12% vs période précédente</p>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+                    {/* Evolution CA Chart */}
+                    <div className="lg:col-span-8 rounded-[32px] bg-white p-8 shadow-sm border border-slate-100 overflow-hidden">
+                        <div className="mb-8 flex items-center justify-between">
+                            <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight italic">Évolution du Chiffre d'Affaires</h2>
+                            <div className="flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-1.5 text-[10px] font-black uppercase text-indigo-600 tracking-widest">
+                                <TrendingUp size={12} /> Live Data
+                            </div>
                         </div>
-                        <DollarSign className="text-green-600" size={32} />
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Commandes</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats?.nbCommandes || 0}</p>
-                            <p className="text-xs text-blue-600 mt-1">+8% vs période précédente</p>
+                        <div className="h-[400px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={stats?.evolutionCA || []}>
+                                    <defs>
+                                        <linearGradient id="colorCA" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.1} />
+                                            <stop offset="95%" stopColor="#4F46E5" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                    <XAxis
+                                        dataKey="date"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fontSize: 11, fill: '#64748b', fontWeight: 800 }}
+                                        dy={10}
+                                    />
+                                    <YAxis
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fontSize: 11, fill: '#64748b', fontWeight: 800 }}
+                                        tickFormatter={(val) => `${(val / 1000).toFixed(0)}k`}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', padding: '15px' }}
+                                        itemStyle={{ fontWeight: 900, color: '#4F46E5' }}
+                                        labelStyle={{ fontWeight: 700, color: '#64748b', marginBottom: '5px' }}
+                                    />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="ca"
+                                        stroke="#4F46E5"
+                                        strokeWidth={4}
+                                        fillOpacity={1}
+                                        fill="url(#colorCA)"
+                                        name="CA (FCFA)"
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
                         </div>
-                        <TrendingUp className="text-blue-600" size={32} />
                     </div>
-                </div>
 
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Ticket Moyen</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats?.ticketMoyen?.toLocaleString() || 0} FCFA</p>
-                            <p className="text-xs text-indigo-600 mt-1">+5% vs période précédente</p>
+                    {/* Top Plats - Pie Chart */}
+                    <div className="lg:col-span-4 rounded-[32px] bg-white p-8 shadow-sm border border-slate-100">
+                        <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight italic mb-8">Performance Plats</h2>
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={topPlats}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={100}
+                                        paddingAngle={5}
+                                        dataKey="quantite"
+                                    >
+                                        {topPlats.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} cornerRadius={8} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 10px 20px rgba(0,0,0,0.05)' }}
+                                        itemStyle={{ fontWeight: 800 }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
                         </div>
-                        <DollarSign className="text-indigo-600" size={32} />
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Clients Servis</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats?.nbClients || 0}</p>
-                            <p className="text-xs text-purple-600 mt-1">+15% vs période précédente</p>
-                        </div>
-                        <Users className="text-purple-600" size={32} />
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                {/* Évolution CA */}
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h2 className="text-lg font-bold mb-4">Évolution du Chiffre d'Affaires</h2>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={stats?.evolutionCA || []}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            <Line type="monotone" dataKey="ca" stroke="#4F46E5" strokeWidth={2} name="CA (FCFA)" />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </div>
-
-                {/* Top Plats */}
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h2 className="text-lg font-bold mb-4">Plats les Plus Vendus</h2>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                            <Pie
-                                data={topPlats}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                label={(entry) => entry.nom}
-                                outerRadius={80}
-                                fill="#8884d8"
-                                dataKey="quantite"
-                            >
-                                {topPlats.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip />
-                        </PieChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
-
-            {/* Tableau détaillé */}
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="p-4 border-b">
-                    <h2 className="text-lg font-bold">Détails des Ventes</h2>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plat</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantité</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CA Généré</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">% du Total</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {topPlats.map((plat, idx) => (
-                                <tr key={idx} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap font-medium">{plat.nom}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">{plat.quantite}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">{plat.ca?.toLocaleString()} FCFA</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex items-center">
-                                            <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                                                <div
-                                                    className="bg-indigo-600 h-2 rounded-full"
-                                                    style={{ width: `${plat.pourcentage}%` }}
-                                                ></div>
-                                            </div>
-                                            <span className="text-sm">{plat.pourcentage}%</span>
-                                        </div>
-                                    </td>
-                                </tr>
+                        <div className="mt-6 space-y-3">
+                            {topPlats.slice(0, 3).map((plat, idx) => (
+                                <div key={idx} className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-2 w-2 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></div>
+                                        <span className="text-xs font-black text-slate-700 truncate max-w-[120px]">{plat.nom}</span>
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-400">{plat.quantite} ventes</span>
+                                </div>
                             ))}
-                        </tbody>
-                    </table>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Detailed Table */}
+                <div className="rounded-[32px] bg-white shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
+                        <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight italic">Analyse Détaillée par Produit</h2>
+                        <div className="h-10 w-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-indigo-600">
+                            <Pizza size={20} />
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="bg-white">
+                                    <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Produit</th>
+                                    <th className="px-8 py-5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Volume</th>
+                                    <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Revenu Généré</th>
+                                    <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Contribution</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {topPlats.length > 0 ? topPlats.map((plat, idx) => (
+                                    <tr key={idx} className="hover:bg-indigo-50/30 transition-colors group">
+                                        <td className="px-8 py-6 whitespace-nowrap">
+                                            <span className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition">{plat.nom}</span>
+                                        </td>
+                                        <td className="px-8 py-6 text-center">
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-tight">
+                                                {plat.quantite}
+                                            </span>
+                                        </td>
+                                        <td className="px-8 py-6 text-right font-black text-slate-900 text-sm">
+                                            {(plat.ca || 0).toLocaleString()} <span className="text-[10px] ml-1 text-slate-400 italic">FCFA</span>
+                                        </td>
+                                        <td className="px-8 py-6 text-right">
+                                            <div className="flex items-center justify-end gap-3">
+                                                <div className="w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                                    <div
+                                                        className="bg-indigo-600 h-full rounded-full transition-all duration-1000"
+                                                        style={{ width: `${plat.pourcentage}%` }}
+                                                    ></div>
+                                                </div>
+                                                <span className="text-xs font-black text-indigo-600 min-w-[40px]">{plat.pourcentage}%</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan="4" className="py-20 text-center opacity-20 italic font-black uppercase tracking-widest">
+                                            Aucune donnée disponible
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

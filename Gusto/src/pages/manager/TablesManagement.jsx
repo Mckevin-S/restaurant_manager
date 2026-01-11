@@ -3,10 +3,12 @@ import { Plus, Edit2, Trash2, Users, MapPin, Layout, CheckCircle, Clock, AlertCi
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../services/apiClient';
 import { toast } from 'react-hot-toast';
+import PageHeader from '../../widget/PageHeader';
 
 const TablesManagement = () => {
   const [tables, setTables] = useState([]);
   const [zones, setZones] = useState([]);
+  // setSelectedZonesetSelectedZonesetSelectedZonesetSelectedZonesetSelectedZonesetSelectedZonesetSelectedZonesetSelectedZonesetSelectedZonesetSelectedZonesetSelectedZonesetSelectedZone
   const [selectedZone, setSelectedZone] = useState('all');
   const [showTableForm, setShowTableForm] = useState(false);
   const [showZoneForm, setShowZoneForm] = useState(false);
@@ -90,36 +92,35 @@ const TablesManagement = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-4 lg:p-8">
-      {/* HEADER SECTION */}
-      <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-        <div>
-          <h1 className="text-4xl font-black tracking-tight text-slate-900">Plan de Salle</h1>
-          <p className="mt-1 text-slate-500 font-medium">Configurez l'agencement et suivez l'état de vos tables.</p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowZoneForm(true)}
-            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
-          >
-            <MapPin size={18} className="text-indigo-600" /> Ajouter une Zone
-          </button>
-          <button
-            onClick={() => setShowTableForm(true)}
-            className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700 hover:scale-[1.02] active:scale-95"
-          >
-            <Plus size={18} /> Nouvelle Table
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#f8fafc] animate-in fade-in duration-500 pb-12">
+      <PageHeader
+        icon={Layout}
+        title="Plan de Salle"
+        subtitle="Configurez l'agencement et suivez l'état de vos tables."
+        actions={
+          <>
+            <button
+              onClick={() => setShowZoneForm(true)}
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            >
+              <MapPin size={18} className="text-indigo-600" /> Ajouter une Zone
+            </button>
+            <button
+              onClick={() => setShowTableForm(true)}
+              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700 hover:scale-[1.02] active:scale-95"
+            >
+              <Plus size={18} /> Nouvelle Table
+            </button>
+          </>
+        }
+      />
 
       {/* STATS STRIP */}
       <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
           { label: 'Total', val: tables.length, color: 'text-slate-600', bg: 'bg-slate-100', icon: <Layout size={20} /> },
-          { label: 'Libres', val: tables.filter(t => t.statut === 'LIBRE').length, color: 'text-emerald-600', bg: 'bg-emerald-100', icon: <CheckCircle size={20} /> },
-          { label: 'Occupées', val: tables.filter(t => t.statut === 'OCCUPEE').length, color: 'text-rose-600', bg: 'bg-rose-100', icon: <Users size={20} /> },
+          { label: 'Libres', val: tables.filter(t => t.statut === 'Libre').length, color: 'text-emerald-600', bg: 'bg-emerald-100', icon: <CheckCircle size={20} /> },
+          { label: 'Occupées', val: tables.filter(t => t.statut === 'Occupée').length, color: 'text-rose-600', bg: 'bg-rose-100', icon: <Users size={20} /> },
           { label: 'Zones', val: zones.length, color: 'text-indigo-600', bg: 'bg-indigo-100', icon: <MapPin size={20} /> },
         ].map((s, i) => (
           <div key={i} className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm border border-slate-100">
