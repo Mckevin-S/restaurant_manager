@@ -12,6 +12,8 @@ import com.example.BackendProject.utils.LoggingUtils;
 import com.example.BackendProject.utils.RoleType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -323,5 +325,48 @@ public class UtilisateurServiceImplementation implements UtilisateurServiceInter
         return dto;
     }
 
+    @Override
+    public UtilisateurDto getCurrentUtilisateur() {
+        String context = LoggingUtils.getLogContext();
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email;
+        if (principal instanceof UserDetails) {
+            email = ((UserDetails) principal).getUsername();
+        } else {
+            email = principal.toString();
+        }
 
+        logger.info("{} Récupération des informations de l'utilisateur connecté : {}", context, email);
+        return findByEmail(email);
+    }
+
+    @Override
+    public UtilisateurDto updateProfile(UtilisateurDto utilisateurDto) {
+        String context = LoggingUtils.getLogContext();
+        UtilisateurDto current = getCurrentUtilisateur();
+        Long id = current.getId();
+        
+        logger.info("{} Mise à jour du profil personnel pour l'utilisateur ID: {}", context, id);
+        
+        Utilisateur utilisateur = utilisateurRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+        // Seuls certains champs sont autorisés à la modification par l'utilisateur lui-même
+        if (utilisateurDto.getNom() != null && !utilisateurDto.getNom().isEmpty()) {
+            utilisateur.setNom(utilisateurDto.getNom());
+        }
+        if (utilisateurDto.getPrenom() != null && !utilisateurDto.getPrenom().isEmpty()) {
+            utilisateur.setPrenom(utilisateurDto.getPrenom());
+        }
+        if (utilisateurDto.getTelephone() != null && !utilisateurDto.getTelephone().isEmpty()) {
+            utilisateur.setTelephone(utilisateurDto.getTelephone());
+        }
+
+        Utilisateur updated = utilisateurRepository.save(utilisateur);
+        logger.info("{} Profil personnel mis à jour avec succès pour l'ID: {}", context, id);
+        
+        UtilisateurDto result = utilisateurMapper.toDto(updated);
+        result.setMotDePasse(null);
+        return result;
+    }
 }

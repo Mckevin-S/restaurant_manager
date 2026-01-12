@@ -26,4 +26,7 @@ public interface UtilisateurServiceInterface {
     
     UtilisateurDto findByEmail(String email);
 
+    UtilisateurDto getCurrentUtilisateur();
+
+    UtilisateurDto updateProfile(UtilisateurDto utilisateurDto);
 }

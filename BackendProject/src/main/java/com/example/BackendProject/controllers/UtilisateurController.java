@@ -407,4 +407,22 @@ public class UtilisateurController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
     }
+
+    /**
+     * Récupérer l'utilisateur actuellement connecté
+     */
+    @GetMapping("/me")
+    @Operation(summary = "Récupérer l'utilisateur actuel", description = "Retourne les détails de l'utilisateur authentifié via son token JWT")
+    public ResponseEntity<UtilisateurDto> getCurrentUser() {
+        return ResponseEntity.ok(utilisateurServiceImplementation.getCurrentUtilisateur());
+    }
+
+    /**
+     * Mettre à jour le profil de l'utilisateur actuel
+     */
+    @PutMapping("/me")
+    @Operation(summary = "Mettre à jour mon profil", description = "Permet à l'utilisateur connecté de modifier ses propres informations")
+    public ResponseEntity<UtilisateurDto> updateMyProfile(@RequestBody UtilisateurDto dto) {
+        return ResponseEntity.ok(utilisateurServiceImplementation.updateProfile(dto));
+    }
 }
