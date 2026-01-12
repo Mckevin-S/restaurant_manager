@@ -142,14 +142,14 @@ const KitchenDashboard = () => {
 
   if (loading && orders.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: '#0f172a' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
         <CircularProgress color="success" />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, bgcolor: '#0f172a', minHeight: '100vh' }}>
+    <Box>
       {/* Header */}
       <Stack direction={isMobile ? "column" : "row"} justifyContent="space-between" spacing={3} sx={{ mb: 6 }}>
         <Box>

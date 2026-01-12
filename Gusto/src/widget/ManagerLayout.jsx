@@ -5,24 +5,28 @@ import SideBar from './SideBar';
 
 const ManagerLayout = () => {
     const navigate = useNavigate();
-    const usr = localStorage.getItem('role') || 'Manager';
+    const role = localStorage.getItem('role') || 'ROLE_MANAGER';
+
+    // Adaptation du thème en fonction du rôle (ex: Cuisine est plus sombre)
+    const isKitchen = role === 'ROLE_CUISINIER';
+    const bgColor = isKitchen ? '#0f172a' : '#F8F9FA';
 
     const handleLogout = () => {
-        localStorage.removeItem('userToken');
+        localStorage.removeItem('token'); // Match LoginSlice
         localStorage.removeItem('role');
         navigate('/login');
     };
 
     return (
-        <Box sx={{ display: 'flex', bgcolor: '#F8F9FA', minHeight: '100vh', width: "100%" }}>
-            <SideBar userRole={usr} onLogout={handleLogout} />
+        <Box sx={{ display: 'flex', bgcolor: bgColor, minHeight: '100vh', width: "100%" }}>
+            <SideBar userRole={role} onLogout={handleLogout} />
 
             <Box component="main" sx={{
                 flexGrow: 1,
                 p: { xs: 2, md: 4 },
                 width: "100%",
                 overflowX: 'hidden',
-                backgroundColor: '#F8F9FA'
+                backgroundColor: bgColor
             }}>
                 <Outlet />
             </Box>

@@ -53,7 +53,7 @@ const ServeurDashboard = () => {
   };
 
   return (
-    <Box sx={{ p: 4, bgcolor: '#f8fafc', minHeight: '100vh' }}>
+    <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 5 }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 900, color: '#1e293b' }}>Tableau de Service</Typography>
