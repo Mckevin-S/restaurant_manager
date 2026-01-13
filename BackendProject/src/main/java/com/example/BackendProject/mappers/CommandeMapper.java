@@ -5,13 +5,20 @@ import com.example.BackendProject.entities.Commande;
 import com.example.BackendProject.dto.CommandeDto;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {LigneCommandeMapper.class})
 public interface CommandeMapper {
     @Mapping(target = "tableId", source = "table.id")
-    // @Mapping(target = "serveurId", source = "serveur.id")
+    @Mapping(target = "lignesCommande", source = "lignes")
     CommandeDto toDto(Commande commande);
 
     @Mapping(target = "table.id", source = "tableId")
-    // @Mapping(target = "serveur.id", source = "serveurId")
+    @Mapping(target = "lignes", source = "lignesCommande")
     Commande toEntity(CommandeDto commandeDto);
+
+    @org.mapstruct.AfterMapping
+    default void handleNullTable(@org.mapstruct.MappingTarget Commande entity, CommandeDto dto) {
+        if (dto.getTableId() == null) {
+            entity.setTable(null);
+        }
+    }
 }

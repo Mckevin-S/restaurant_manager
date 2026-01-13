@@ -14,11 +14,7 @@ public class CommandeDto {
 
     private Long id;
     
-    @NotNull(message = "La table est obligatoire")
-    private Long tableId;   // Renommé pour correspondre au Mapper
-    
-    // @NotNull(message = "Le serveur est obligatoire")
-    // private Long serveurId; // Renommé pour correspondre au Mapper
+    private Long tableId;   // Rendu optionnel pour A_EMPORTER
     
     private Timestamp dateHeureCommande;
     
@@ -28,21 +24,21 @@ public class CommandeDto {
     @NotNull(message = "Le type de commande est obligatoire")
     private TypeCommande typeCommande;
     
-    @DecimalMin(value = "0.0", message = "Le total HT doit être positif ou nul")
     private BigDecimal totalHt;
     
-    @DecimalMin(value = "0.0", message = "Le total TTC doit être positif ou nul")
-    private BigDecimal totalTtc;;
+    private BigDecimal totalTtc;
 
-    public CommandeDto(Long id, Long tableId, Long serveurId, Timestamp dateHeureCommande, StatutCommande statut, TypeCommande typeCommande, BigDecimal totalHt, BigDecimal totalTtc) {
+    private java.util.List<LigneCommandeDto> lignesCommande;
+
+    public CommandeDto(Long id, Long tableId, Timestamp dateHeureCommande, StatutCommande statut, TypeCommande typeCommande, BigDecimal totalHt, BigDecimal totalTtc, java.util.List<LigneCommandeDto> lignesCommande) {
         this.id = id;
         this.tableId = tableId;
-        // this.serveurId = serveurId;
         this.dateHeureCommande = dateHeureCommande;
         this.statut = statut;
         this.typeCommande = typeCommande;
         this.totalHt = totalHt;
         this.totalTtc = totalTtc;
+        this.lignesCommande = lignesCommande;
     }
 
     public CommandeDto() {
@@ -111,5 +107,12 @@ public class CommandeDto {
 
     public void setTotalTtc(BigDecimal totalTtc) {
         this.totalTtc = totalTtc;
+    }
+    public java.util.List<LigneCommandeDto> getLignesCommande() {
+        return lignesCommande;
+    }
+
+    public void setLignesCommande(java.util.List<LigneCommandeDto> lignesCommande) {
+        this.lignesCommande = lignesCommande;
     }
 }

@@ -45,6 +45,7 @@ const ServeurDashboard = () => {
   const getStatusConfig = (statut) => {
     const configs = {
       'PRETE': { color: '#10b981', bg: '#ecfdf5', label: 'À SERVIR', pulse: true },
+      'SERVIE': { color: '#6366f1', bg: '#eef2ff', label: 'EN CAISSE', pulse: false },
       'EN_PREPARATION': { color: '#f59e0b', bg: '#fffbeb', label: 'CUISINE', pulse: false },
       'PAYEE': { color: '#3b82f6', bg: '#eff6ff', label: 'TERMINÉE', pulse: false },
       'EN_ATTENTE': { color: '#ef4444', bg: '#fef2f2', label: 'NOUVEAU', pulse: true }
@@ -143,13 +144,19 @@ const ServeurDashboard = () => {
                         <Button
                           fullWidth variant="contained"
                           startIcon={<CheckCircleIcon />}
-                          onClick={() => dispatch(updateStatutCommande({ id: cmd.id, nouveauStatut: 'PAYEE' }))}
+                          onClick={() => dispatch(updateStatutCommande({ id: cmd.id, nouveauStatut: 'SERVIE' }))}
                           sx={{
                             bgcolor: '#10b981', borderRadius: 3, py: 1.5, fontWeight: 800, textTransform: 'none',
                             animation: config.pulse ? 'pulse 2s infinite' : 'none'
                           }}
                         >
                           Marquer comme Servi
+                        </Button>
+                      )}
+
+                      {cmd.statut === 'SERVIE' && (
+                        <Button fullWidth disabled sx={{ borderRadius: 3, py: 1.5, color: '#6366f1' }}>
+                          <CheckCircleIcon sx={{ mr: 1 }} /> Envoyé à l'encaissement
                         </Button>
                       )}
 

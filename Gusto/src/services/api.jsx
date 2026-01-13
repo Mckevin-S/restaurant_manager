@@ -39,6 +39,9 @@ export const getCommandes = () => apiClient.get('/commandes');
 /** Récupère les commandes en attente */
 export const getCommandesEnAttente = () => apiClient.get('/commandes/statut/EN_ATTENTE');
 
+/** Récupère les commandes prêtes pour l'encaissement */
+export const getCommandesServies = () => apiClient.get('/commandes/statut/SERVIE');
+
 /** Retourne l'URL du ticket pour une commande donnée */
 export const getTicketUrl = (id) => `${apiClient.defaults.baseURL}/commandes/${id}/ticket`;
 

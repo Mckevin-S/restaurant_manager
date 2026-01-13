@@ -2,6 +2,7 @@ package com.example.BackendProject.services.implementations;
 
 import com.example.BackendProject.dto.CommandeDto;
 import com.example.BackendProject.entities.Commande;
+import com.example.BackendProject.entities.TableRestaurant;
 import com.example.BackendProject.entities.Utilisateur;
 import com.example.BackendProject.mappers.CommandeMapper;
 import com.example.BackendProject.repository.CommandeRepository;
@@ -90,9 +91,29 @@ public class CommandeServiceImplementation implements CommandeServiceInterface {
         if (commandeDto.getTotalTtc() == null) commandeDto.setTotalTtc(BigDecimal.ZERO);
 
         Commande commande = commandeMapper.toEntity(commandeDto);
-        commande.setTable(tableRestaurantRepository.findById(commandeDto.getTableId()).get());
-        Commande savedCommande = commandeRepository.save(commande);
+        
+        // Gestion de la table et lien bidirectionnel
+        if (commandeDto.getTableId() != null) {
+            TableRestaurant table = tableRestaurantRepository.findById(commandeDto.getTableId())
+                    .orElseThrow(() -> new RuntimeException("Table non trouvée"));
+            
+            // Marquer la table comme occupée si c'est une commande sur place
+            if (commandeDto.getTypeCommande() == TypeCommande.SUR_PLACE) {
+                table.setStatut(com.example.BackendProject.utils.StatutTable.Occupée);
+                tableRestaurantRepository.save(table);
+                logger.info("{} Table ID: {} marquée comme Occupée", context, table.getId());
+            }
+            commande.setTable(table);
+        } else {
+            commande.setTable(null);
+        }
 
+        // Lien bidirectionnel pour les lignes de commande
+        if (commande.getLignes() != null) {
+            commande.getLignes().forEach(ligne -> ligne.setCommande(commande));
+        }
+
+        Commande savedCommande = commandeRepository.save(commande);
         logger.info("{} Commande enregistrée avec succès. ID: {}, Statut: {}", context, savedCommande.getId(), savedCommande.getStatut());
         
         CommandeDto resultDto = commandeMapper.toDto(savedCommande);
@@ -168,6 +189,15 @@ public class CommandeServiceImplementation implements CommandeServiceInterface {
         }
 
         commande.setStatut(nouveauStatut);
+        
+        // Libérer la table si la commande est payée
+        if (nouveauStatut == StatutCommande.PAYEE && commande.getTable() != null) {
+            TableRestaurant table = commande.getTable();
+            table.setStatut(com.example.BackendProject.utils.StatutTable.Libre);
+            tableRestaurantRepository.save(table);
+            logger.info("{} Table ID: {} libérée après paiement", context, table.getId());
+        }
+
         Commande updated = commandeRepository.save(commande);
         logger.info("{} Statut mis à jour avec succès pour la commande ID: {}", context, id);
         
@@ -177,11 +207,13 @@ public class CommandeServiceImplementation implements CommandeServiceInterface {
         if (nouveauStatut == StatutCommande.PRETE) {
             messagingTemplate.convertAndSend("/topic/salle/prete", updatedDto);
             logger.info("{} Notification 'PRÊTE' envoyée pour la commande ID: {}", context, id);
+        } else if (nouveauStatut == StatutCommande.SERVIE) {
+            messagingTemplate.convertAndSend("/topic/serveurs/servie", updatedDto);
+            logger.info("{} Notification 'SERVIE' envoyée pour la commande ID: {}", context, id);
         } else if (nouveauStatut == StatutCommande.PAYEE) {
             messagingTemplate.convertAndSend("/topic/serveurs/addition", updatedDto);
             logger.info("{} Notification 'PAYÉE' envoyée pour la commande ID: {}", context, id);
         } else if (nouveauStatut == StatutCommande.EN_PREPARATION || nouveauStatut == StatutCommande.EN_ATTENTE) {
-            // Optionnel : notifier la cuisine si une commande change entre ces deux états
             messagingTemplate.convertAndSend("/topic/cuisine/commandes", updatedDto);
         }
 
@@ -299,11 +331,17 @@ public class CommandeServiceImplementation implements CommandeServiceInterface {
             throw new RuntimeException(errorMsg);
         }
 
-        // Vérification du flux logique (Cuisine)
+        // Vérification du flux logique (Cuisine / Salle / Caisse)
         if (statutActuel == StatutCommande.EN_ATTENTE && nouveauStatut == StatutCommande.PRETE) {
             String errorMsg = "Transition directe EN_ATTENTE -> PRETE interdite. Passage par EN_PREPARATION obligatoire.";
             logger.warn("{} Violation du flux de cuisine : {}", context, errorMsg);
             throw new RuntimeException("Une commande en attente doit d'abord passer par 'En préparation'");
+        }
+
+        if (statutActuel == StatutCommande.PRETE && nouveauStatut == StatutCommande.PAYEE) {
+            String errorMsg = "Transition PRETE -> PAYEE interdite. La commande doit être 'SERVIE' avant paiement.";
+            logger.warn("{} Flux incorrect : {}", context, errorMsg);
+            throw new RuntimeException("La commande doit être marquée comme 'Servie' avant l'encaissement.");
         }
         
         logger.debug("{} Validation transition réussie : {} -> {}", context, statutActuel, nouveauStatut);

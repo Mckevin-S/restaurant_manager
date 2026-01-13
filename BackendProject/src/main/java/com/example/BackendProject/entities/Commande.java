@@ -35,7 +35,7 @@ public class Commande {
     private BigDecimal totalTtc;
     private Integer nombrePersonnes;
 
-    @OneToMany(mappedBy = "commande")
+    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LigneCommande> lignes;
 
     @OneToMany(mappedBy = "commande")
