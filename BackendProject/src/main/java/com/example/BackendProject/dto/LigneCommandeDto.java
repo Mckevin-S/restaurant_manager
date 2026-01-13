@@ -8,7 +8,6 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
-
 public class LigneCommandeDto {
 
     private Long id;
@@ -18,8 +17,8 @@ public class LigneCommandeDto {
     private BigDecimal prixUnitaire;
     private String notesCuisine;
 
-
-    public LigneCommandeDto(Long id, Long commande, Long plat, Integer quantite, BigDecimal prixUnitaire, String notesCuisine) {
+    public LigneCommandeDto(Long id, Long commande, Long plat, Integer quantite, BigDecimal prixUnitaire,
+            String notesCuisine) {
         this.id = id;
         this.commande = commande;
         this.plat = plat;

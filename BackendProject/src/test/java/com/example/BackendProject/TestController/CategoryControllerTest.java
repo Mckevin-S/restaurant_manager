@@ -34,208 +34,216 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Tests unitaires - CategoryController")
 class CategoryControllerTest {
 
-    @Mock
-    private CategoryServiceImplementation categoryService;
+        @Mock
+        private CategoryServiceImplementation categoryService;
 
-    @InjectMocks
-    private CategoryController categoryController;
+        @InjectMocks
+        private CategoryController categoryController;
 
-    private MockMvc mockMvc;
-    private ObjectMapper objectMapper;
-    private CategoryDto categoryDto;
+        private MockMvc mockMvc;
+        private ObjectMapper objectMapper;
+        private CategoryDto categoryDto;
 
-    /**
-     * Gestionnaire d'exceptions local pour simuler le comportement du BackendProject
-     * et transformer les RuntimeException en codes HTTP corrects (400, 404).
-     */
-    @RestControllerAdvice
-    static class TestGlobalExceptionHandler {
-        @ExceptionHandler(RuntimeException.class)
-        public ResponseEntity<String> handleRuntimeException(RuntimeException e) {
-            if (e.getMessage().contains("non trouvé")) {
-                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-            }
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        /**
+         * Gestionnaire d'exceptions local pour simuler le comportement du
+         * BackendProject
+         * et transformer les RuntimeException en codes HTTP corrects (400, 404).
+         */
+        @RestControllerAdvice
+        static class TestGlobalExceptionHandler {
+                @ExceptionHandler(RuntimeException.class)
+                public ResponseEntity<String> handleRuntimeException(RuntimeException e) {
+                        if (e.getMessage().contains("non trouvé")) {
+                                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+                        }
+                        return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+                }
+
+                @ExceptionHandler(IllegalArgumentException.class)
+                public ResponseEntity<String> handleIllegalArgument(IllegalArgumentException e) {
+                        return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+                }
         }
 
-        @ExceptionHandler(IllegalArgumentException.class)
-        public ResponseEntity<String> handleIllegalArgument(IllegalArgumentException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        @BeforeEach
+        void setUp() {
+                // CORRECTION : On attache le ControllerAdvice au mockMvc
+                mockMvc = MockMvcBuilders.standaloneSetup(categoryController)
+                                .setControllerAdvice(new TestGlobalExceptionHandler())
+                                .setMessageConverters(
+                                                new org.springframework.http.converter.json.MappingJackson2HttpMessageConverter())
+                                .setContentNegotiationManager(
+                                                new org.springframework.web.accept.ContentNegotiationManager(
+                                                                new org.springframework.web.accept.FixedContentNegotiationStrategy(
+                                                                                org.springframework.http.MediaType.APPLICATION_JSON)))
+                                .build();
+
+                objectMapper = new ObjectMapper();
+
+                categoryDto = new CategoryDto();
+                categoryDto.setId(1L);
+                categoryDto.setNom("Entrées");
+                categoryDto.setDescription("Délicieuses entrées");
+                categoryDto.setOrdreAffichage(1);
         }
-    }
 
-    @BeforeEach
-    void setUp() {
-        // CORRECTION : On attache le ControllerAdvice au mockMvc
-        mockMvc = MockMvcBuilders.standaloneSetup(categoryController)
-                .setControllerAdvice(new TestGlobalExceptionHandler())
-                .build();
+        // ==================== Tests CREATE ====================
 
-        objectMapper = new ObjectMapper();
+        @Test
+        @DisplayName("POST /api/categories - Créer une catégorie avec succès")
+        void testCreateCategory_Success() throws Exception {
+                when(categoryService.save(any(CategoryDto.class))).thenReturn(categoryDto);
 
-        categoryDto = new CategoryDto();
-        categoryDto.setId(1L);
-        categoryDto.setNom("Entrées");
-        categoryDto.setDescription("Délicieuses entrées");
-        categoryDto.setOrdreAffichage(1);
-    }
+                mockMvc.perform(post("/api/categories")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(categoryDto)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.id").value(1))
+                                .andExpect(jsonPath("$.nom").value("Entrées"));
 
-    // ==================== Tests CREATE ====================
+                verify(categoryService, times(1)).save(any(CategoryDto.class));
+        }
 
-    @Test
-    @DisplayName("POST /api/categories - Créer une catégorie avec succès")
-    void testCreateCategory_Success() throws Exception {
-        when(categoryService.save(any(CategoryDto.class))).thenReturn(categoryDto);
+        @Test
+        @DisplayName("POST /api/categories - Échec création avec données invalides (400)")
+        void testCreateCategory_InvalidData() throws Exception {
+                when(categoryService.save(any(CategoryDto.class)))
+                                .thenThrow(new RuntimeException("Le nom de la catégorie est obligatoire"));
 
-        mockMvc.perform(post("/api/categories")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(categoryDto)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.nom").value("Entrées"));
+                mockMvc.perform(post("/api/categories")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(categoryDto)))
+                                .andExpect(status().isBadRequest());
+        }
 
-        verify(categoryService, times(1)).save(any(CategoryDto.class));
-    }
+        @Test
+        @DisplayName("POST /api/categories - Échec création avec menu inexistant (400)")
+        void testCreateCategory_MenuNotFound() throws Exception {
+                when(categoryService.save(any(CategoryDto.class)))
+                                .thenThrow(new RuntimeException("Menu non trouvé avec l'ID : 999"));
 
-    @Test
-    @DisplayName("POST /api/categories - Échec création avec données invalides (400)")
-    void testCreateCategory_InvalidData() throws Exception {
-        when(categoryService.save(any(CategoryDto.class)))
-                .thenThrow(new RuntimeException("Le nom de la catégorie est obligatoire"));
+                mockMvc.perform(post("/api/categories")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(categoryDto)))
+                                .andExpect(status().isBadRequest());
+        }
 
-        mockMvc.perform(post("/api/categories")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(categoryDto)))
-                .andExpect(status().isBadRequest());
-    }
+        // ==================== Tests READ ALL ====================
 
-    @Test
-    @DisplayName("POST /api/categories - Échec création avec menu inexistant (400)")
-    void testCreateCategory_MenuNotFound() throws Exception {
-        when(categoryService.save(any(CategoryDto.class)))
-                .thenThrow(new RuntimeException("Menu non trouvé avec l'ID : 999"));
+        @Test
+        @DisplayName("GET /api/categories - Récupérer toutes les catégories")
+        void testGetAllCategories_Success() throws Exception {
+                CategoryDto category2 = new CategoryDto();
+                category2.setId(2L);
+                category2.setNom("Plats principaux");
 
-        mockMvc.perform(post("/api/categories")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(categoryDto)))
-                .andExpect(status().isBadRequest());
-    }
+                List<CategoryDto> categories = Arrays.asList(categoryDto, category2);
+                when(categoryService.getAll()).thenReturn(categories);
 
-    // ==================== Tests READ ALL ====================
+                mockMvc.perform(get("/api/categories")
+                                .accept(MediaType.APPLICATION_JSON))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$", hasSize(2)))
+                                .andExpect(jsonPath("$[0].nom").value("Entrées"));
+        }
 
-    @Test
-    @DisplayName("GET /api/categories - Récupérer toutes les catégories")
-    void testGetAllCategories_Success() throws Exception {
-        CategoryDto category2 = new CategoryDto();
-        category2.setId(2L);
-        category2.setNom("Plats principaux");
+        // ==================== Tests READ BY ID ====================
 
-        List<CategoryDto> categories = Arrays.asList(categoryDto, category2);
-        when(categoryService.getAll()).thenReturn(categories);
+        @Test
+        @DisplayName("GET /api/categories/{id} - Récupérer une catégorie par ID")
+        void testGetCategoryById_Success() throws Exception {
+                when(categoryService.getById(1L)).thenReturn(categoryDto);
 
-        mockMvc.perform(get("/api/categories"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].nom").value("Entrées"));
-    }
+                mockMvc.perform(get("/api/categories/1"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id").value(1));
+        }
 
-    // ==================== Tests READ BY ID ====================
+        @Test
+        @DisplayName("GET /api/categories/{id} - Catégorie non trouvée (404)")
+        void testGetCategoryById_NotFound() throws Exception {
+                when(categoryService.getById(999L))
+                                .thenThrow(new RuntimeException("Catégorie non trouvée avec l'ID : 999"));
 
-    @Test
-    @DisplayName("GET /api/categories/{id} - Récupérer une catégorie par ID")
-    void testGetCategoryById_Success() throws Exception {
-        when(categoryService.getById(1L)).thenReturn(categoryDto);
+                mockMvc.perform(get("/api/categories/999"))
+                                .andExpect(status().isNotFound());
+        }
 
-        mockMvc.perform(get("/api/categories/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1));
-    }
+        // ==================== Tests UPDATE ====================
 
-    @Test
-    @DisplayName("GET /api/categories/{id} - Catégorie non trouvée (404)")
-    void testGetCategoryById_NotFound() throws Exception {
-        when(categoryService.getById(999L))
-                .thenThrow(new RuntimeException("Catégorie non trouvée avec l'ID : 999"));
+        @Test
+        @DisplayName("PUT /api/categories/{id} - Mettre à jour une catégorie")
+        void testUpdateCategory_Success() throws Exception {
+                CategoryDto updatedCategory = new CategoryDto();
+                updatedCategory.setId(1L);
+                updatedCategory.setNom("Entrées Chaudes");
 
-        mockMvc.perform(get("/api/categories/999"))
-                .andExpect(status().isNotFound());
-    }
+                when(categoryService.update(eq(1L), any(CategoryDto.class))).thenReturn(updatedCategory);
 
-    // ==================== Tests UPDATE ====================
+                mockMvc.perform(put("/api/categories/1")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(updatedCategory)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.nom").value("Entrées Chaudes"));
+        }
 
-    @Test
-    @DisplayName("PUT /api/categories/{id} - Mettre à jour une catégorie")
-    void testUpdateCategory_Success() throws Exception {
-        CategoryDto updatedCategory = new CategoryDto();
-        updatedCategory.setId(1L);
-        updatedCategory.setNom("Entrées Chaudes");
+        @Test
+        @DisplayName("PUT /api/categories/{id} - Mise à jour échouée (404)")
+        void testUpdateCategory_NotFound() throws Exception {
+                when(categoryService.update(eq(999L), any(CategoryDto.class)))
+                                .thenThrow(new RuntimeException("Catégorie non trouvée avec l'ID : 999"));
 
-        when(categoryService.update(eq(1L), any(CategoryDto.class))).thenReturn(updatedCategory);
+                mockMvc.perform(put("/api/categories/999")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(categoryDto)))
+                                .andExpect(status().isNotFound());
+        }
 
-        mockMvc.perform(put("/api/categories/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedCategory)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nom").value("Entrées Chaudes"));
-    }
+        // ==================== Tests DELETE ====================
 
-    @Test
-    @DisplayName("PUT /api/categories/{id} - Mise à jour échouée (404)")
-    void testUpdateCategory_NotFound() throws Exception {
-        when(categoryService.update(eq(999L), any(CategoryDto.class)))
-                .thenThrow(new RuntimeException("Catégorie non trouvée avec l'ID : 999"));
+        @Test
+        @DisplayName("DELETE /api/categories/{id} - Supprimer une catégorie")
+        void testDeleteCategory_Success() throws Exception {
+                doNothing().when(categoryService).delete(1L);
 
-        mockMvc.perform(put("/api/categories/999")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(categoryDto)))
-                .andExpect(status().isNotFound());
-    }
+                mockMvc.perform(delete("/api/categories/1"))
+                                .andExpect(status().isNoContent());
+        }
 
-    // ==================== Tests DELETE ====================
+        @Test
+        @DisplayName("DELETE /api/categories/{id} - Suppression échouée (404)")
+        void testDeleteCategory_NotFound() throws Exception {
+                doThrow(new RuntimeException("Catégorie non trouvée avec l'ID : 999"))
+                                .when(categoryService).delete(999L);
 
-    @Test
-    @DisplayName("DELETE /api/categories/{id} - Supprimer une catégorie")
-    void testDeleteCategory_Success() throws Exception {
-        doNothing().when(categoryService).delete(1L);
+                mockMvc.perform(delete("/api/categories/999"))
+                                .andExpect(status().isNotFound());
+        }
 
-        mockMvc.perform(delete("/api/categories/1"))
-                .andExpect(status().isNoContent());
-    }
+        // ==================== Tests REORDER ====================
 
-    @Test
-    @DisplayName("DELETE /api/categories/{id} - Suppression échouée (404)")
-    void testDeleteCategory_NotFound() throws Exception {
-        doThrow(new RuntimeException("Catégorie non trouvée avec l'ID : 999"))
-                .when(categoryService).delete(999L);
+        @Test
+        @DisplayName("PATCH /api/categories/reorder/{menuId} - Réorganiser les catégories")
+        void testReorderCategories_Success() throws Exception {
+                List<Long> categoryIds = Arrays.asList(2L, 1L);
+                doNothing().when(categoryService).reorderCategories(eq(1L), anyList());
 
-        mockMvc.perform(delete("/api/categories/999"))
-                .andExpect(status().isNotFound());
-    }
+                mockMvc.perform(patch("/api/categories/reorder/1")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(categoryIds)))
+                                .andExpect(status().isOk());
+        }
 
-    // ==================== Tests REORDER ====================
+        @Test
+        @DisplayName("PATCH /api/categories/reorder/{menuId} - Échec (400)")
+        void testReorderCategories_InvalidCategory() throws Exception {
+                List<Long> categoryIds = Arrays.asList(1L, 999L);
+                doThrow(new RuntimeException("Catégorie non trouvée avec l'ID : 999"))
+                                .when(categoryService).reorderCategories(eq(1L), anyList());
 
-    @Test
-    @DisplayName("PATCH /api/categories/reorder/{menuId} - Réorganiser les catégories")
-    void testReorderCategories_Success() throws Exception {
-        List<Long> categoryIds = Arrays.asList(2L, 1L);
-        doNothing().when(categoryService).reorderCategories(eq(1L), anyList());
-
-        mockMvc.perform(patch("/api/categories/reorder/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(categoryIds)))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("PATCH /api/categories/reorder/{menuId} - Échec (400)")
-    void testReorderCategories_InvalidCategory() throws Exception {
-        List<Long> categoryIds = Arrays.asList(1L, 999L);
-        doThrow(new RuntimeException("Catégorie non trouvée avec l'ID : 999"))
-                .when(categoryService).reorderCategories(eq(1L), anyList());
-
-        mockMvc.perform(patch("/api/categories/reorder/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(categoryIds)))
-                .andExpect(status().isBadRequest());
-    }
+                mockMvc.perform(patch("/api/categories/reorder/1")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(categoryIds)))
+                                .andExpect(status().isBadRequest());
+        }
 }

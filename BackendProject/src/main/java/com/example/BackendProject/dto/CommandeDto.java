@@ -9,28 +9,31 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 
-
 public class CommandeDto {
 
     private Long id;
-    
-    private Long tableId;   // Rendu optionnel pour A_EMPORTER
-    
+
+    private Long tableId; // Rendu optionnel pour A_EMPORTER
+
+    private Long serveurId;
+
     private Timestamp dateHeureCommande;
-    
+
     @NotNull(message = "Le statut est obligatoire")
     private StatutCommande statut;
-    
+
     @NotNull(message = "Le type de commande est obligatoire")
     private TypeCommande typeCommande;
-    
+
     private BigDecimal totalHt;
-    
+
     private BigDecimal totalTtc;
 
     private java.util.List<LigneCommandeDto> lignesCommande;
 
-    public CommandeDto(Long id, Long tableId, Timestamp dateHeureCommande, StatutCommande statut, TypeCommande typeCommande, BigDecimal totalHt, BigDecimal totalTtc, java.util.List<LigneCommandeDto> lignesCommande) {
+    public CommandeDto(Long id, Long tableId, Timestamp dateHeureCommande, StatutCommande statut,
+            TypeCommande typeCommande, BigDecimal totalHt, BigDecimal totalTtc,
+            java.util.List<LigneCommandeDto> lignesCommande) {
         this.id = id;
         this.tableId = tableId;
         this.dateHeureCommande = dateHeureCommande;
@@ -61,13 +64,13 @@ public class CommandeDto {
         this.tableId = tableId;
     }
 
-    // public Long getServeurId() {
-    //     return serveurId;
-    // }
+    public Long getServeurId() {
+        return serveurId;
+    }
 
-    // public void setServeurId(Long serveurId) {
-    //     this.serveurId = serveurId;
-    // }
+    public void setServeurId(Long serveurId) {
+        this.serveurId = serveurId;
+    }
 
     public Timestamp getDateHeureCommande() {
         return dateHeureCommande;
@@ -108,6 +111,7 @@ public class CommandeDto {
     public void setTotalTtc(BigDecimal totalTtc) {
         this.totalTtc = totalTtc;
     }
+
     public java.util.List<LigneCommandeDto> getLignesCommande() {
         return lignesCommande;
     }

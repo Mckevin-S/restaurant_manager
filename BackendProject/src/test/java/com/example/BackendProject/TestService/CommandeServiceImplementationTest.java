@@ -14,6 +14,7 @@ import com.example.BackendProject.services.implementations.CommandeServiceImplem
 import com.example.BackendProject.utils.RoleType;
 import com.example.BackendProject.utils.StatutCommande;
 import com.example.BackendProject.utils.TypeCommande;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,6 +42,8 @@ class CommandeServiceImplementationTest {
     private TableRestaurantRepository tableRestaurantRepository;
     @Mock
     private CommandeMapper commandeMapper;
+    @Mock
+    private SimpMessagingTemplate messagingTemplate;
 
     @InjectMocks
     private CommandeServiceImplementation service;
@@ -75,8 +77,9 @@ class CommandeServiceImplementationTest {
 
         commandeDto = new CommandeDto();
         commandeDto.setTypeCommande(TypeCommande.SUR_PLACE);
-        // commandeDto.setServeurId(serveur.getId());
+        commandeDto.setServeurId(1L); // Fix: ID matching the serveur mock
         commandeDto.setTableId(table.getId());
+        commandeDto.setStatut(StatutCommande.EN_ATTENTE);
     }
 
     // ==================== TESTS DE SAUVEGARDE ====================
@@ -86,6 +89,7 @@ class CommandeServiceImplementationTest {
     void save_ShouldSucceed_WhenValid() {
         when(utilisateurRepository.findById(1L)).thenReturn(Optional.of(serveur));
         when(tableRestaurantRepository.existsById(10L)).thenReturn(true);
+        when(tableRestaurantRepository.findById(10L)).thenReturn(Optional.of(table));
         when(commandeMapper.toEntity(any())).thenReturn(commande);
         when(commandeRepository.save(any())).thenReturn(commande);
         when(commandeMapper.toDto(any())).thenReturn(commandeDto);
@@ -153,12 +157,13 @@ class CommandeServiceImplementationTest {
 
     // ==================== TESTS DE RECHERCHE ====================
 
-//    @Test
-//    @DisplayName("FindByDateRange - Échec si début > fin")
-//    void findByDateRange_ShouldThrow_WhenDatesInverted() {
-//        Timestamp debut = new Timestamp(System.currentTimeMillis());
-//        Timestamp fin = new Timestamp(System.currentTimeMillis() - 100000);
-//
-//        assertThrows(RuntimeException.class, () -> service.findByDateRange(debut, fin));
-//    }
+    // @Test
+    // @DisplayName("FindByDateRange - Échec si début > fin")
+    // void findByDateRange_ShouldThrow_WhenDatesInverted() {
+    // Timestamp debut = new Timestamp(System.currentTimeMillis());
+    // Timestamp fin = new Timestamp(System.currentTimeMillis() - 100000);
+    //
+    // assertThrows(RuntimeException.class, () -> service.findByDateRange(debut,
+    // fin));
+    // }
 }

@@ -11,6 +11,7 @@ import com.example.BackendProject.repository.TableRestaurantRepository;
 import com.example.BackendProject.repository.UtilisateurRepository;
 import com.example.BackendProject.services.implementations.CommandeServiceImplementation;
 import com.example.BackendProject.utils.StatutCommande;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,9 @@ class CommandeServiceTest {
     @Mock
     private CommandeMapper commandeMapper;
 
+    @Mock
+    private SimpMessagingTemplate messagingTemplate;
+
     @InjectMocks
     private CommandeServiceImplementation commandeService;
 
@@ -63,6 +67,7 @@ class CommandeServiceTest {
         serveur = new Utilisateur();
         serveur.setId(1L);
         serveur.setNom("Dupont");
+        serveur.setRole(com.example.BackendProject.utils.RoleType.SERVEUR);
 
         commande = new Commande();
         commande.setId(1L);
@@ -76,15 +81,17 @@ class CommandeServiceTest {
         commandeDto = new CommandeDto();
         commandeDto.setId(1L);
         commandeDto.setTableId(1L);
-        // commandeDto.setServeurId(1L);
+        commandeDto.setServeurId(1L);
         commandeDto.setStatut(StatutCommande.EN_ATTENTE);
         commandeDto.setTotalHt(BigDecimal.valueOf(10000));
         commandeDto.setTotalTtc(BigDecimal.valueOf(11800));
+        commandeDto.setTypeCommande(com.example.BackendProject.utils.TypeCommande.SUR_PLACE);
     }
 
     @Test
     @DisplayName("Devrait créer une commande avec succès")
     void devraitCreerCommandeAvecSucces() {
+        when(tableRepository.existsById(1L)).thenReturn(true); // Added for validation check
         when(tableRepository.findById(1L)).thenReturn(Optional.of(table));
         when(utilisateurRepository.findById(1L)).thenReturn(Optional.of(serveur));
         when(commandeMapper.toEntity(commandeDto)).thenReturn(commande);
@@ -101,7 +108,8 @@ class CommandeServiceTest {
     @Test
     @DisplayName("Devrait lever une exception si la table n'existe pas")
     void devraitLeverExceptionSiTableInexistante() {
-        when(tableRepository.findById(anyLong())).thenReturn(Optional.empty());
+        commandeDto.setServeurId(null); // Skip server validation
+        when(tableRepository.existsById(anyLong())).thenReturn(false);
 
         assertThrows(RessourceNonTrouveeException.class, () -> {
             commandeService.save(commandeDto);
@@ -202,23 +210,23 @@ class CommandeServiceTest {
     @Test
     @DisplayName("Devrait supprimer une commande")
     void devraitSupprimerCommande() {
-        when(commandeRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(commandeRepository).deleteById(1L);
+        when(commandeRepository.findById(1L)).thenReturn(Optional.of(commande));
+        doNothing().when(commandeRepository).delete(commande);
 
         commandeService.delete(1L);
 
-        verify(commandeRepository, times(1)).deleteById(1L);
+        verify(commandeRepository, times(1)).delete(commande);
     }
 
     @Test
     @DisplayName("Devrait lever une exception lors de la suppression d'une commande inexistante")
     void devraitLeverExceptionSupprimerCommandeInexistante() {
-        when(commandeRepository.existsById(anyLong())).thenReturn(false);
+        when(commandeRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         assertThrows(RessourceNonTrouveeException.class, () -> {
             commandeService.delete(999L);
         });
-        verify(commandeRepository, never()).deleteById(anyLong());
+        verify(commandeRepository, never()).delete(any(Commande.class));
     }
 
     @Test

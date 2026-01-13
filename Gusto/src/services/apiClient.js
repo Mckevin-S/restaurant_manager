@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
  * Centralized Axios instance for the Gusto application.
  */
 const apiClient = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3006/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
     timeout: 15000, // Augmenté pour les rapports PDF
     headers: {
         'Content-Type': 'application/json',
