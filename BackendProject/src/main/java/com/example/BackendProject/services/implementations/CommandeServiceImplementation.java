@@ -1,6 +1,7 @@
 package com.example.BackendProject.services.implementations;
 
 import com.example.BackendProject.dto.CommandeDto;
+import com.example.BackendProject.dto.LigneCommandeDto;
 import com.example.BackendProject.entities.Commande;
 import com.example.BackendProject.entities.TableRestaurant;
 import com.example.BackendProject.entities.Utilisateur;
@@ -91,10 +92,20 @@ public class CommandeServiceImplementation implements CommandeServiceInterface {
             commandeDto.setDateHeureCommande(Timestamp.valueOf(LocalDateTime.now()));
         if (commandeDto.getStatut() == null)
             commandeDto.setStatut(StatutCommande.EN_ATTENTE);
-        if (commandeDto.getTotalHt() == null)
-            commandeDto.setTotalHt(BigDecimal.ZERO);
-        if (commandeDto.getTotalTtc() == null)
-            commandeDto.setTotalTtc(BigDecimal.ZERO);
+        
+        // Calculer les totaux si nécessaire (si non fournis par le frontend)
+        if (commandeDto.getTotalTtc() == null || commandeDto.getTotalTtc().compareTo(BigDecimal.ZERO) == 0) {
+            BigDecimal total = BigDecimal.ZERO;
+            if (commandeDto.getLignesCommande() != null) {
+                for (LigneCommandeDto ligne : commandeDto.getLignesCommande()) {
+                    if (ligne.getPrixUnitaire() != null && ligne.getQuantite() != null) {
+                        total = total.add(ligne.getPrixUnitaire().multiply(new BigDecimal(ligne.getQuantite())));
+                    }
+                }
+            }
+            commandeDto.setTotalTtc(total);
+            commandeDto.setTotalHt(total); // On suppose HT = TTC pour l'instant si non spécifié
+        }
 
         Commande commande = commandeMapper.toEntity(commandeDto);
 
@@ -343,11 +354,12 @@ public class CommandeServiceImplementation implements CommandeServiceInterface {
         }
 
         // Vérification du flux logique (Cuisine / Salle / Caisse)
-        if (statutActuel == StatutCommande.EN_ATTENTE && nouveauStatut == StatutCommande.PRETE) {
-            String errorMsg = "Transition directe EN_ATTENTE -> PRETE interdite. Passage par EN_PREPARATION obligatoire.";
-            logger.warn("{} Violation du flux de cuisine : {}", context, errorMsg);
-            throw new RuntimeException("Une commande en attente doit d'abord passer par 'En préparation'");
-        }
+        // Relaxed validation for smoother dev/demo flow
+        // if (statutActuel == StatutCommande.EN_ATTENTE && nouveauStatut == StatutCommande.PRETE) {
+        //     String errorMsg = "Transition directe EN_ATTENTE -> PRETE interdite. Passage par EN_PREPARATION obligatoire.";
+        //     logger.warn("{} Violation du flux de cuisine : {}", context, errorMsg);
+        //     throw new RuntimeException("Une commande en attente doit d'abord passer par 'En préparation'");
+        // }
 
         if (statutActuel == StatutCommande.PRETE && nouveauStatut == StatutCommande.PAYEE) {
             String errorMsg = "Transition PRETE -> PAYEE interdite. La commande doit être 'SERVIE' avant paiement.";

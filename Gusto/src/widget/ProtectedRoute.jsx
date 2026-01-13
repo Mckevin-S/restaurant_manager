@@ -29,14 +29,14 @@
 import { useSelector } from 'react-redux';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
-const ProtectedRoute = ({ allowedRoles }) => {
+const ProtectedRoute = ({ allowedRoles, children }) => {
   const { token, user, tempUsername } = useSelector((state) => state.auth);
   const location = useLocation();
 
   // 1. GESTION DE LA PHASE DE CONFIRMATION (AVANT TOKEN)
   if (location.pathname === '/confirmation') {
     // Si déjà loggé, on quitte cette page
-    return tempUsername ? <Outlet /> : <Navigate to="/login" replace />;
+    return tempUsername ? (children || <Outlet />) : <Navigate to="/login" replace />;
   }
 
   // 2. GESTION DE LA SÉCURITÉ (SANS TOKEN)
@@ -49,9 +49,10 @@ const ProtectedRoute = ({ allowedRoles }) => {
   // on le redirige vers son interface métier
   const handleRedirect = () => {
     switch (user?.role) {
-      case 'ROLE_MANAGER':  return '/dashboard';
-      case 'ROLE_SERVEUR':  return '/server';
+      case 'ROLE_MANAGER': return '/dashboard';
+      case 'ROLE_SERVEUR': return '/server';
       case 'ROLE_CUISINIER': return '/kitchen';
+      case 'ROLE_CAISSIER': return '/payment';
       default: return '/login';
     }
   };
@@ -66,7 +67,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
     return <Navigate to={handleRedirect()} replace />;
   }
 
-  return <Outlet />;
+  return children || <Outlet />;
 };
 
 export default ProtectedRoute;

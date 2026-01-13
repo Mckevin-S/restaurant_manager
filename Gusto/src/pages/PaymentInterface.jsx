@@ -21,6 +21,8 @@ const PaymentInterface = () => {
   const [method, setMethod] = useState('cash');
   const [receivedAmount, setReceivedAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [lastPaidCommande, setLastPaidCommande] = useState(null);
 
   useEffect(() => {
     fetchCommandes();
@@ -31,9 +33,6 @@ const PaymentInterface = () => {
     try {
       const response = await getCommandesServies();
       setCommandes(response.data);
-      if (response.data.length > 0 && !selectedCommande) {
-        // Optionnel: sélectionner la première par défaut
-      }
     } catch (error) {
       toast.error("Erreur lors de la récupération des commandes");
     } finally {
@@ -48,6 +47,8 @@ const PaymentInterface = () => {
     try {
       await updateStatut(selectedCommande.id, 'PAYEE');
       toast.success(`Encaissement validé pour la Table ${selectedCommande.table?.numero || 'N/A'}`);
+      setLastPaidCommande(selectedCommande);
+      setPaymentSuccess(true);
       setSelectedCommande(null);
       setReceivedAmount('');
       fetchCommandes();
@@ -56,6 +57,10 @@ const PaymentInterface = () => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   const total = selectedCommande ? selectedCommande.totalTtc : 0;
@@ -182,9 +187,34 @@ const PaymentInterface = () => {
             )}
           </Grid>
 
-          {/* DROITE : TICKET */}
-          {selectedCommande && (
-            <Grid item xs={12} md={3.5}>
+          {/* DROITE : TICKET OU SUCCÈS */}
+          <Grid item xs={12} md={3.5}>
+            {paymentSuccess && lastPaidCommande ? (
+              <Paper sx={{ p: 4, borderRadius: 8, textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.08)', bgcolor: 'white' }}>
+                <CheckCircleIcon sx={{ fontSize: 80, color: '#10b981', mb: 2 }} />
+                <Typography variant="h5" fontWeight={900} gutterBottom>Paiement Réussi !</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+                  La commande de la Table {lastPaidCommande.table?.numero} a été clôturée avec succès.
+                </Typography>
+                <Stack spacing={2}>
+                  <Button
+                    fullWidth variant="contained"
+                    onClick={handlePrint}
+                    startIcon={<ReceiptLongIcon />}
+                    sx={{ py: 1.5, borderRadius: 3, bgcolor: '#1e293b', fontWeight: 800 }}
+                  >
+                    IMPRIMER LE REÇU
+                  </Button>
+                  <Button
+                    fullWidth variant="outlined"
+                    onClick={() => { setPaymentSuccess(false); setLastPaidCommande(null); }}
+                    sx={{ py: 1.5, borderRadius: 3, fontWeight: 800 }}
+                  >
+                    NOUVEL ENCAISSEMENT
+                  </Button>
+                </Stack>
+              </Paper>
+            ) : selectedCommande ? (
               <Paper sx={{ borderRadius: 8, overflow: 'hidden', boxShadow: '0 30px 60px rgba(15, 23, 42, 0.15)', bgcolor: '#1e293b', color: 'white' }}>
                 <Box sx={{ p: 3, bgcolor: '#334155' }}>
                   <Typography variant="h6" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -201,8 +231,8 @@ const PaymentInterface = () => {
                     <Box sx={{ maxHeight: 200, overflowY: 'auto', pr: 1 }}>
                       {selectedCommande.lignesCommande?.map((ligne, i) => (
                         <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
-                          <Typography variant="body2" color="#cbd5e1">{ligne.quantite}x {ligne.platNom || 'Article'}</Typography>
-                          <Typography variant="body2">{(ligne.quantite * ligne.prixUnitaire).toLocaleString()}</Typography>
+                          <Typography variant="body2" color="#cbd5e1" sx={{ flex: 1, mr: 1 }}>{ligne.quantite}x {ligne.platNom || 'Article'}</Typography>
+                          <Typography variant="body2">{(ligne.quantite * ligne.prixUnitaire).toLocaleString()} FCFA</Typography>
                         </Box>
                       ))}
                     </Box>
@@ -225,10 +255,54 @@ const PaymentInterface = () => {
                   </Stack>
                 </Box>
               </Paper>
-            </Grid>
-          )}
+            ) : (
+              <Box sx={{ border: '2px dashed #cbd5e1', borderRadius: 8, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 4, textAlign: 'center' }}>
+                <Typography variant="body1" color="text.secondary" fontWeight={600}>
+                  En attente de sélection d'une commande
+                </Typography>
+              </Box>
+            )}
+          </Grid>
         </Grid>
       </Container>
+
+      {/* ZONE INVISIBLE POUR L'IMPRESSION */}
+      <Box sx={{ display: 'none', displayPrint: 'block', p: 4, color: 'black', width: '80mm' }}>
+        <Typography variant="h5" align="center" fontWeight={900}>GUSTO RESTAURANT</Typography>
+        <Typography variant="body2" align="center" sx={{ mb: 2 }}>Reçu de Paiement</Typography>
+        <Divider sx={{ my: 1, borderColor: 'black' }} />
+        {lastPaidCommande && (
+          <>
+            <Typography variant="body2">Ticket: #{lastPaidCommande.id}</Typography>
+            <Typography variant="body2">Table: {lastPaidCommande.table?.numero}</Typography>
+            <Typography variant="body2">Date: {new Date().toLocaleString()}</Typography>
+            <Divider sx={{ my: 1, borderColor: 'black' }} />
+            {lastPaidCommande.lignesCommande?.map((ligne, i) => (
+              <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2">{ligne.quantite}x {ligne.platNom || 'Article'}</Typography>
+                <Typography variant="body2">{(ligne.quantite * ligne.prixUnitaire).toLocaleString()}</Typography>
+              </Box>
+            ))}
+            <Divider sx={{ my: 1, borderColor: 'black', borderStyle: 'dashed' }} />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography variant="h6" fontWeight={900}>TOTAL</Typography>
+              <Typography variant="h6" fontWeight={900}>{lastPaidCommande.totalTtc.toLocaleString()} FCFA</Typography>
+            </Box>
+            <Typography variant="body2" align="center" sx={{ mt: 4 }}>Merci de votre visite !</Typography>
+          </>
+        )}
+      </Box>
+
+      <style>
+        {`
+          @media print {
+            body * { visibility: hidden; }
+            [class*="displayPrint"] { visibility: visible; position: absolute; left: 0; top: 0; }
+            header, footer, aside, nav, button { display: none !important; }
+          }
+        `}
+      </style>
+
     </Box>
   );
 };

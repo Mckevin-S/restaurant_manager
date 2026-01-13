@@ -44,7 +44,7 @@ function App() {
       <Route path="/POS" element={<PointOfSale />} />
 
       {/* --- ROUTES AUTHENTIFIÉES AVEC SIDEBAR (UNITÉ DE DESIGN) --- */}
-      <Route element={<ProtectedRoute allowedRoles={['ROLE_MANAGER', 'ROLE_SERVEUR', 'ROLE_CUISINIER', 'admin', 'manager', 'staff']} />}>
+      <Route element={<ProtectedRoute allowedRoles={['ROLE_MANAGER', 'ROLE_SERVEUR', 'ROLE_CUISINIER', 'ROLE_CAISSIER', 'admin', 'manager', 'staff']} />}>
         <Route element={<ManagerLayout />}>
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/help" element={<Help />} />
@@ -80,7 +80,7 @@ function App() {
       </Route>
 
       {/* Routes de support sans Sidebar si nécessaire */}
-      <Route path='/payment' element={<ProtectedRoute allowedRoles={['ROLE_SERVEUR', 'staff']}><PaymentInterface /></ProtectedRoute>} />
+      <Route path='/payment' element={<ProtectedRoute allowedRoles={['ROLE_CAISSIER', 'ROLE_MANAGER', 'staff']}><PaymentInterface /></ProtectedRoute>} />
 
       {/* Fallback */}
       <Route path='*' element={<NotFound />} />
