@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Paper, Grid, Button, Divider,
   IconButton, TextField, InputAdornment, Container, alpha,
-  List, ListItem, ListItemText, ListItemAvatar, Avatar, CircularProgress, Stack, Fade, Chip
+  List, ListItem, ListItemText, ListItemAvatar, Avatar, CircularProgress, Stack, Fade, Chip,
+  Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import { getCommandesServies, updateStatut } from '../services/api';
 import { toast } from 'react-hot-toast';
@@ -16,6 +17,9 @@ import TableBarIcon from '@mui/icons-material/TableBar';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import PrintIcon from '@mui/icons-material/Print';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import PersonIcon from '@mui/icons-material/Person';
+import PhoneIcon from '@mui/icons-material/Phone';
+import NotesIcon from '@mui/icons-material/Notes';
 
 const PaymentInterface = () => {
   const [commandes, setCommandes] = useState([]);
@@ -26,6 +30,10 @@ const PaymentInterface = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [lastPaidCommande, setLastPaidCommande] = useState(null);
+
+  // Client Info Modal State
+  const [clientModalOpen, setClientModalOpen] = useState(false);
+  const [clientInfo, setClientInfo] = useState({ name: '', phone: '', note: '' });
 
   useEffect(() => {
     fetchCommandes();
@@ -64,8 +72,16 @@ const PaymentInterface = () => {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handleOpenPrintModal = () => {
+    setClientInfo({ name: '', phone: '', note: '' }); // Reset or keep previous? Resetting is safer often.
+    setClientModalOpen(true);
+  };
+
+  const handleConfirmPrint = () => {
+    setClientModalOpen(false);
+    setTimeout(() => {
+      window.print();
+    }, 300); // Small delay to allow modal to close completely
   };
 
   const total = selectedCommande ? selectedCommande.totalTtc : 0;
@@ -319,7 +335,7 @@ const PaymentInterface = () => {
                     <Stack spacing={2} sx={{ width: '100%', mt: 4 }}>
                       <Button
                         fullWidth variant="contained" size="large"
-                        onClick={handlePrint}
+                        onClick={handleOpenPrintModal}
                         startIcon={<PrintIcon />}
                         sx={{ py: 2, borderRadius: 4, bgcolor: '#1e293b', fontWeight: 800, boxShadow: '0 10px 20px rgba(30, 41, 59, 0.3)' }}
                       >
@@ -405,54 +421,176 @@ const PaymentInterface = () => {
       </Container>
 
 
-      {/* ZONE D'IMPRESSION CACHÉE */}
-      <Box sx={{ display: 'none', displayPrint: 'block', p: 4, color: 'black', width: '80mm', fontFamily: 'monospace' }}>
-        <Typography variant="h6" align="center" fontWeight={900} sx={{ mb: 1 }}>GUSTO RESTAURANT</Typography>
-        <Typography variant="body2" align="center">123 Rue de la Gastronomie, Abidjan</Typography>
-        <Typography variant="body2" align="center">Tel: +225 01 02 03 04</Typography>
-        <Divider sx={{ my: 2, borderColor: 'black', borderStyle: 'dashed' }} />
+      {/* --- MODAL CLIENT --- */}
+      <Dialog
+        open={clientModalOpen}
+        onClose={() => setClientModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 4, p: 2 }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 900, fontSize: '1.5rem', pb: 1 }}>
+          Informations Client
+          <Typography variant="body2" color="text.secondary">Ajouter les détails du client sur la facture (optionnel)</Typography>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 1 }}>
+          <Grid container spacing={3} sx={{ mt: 0.5 }}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Nom du client"
+                InputProps={{
+                  startAdornment: <InputAdornment position="start"><PersonIcon color="action" /></InputAdornment>,
+                }}
+                value={clientInfo.name}
+                onChange={(e) => setClientInfo({ ...clientInfo, name: e.target.value })}
+                variant="outlined"
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Téléphone"
+                InputProps={{
+                  startAdornment: <InputAdornment position="start"><PhoneIcon color="action" /></InputAdornment>,
+                }}
+                value={clientInfo.phone}
+                onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })}
+                variant="outlined"
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                label="Note / Adresse"
+                InputProps={{
+                  startAdornment: <InputAdornment position="start"><NotesIcon color="action" sx={{ mt: 1 }} /></InputAdornment>,
+                }}
+                value={clientInfo.note}
+                onChange={(e) => setClientInfo({ ...clientInfo, note: e.target.value })}
+                variant="outlined"
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button onClick={() => setClientModalOpen(false)} sx={{ fontWeight: 700, px: 3, borderRadius: 3, color: '#64748b' }}>
+            Annuler
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleConfirmPrint}
+            startIcon={<PrintIcon />}
+            sx={{ fontWeight: 800, px: 4, py: 1.5, borderRadius: 3, bgcolor: '#1e293b' }}
+          >
+            CONFIRMER ET IMPRIMER
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+
+      {/* ZONE D'IMPRESSION (80mm) */}
+      <Box className="displayPrint-container" sx={{ display: 'none', displayPrint: 'block', width: '80mm', p: 0, color: 'black', fontFamily: "'Courier New', Courier, monospace" }}>
+        <Box sx={{ textAlign: 'center', mb: 2, pb: 2, borderBottom: '2px dashed black' }}>
+          <Typography variant="h5" fontWeight={900} sx={{ textTransform: 'uppercase', fontSize: '1.4rem' }}>GUSTO RESTAURANT</Typography>
+          <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>Cocody Riviera, Abidjan</Typography>
+          <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>Tel: +225 07 07 07 07 07</Typography>
+          <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>RC: 123456789 • CC: 987654321</Typography>
+        </Box>
 
         {lastPaidCommande && (
-          <>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="body2">Ticket #{lastPaidCommande.id}</Typography>
-              <Typography variant="body2">{new Date().toLocaleDateString()}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant="body2">Table: {lastPaidCommande.table?.numero}</Typography>
-              <Typography variant="body2">{new Date().toLocaleTimeString()}</Typography>
-            </Box>
+          <Box>
+            <Box sx={{ mb: 2 }}>
+              <Grid container>
+                <Grid item xs={6}><Typography variant="body2" fontWeight={700}>Facture N°:</Typography></Grid>
+                <Grid item xs={6} textAlign="right"><Typography variant="body2">#{lastPaidCommande.id}-{new Date().getFullYear()}</Typography></Grid>
 
-            <Divider sx={{ mb: 2, borderColor: 'black' }} />
+                <Grid item xs={6}><Typography variant="body2" fontWeight={700}>Date:</Typography></Grid>
+                <Grid item xs={6} textAlign="right"><Typography variant="body2">{new Date().toLocaleString('fr-FR')}</Typography></Grid>
 
-            <Stack spacing={1}>
-              {lastPaidCommande.lignesCommande?.map((ligne, i) => (
-                <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" sx={{ flex: 1 }}>{ligne.platNom}</Typography>
-                  <Typography variant="body2">x{ligne.quantite}</Typography>
-                  <Typography variant="body2" sx={{ minWidth: 60, textAlign: 'right' }}>{(ligne.quantite * ligne.prixUnitaire).toLocaleString()}</Typography>
-                </Box>
-              ))}
-            </Stack>
+                <Grid item xs={6}><Typography variant="body2" fontWeight={700}>Table:</Typography></Grid>
+                <Grid item xs={6} textAlign="right"><Typography variant="body2">{lastPaidCommande.table?.numero}</Typography></Grid>
 
-            <Divider sx={{ my: 2, borderColor: 'black', borderStyle: 'dashed' }} />
-
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-              <Typography variant="h6" fontWeight={900}>TOTAL</Typography>
-              <Typography variant="h6" fontWeight={900}>{lastPaidCommande.totalTtc.toLocaleString()} FCFA</Typography>
+                <Grid item xs={6}><Typography variant="body2" fontWeight={700}>Caissier:</Typography></Grid>
+                <Grid item xs={6} textAlign="right"><Typography variant="body2">Admin</Typography></Grid>
+              </Grid>
             </Box>
 
-            <Typography variant="body2" align="center">Mode de paiement: {method === 'cash' ? 'Espèces' : method === 'card' ? 'Carte' : 'Mobile'}</Typography>
-            <Typography variant="body2" align="center" sx={{ mt: 3, fontStyle: 'italic' }}>Merci de votre visite !</Typography>
-          </>
+            {/* INFO CLIENT SI PRÉSENT */}
+            {(clientInfo.name || clientInfo.phone) && (
+              <Box sx={{ mb: 2, p: 1, border: '1px solid black', borderRadius: 1 }}>
+                <Typography variant="caption" fontWeight={900} sx={{ textDecoration: 'underline' }}>CLIENT</Typography>
+                {clientInfo.name && <Typography variant="body2" fontWeight={700}>{clientInfo.name}</Typography>}
+                {clientInfo.phone && <Typography variant="body2">Tél: {clientInfo.phone}</Typography>}
+                {clientInfo.note && <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontStyle: 'italic' }}>Note: {clientInfo.note}</Typography>}
+              </Box>
+            )}
+
+            <Divider sx={{ borderStyle: 'solid', borderColor: 'black', mb: 1 }} />
+
+            {/* TICKET ITEMS HEADER */}
+            <Grid container sx={{ mb: 0.5 }}>
+              <Grid item xs={7}><Typography variant="caption" fontWeight={900}>DESIGNATION</Typography></Grid>
+              <Grid item xs={2} textAlign="center"><Typography variant="caption" fontWeight={900}>QTE</Typography></Grid>
+              <Grid item xs={3} textAlign="right"><Typography variant="caption" fontWeight={900}>TOTAL</Typography></Grid>
+            </Grid>
+
+            {lastPaidCommande.lignesCommande?.map((ligne, i) => (
+              <Grid container key={i} sx={{ mb: 0.5 }}>
+                <Grid item xs={7}><Typography variant="body2" sx={{ fontSize: '0.85rem' }}>{ligne.platNom}</Typography></Grid>
+                <Grid item xs={2} textAlign="center"><Typography variant="body2" sx={{ fontSize: '0.85rem' }}>{ligne.quantite}</Typography></Grid>
+                <Grid item xs={3} textAlign="right"><Typography variant="body2" sx={{ fontSize: '0.85rem' }}>{(ligne.quantite * ligne.prixUnitaire).toLocaleString()}</Typography></Grid>
+              </Grid>
+            ))}
+
+            <Divider sx={{ borderStyle: 'solid', borderColor: 'black', my: 1 }} />
+
+            <Grid container sx={{ mb: 0.5 }}>
+              <Grid item xs={6}><Typography variant="body2" fontWeight={700} sx={{ fontSize: '1rem' }}>NET À PAYER</Typography></Grid>
+              <Grid item xs={6} textAlign="right"><Typography variant="body2" fontWeight={900} sx={{ fontSize: '1.2rem' }}>{lastPaidCommande.totalTtc.toLocaleString()} F</Typography></Grid>
+            </Grid>
+
+            <Grid container sx={{ mb: 2 }}>
+              <Grid item xs={6}><Typography variant="caption">Espèces</Typography></Grid>
+              <Grid item xs={6} textAlign="right"><Typography variant="caption">{(receivedAmount || lastPaidCommande.totalTtc).toLocaleString()} F</Typography></Grid>
+              {receivedAmount && (
+                <>
+                  <Grid item xs={6}><Typography variant="caption">Rendu</Typography></Grid>
+                  <Grid item xs={6} textAlign="right"><Typography variant="caption">{(receivedAmount - lastPaidCommande.totalTtc).toLocaleString()} F</Typography></Grid>
+                </>
+              )}
+            </Grid>
+
+            <Box sx={{ textAlign: 'center', mt: 4 }}>
+              <Typography variant="caption" sx={{ display: 'block' }}>Les marchandises vendues ne sont ni reprises ni échangées.</Typography>
+              <Typography variant="body2" fontWeight={900} sx={{ mt: 1 }}>MERCI DE VOTRE VISITE !</Typography>
+              <Typography variant="caption">Gusto Restaurant System</Typography>
+            </Box>
+          </Box>
         )}
       </Box>
 
       <style>
         {`
           @media print {
-            body * { visibility: hidden; }
-            [class*="displayPrint"] { visibility: visible; position: absolute; left: 0; top: 0; width: 100%; }
+            @page { margin: 0; size: 80mm auto; }
+            body { visibility: hidden; }
+            .displayPrint-container { 
+              visibility: visible; 
+              position: absolute; 
+              left: 0; 
+              top: 0; 
+              width: 100%; 
+              background: white;
+            }
+            .displayPrint-container * { visibility: visible; }
           }
         `}
       </style>

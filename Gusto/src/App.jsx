@@ -42,6 +42,7 @@ function App() {
       <Route path='/confirmation' element={<Confirmation />} />
       <Route path='/' element={<Navigate to="/login" />} />
       <Route path="/POS" element={<PointOfSale />} />
+      {/* Route POS déplacée dans la section protégée */}
 
       {/* --- ROUTES AUTHENTIFIÉES AVEC SIDEBAR (UNITÉ DE DESIGN) --- */}
       <Route element={<ProtectedRoute allowedRoles={['ROLE_MANAGER', 'ROLE_SERVEUR', 'ROLE_CUISINIER', 'ROLE_CAISSIER', 'admin', 'manager', 'staff']} />}>
@@ -83,9 +84,6 @@ function App() {
           </Route>
         </Route>
       </Route>
-
-      {/* Routes de support sans Sidebar si nécessaire */}
-      {/* <Route path='/payment' moved to sidebar layout /> */}
 
       {/* Fallback */}
       <Route path='*' element={<NotFound />} />
