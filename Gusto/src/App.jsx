@@ -76,11 +76,16 @@ function App() {
             <Route path='/kitchen/recipes' element={<RecipesManagement />} />
             <Route path='/kitchen/inventory' element={<KitchenInventory />} />
           </Route>
+
+          {/* --- ROUTES CAISSIER (DANS LE LAYOUT) --- */}
+          <Route element={<ProtectedRoute allowedRoles={['ROLE_CAISSIER', 'ROLE_MANAGER', 'staff']} />}>
+            <Route path='/payment' element={<PaymentInterface />} />
+          </Route>
         </Route>
       </Route>
 
       {/* Routes de support sans Sidebar si nécessaire */}
-      <Route path='/payment' element={<ProtectedRoute allowedRoles={['ROLE_CAISSIER', 'ROLE_MANAGER', 'staff']}><PaymentInterface /></ProtectedRoute>} />
+      {/* <Route path='/payment' moved to sidebar layout /> */}
 
       {/* Fallback */}
       <Route path='*' element={<NotFound />} />

@@ -7,6 +7,7 @@ import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import TableBarIcon from '@mui/icons-material/TableBar';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
+import PaymentsIcon from '@mui/icons-material/Payments';
 
 export const NAVIGATION = [
   {
@@ -62,5 +63,11 @@ export const NAVIGATION = [
     path: '/server',
     icon: <RestaurantMenuIcon />,
     roles: ['ROLE_SERVEUR']
+  },
+  {
+    title: 'Caisse',
+    path: '/payment',
+    icon: <PaymentsIcon />,
+    roles: ['ROLE_CAISSIER', 'ROLE_MANAGER']
   }
 ];
