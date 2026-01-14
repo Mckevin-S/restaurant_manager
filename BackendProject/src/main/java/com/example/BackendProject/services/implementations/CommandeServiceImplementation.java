@@ -354,12 +354,12 @@ public class CommandeServiceImplementation implements CommandeServiceInterface {
         }
 
         // Vérification du flux logique (Cuisine / Salle / Caisse)
-        // Relaxed validation for smoother dev/demo flow
-        // if (statutActuel == StatutCommande.EN_ATTENTE && nouveauStatut == StatutCommande.PRETE) {
-        //     String errorMsg = "Transition directe EN_ATTENTE -> PRETE interdite. Passage par EN_PREPARATION obligatoire.";
-        //     logger.warn("{} Violation du flux de cuisine : {}", context, errorMsg);
-        //     throw new RuntimeException("Une commande en attente doit d'abord passer par 'En préparation'");
-        // }
+        // En attente DOIT passer par En préparation avant d'être prête
+        if (statutActuel == StatutCommande.EN_ATTENTE && nouveauStatut == StatutCommande.PRETE) {
+            String errorMsg = "Transition directe EN_ATTENTE -> PRETE interdite. Passage par EN_PREPARATION obligatoire.";
+            logger.warn("{} Violation du flux de cuisine : {}", context, errorMsg);
+            throw new RuntimeException("Une commande en attente doit d'abord passer par 'En préparation'");
+        }
 
         if (statutActuel == StatutCommande.PRETE && nouveauStatut == StatutCommande.PAYEE) {
             String errorMsg = "Transition PRETE -> PAYEE interdite. La commande doit être 'SERVIE' avant paiement.";

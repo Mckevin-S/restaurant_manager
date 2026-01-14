@@ -196,10 +196,21 @@ const MenuManagement = () => {
     };
 
     const filteredPlats = plats.filter(plat => {
-        const matchCategory = selectedCategory === 'all' || plat.category?.id === parseInt(selectedCategory);
+        // Si une catégorie est sélectionnée, vérifier qu'elle correspond
+        if (selectedCategory !== 'all') {
+            // Comparer en string pour éviter les problèmes de type
+            const platCatId = String(plat.category?.id || '');
+            if (platCatId !== selectedCategory) return false;
+        }
+        
         const matchSearch = plat.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (plat.description && plat.description.toLowerCase().includes(searchTerm.toLowerCase()));
-        return matchCategory && matchSearch;
+        return matchSearch;
+    }).sort((a, b) => {
+        // Tri par catégorie, puis par nom
+        const catDiff = (a.category?.id || 0) - (b.category?.id || 0);
+        if (catDiff !== 0) return catDiff;
+        return a.nom.localeCompare(b.nom);
     });
 
     if (loading) return (

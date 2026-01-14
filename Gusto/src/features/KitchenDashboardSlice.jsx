@@ -1,12 +1,18 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import apiClient from '../services/apiClient';
 
-// Récupérer les commandes pour la cuisine
+// Récupérer les commandes pour la cuisine (EN_ATTENTE et EN_PREPARATION seulement)
 export const fetchKitchenOrders = createAsyncThunk('kitchen/fetchAll', async (_, { rejectWithValue }) => {
   try {
     const response = await apiClient.get('/commandes');
-    // Filtrage pour la cuisine
-    return response.data.filter(order => order.statut !== 'PAYEE' && order.statut !== 'ANNULEE');
+    // Filtrage pour la cuisine - uniquement les statuts qu'elle gère
+    // EN_ATTENTE: commande vient d'arriver
+    // EN_PREPARATION: cuisine travaille dessus
+    // PRETE: déjà prêt (cuisine peut voir mais ne modifie pas)
+    return response.data.filter(order => {
+      const statut = order.statut;
+      return statut === 'EN_ATTENTE' || statut === 'EN_PREPARATION' || statut === 'PRETE';
+    });
   } catch (error) {
     return rejectWithValue(error.response?.data || "Erreur de connexion");
   }

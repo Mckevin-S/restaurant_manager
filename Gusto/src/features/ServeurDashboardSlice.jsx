@@ -6,8 +6,11 @@ export const fetchCommandes = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await apiClient.get('/commandes');
-      // On s'assure de retourner un tableau
-      return Array.isArray(response.data) ? response.data : [];
+      // Filtrer pour le serveur: PRETE (à servir) et SERVIE (en attente de paiement)
+      const filtered = Array.isArray(response.data) 
+        ? response.data.filter(cmd => cmd.statut === 'PRETE' || cmd.statut === 'SERVIE')
+        : [];
+      return filtered;
     } catch (error) {
       return rejectWithValue(error.response?.data || "Erreur serveur");
     }

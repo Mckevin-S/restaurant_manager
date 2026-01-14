@@ -28,6 +28,9 @@ import KitchenInventory from './pages/kitchen/KitchenInventory';
 import FloorPlan from './pages/serveur/FloorPlan';
 import OrderHistory from './pages/serveur/OrderHistory';
 
+// Caisse Pages
+import CaisseView from './pages/caisse/CaisseView';
+
 // Test Pages
 import ImageUploadTest from './pages/test/ImageUploadTest';
 
@@ -86,6 +89,7 @@ function App() {
           {/* --- ROUTES CAISSIER (DANS LE LAYOUT) --- */}
           <Route element={<ProtectedRoute allowedRoles={['ROLE_CAISSIER', 'ROLE_MANAGER', 'staff']} />}>
             <Route path='/payment' element={<PaymentInterface />} />
+            <Route path='/caisse' element={<CaisseView />} />
           </Route>
 
           {/* --- TEST ROUTES --- */}

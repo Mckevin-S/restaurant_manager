@@ -105,13 +105,13 @@ const ImageUploadTest = () => {
                     <h2 className="text-xl font-bold mb-4">Résultat:</h2>
                     {uploadResult.success ? (
                         <div className="text-green-600">
-                            <p className="mb-2">✅ {uploadResult.message}</p>
+                            <p className="mb-2"> {uploadResult.message}</p>
                             <p className="text-sm">Plat ID: {uploadResult.platId}</p>
                             <p className="text-sm">Photo URL: {uploadResult.photoUrl}</p>
                         </div>
                     ) : (
                         <div className="text-red-600">
-                            <p className="mb-2">❌ {uploadResult.error}</p>
+                            <p className="mb-2"> {uploadResult.error}</p>
                             <pre className="text-xs bg-white p-3 rounded mt-2 overflow-auto">
                                 {JSON.stringify(uploadResult.details, null, 2)}
                             </pre>
