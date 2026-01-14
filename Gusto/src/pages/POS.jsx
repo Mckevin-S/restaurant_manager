@@ -16,6 +16,7 @@ import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import { getPlats, getCategories, getTables, createCommande } from '../services/api';
 import { formatStatut } from '../utils/formatters';
 import { getImageUrl, createImageErrorHandler } from '../utils/imageUtils';
+import { getImageDisplayUrl } from '../utils/imageStorage';
 
 const CURRENCY = 'FCFA';
 
@@ -210,7 +211,7 @@ const PointOfSale = () => {
                       {item.photoUrl ? (
                         <Box
                           component="img"
-                          src={getImageUrl(item.photoUrl)}
+                          src={getImageDisplayUrl(item.photoUrl)}
                           alt={item.nom}
                           onError={createImageErrorHandler()}
                           sx={{ height: 140, width: '100%', objectFit: 'cover', display: 'block' }}

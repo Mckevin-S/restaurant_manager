@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Plus, Clock, Users, BookOpen, ChevronRight, Hash, Flame, AlertTriangle, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getImageUrl, createImageErrorHandler } from '../../utils/imageUtils';
+import { getImageDisplayUrl } from '../../utils/imageStorage';
 
 const RecipesManagement = () => {
     const [recipes, setRecipes] = useState([]);
@@ -156,7 +157,7 @@ const RecipesManagement = () => {
                             <div className="h-64 bg-gray-200 relative">
                                 {selectedRecipe.image ? (
                                     <img 
-                                        src={getImageUrl(selectedRecipe.image)} 
+                                        src={getImageDisplayUrl(selectedRecipe.image)} 
                                         alt={selectedRecipe.name} 
                                         onError={createImageErrorHandler()}
                                         className="w-full h-full object-cover" 

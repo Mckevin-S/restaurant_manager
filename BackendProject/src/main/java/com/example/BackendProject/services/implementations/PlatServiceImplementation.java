@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.HashMap;
@@ -33,8 +34,16 @@ public class PlatServiceImplementation implements PlatServiceInterface {
     private final PlatMapper platMapper;
 //    private final LigneCommandeRepository ligneCommandeRepository;
 
-    // Dossier racine pour le stockage des images
-    private final String UPLOAD_DIR = "uploads/plats/";
+    // Dossier pour le stockage des images - Gusto/src/images
+    // On construit le chemin dynamiquement à partir du répertoire parent du projet
+    private String getUploadDir() {
+        // Obtient le répertoire courant du projet (BackendProject)
+        String currentDir = System.getProperty("user.dir");
+        // Remonte d'un niveau et va vers Gusto/src/images
+        // C:\...\RestaurantManager\BackendProject -> C:\...\RestaurantManager\Gusto\src\images
+        String uploadDir = currentDir.replace("BackendProject", "Gusto") + File.separator + "src" + File.separator + "images";
+        return uploadDir;
+    }
 
     public PlatServiceImplementation(PlatRepository platRepository,
                                      CategoryRepository categoryRepository,
@@ -185,29 +194,51 @@ public class PlatServiceImplementation implements PlatServiceInterface {
             throw new RuntimeException("Le fichier est vide");
         }
 
+        // Valider le type MIME
+        String contentType = file.getContentType();
+        logger.info("{} Type MIME reçu: {}", context, contentType);
+        if (contentType == null || !contentType.startsWith("image/")) {
+            logger.error("{} Type de fichier invalide: {}", context, contentType);
+            throw new RuntimeException("Le fichier doit être une image (image/jpeg, image/png, etc.)");
+        }
+
         // Création du dossier si inexistant
-        Path uploadPath = Paths.get(UPLOAD_DIR);
-        if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+        String uploadDirPath = getUploadDir();
+        Path uploadPath = Paths.get(uploadDirPath);
+        logger.info("{} Chemin upload: {}", context, uploadDirPath);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+            logger.info("{} Dossier images créé: {}", context, uploadDirPath);
+        }
 
         // Génération nom unique et redimensionnement
         String fileName = UUID.randomUUID().toString() + ".jpg";
         Path filePath = uploadPath.resolve(fileName);
 
         try {
+            logger.info("{} Début du redimensionnement d'image vers: {}", context, filePath.toString());
             Thumbnails.of(file.getInputStream())
                     .size(800, 600)
                     .outputFormat("jpg")
                     .outputQuality(0.75) // Compression à 75%
                     .toFile(filePath.toFile());
+            logger.info("{} Image redimensionnée avec succès. Taille du fichier: {} bytes", context, Files.size(filePath));
         } catch (IOException e) {
-            logger.error("{} Erreur lors du traitement de l'image: {}", context, e.getMessage(), e);
+            logger.error("{} Erreur lors du traitement de l'image: {} - Message complet: {}", context, e.getMessage(), e.toString(), e);
+            // Vérifier les permissions du dossier
+            File uploadDir = uploadPath.toFile();
+            logger.error("{} Dossier upload existe: {}, writable: {}, readable: {}", context, uploadDir.exists(), uploadDir.canWrite(), uploadDir.canRead());
             throw new IOException("Erreur lors du redimensionnement de l'image: " + e.getMessage(), e);
         }
 
         // Suppression de l'ancienne image si elle existe (pour économiser l'espace)
         if (plat.getPhotoUrl() != null && !plat.getPhotoUrl().isEmpty()) {
             try {
-                String oldFileName = plat.getPhotoUrl().substring(plat.getPhotoUrl().lastIndexOf("/") + 1);
+                String oldFileName = plat.getPhotoUrl();
+                // Si c'est un chemin complet, extraire juste le nom du fichier
+                if (oldFileName.contains("/")) {
+                    oldFileName = oldFileName.substring(oldFileName.lastIndexOf("/") + 1);
+                }
                 Path oldPath = uploadPath.resolve(oldFileName);
                 if (Files.exists(oldPath)) {
                     Files.delete(oldPath);
@@ -219,9 +250,10 @@ public class PlatServiceImplementation implements PlatServiceInterface {
             }
         }
 
-        plat.setPhotoUrl("/api/images/" + fileName);
+        // Stocker juste le nom du fichier (référence locale)
+        plat.setPhotoUrl(fileName);
         Plat savedPlat = platRepository.save(plat);
-        logger.info("{} Image uploadée avec succès pour le plat ID: {} - URL: {}", context, id, savedPlat.getPhotoUrl());
+        logger.info("{} Image uploadée avec succès pour le plat ID: {} - Fichier: {}", context, id, fileName);
         return platMapper.toDto(savedPlat);
     }
 

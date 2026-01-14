@@ -28,6 +28,9 @@ import KitchenInventory from './pages/kitchen/KitchenInventory';
 import FloorPlan from './pages/serveur/FloorPlan';
 import OrderHistory from './pages/serveur/OrderHistory';
 
+// Test Pages
+import ImageUploadTest from './pages/test/ImageUploadTest';
+
 // Common Pages
 import Help from './pages/common/Help';
 import NotificationsCenter from './pages/common/NotificationsCenter';
@@ -84,6 +87,9 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={['ROLE_CAISSIER', 'ROLE_MANAGER', 'staff']} />}>
             <Route path='/payment' element={<PaymentInterface />} />
           </Route>
+
+          {/* --- TEST ROUTES --- */}
+          <Route path='/test/image-upload' element={<ImageUploadTest />} />
         </Route>
       </Route>
 

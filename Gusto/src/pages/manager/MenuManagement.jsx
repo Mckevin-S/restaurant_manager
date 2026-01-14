@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast';
 import PageHeader from '../../widget/PageHeader';
 import ImageUploader from '../../components/ImageUploader';
 import { getImageUrl, createImageErrorHandler, validateImageFile } from '../../utils/imageUtils';
+import { getImageDisplayUrl } from '../../utils/imageStorage';
 
 const MenuManagement = () => {
     const [plats, setPlats] = useState([]);
@@ -101,35 +102,33 @@ const MenuManagement = () => {
             const formData = new FormData();
             formData.append('file', file);
             
-            // NE PAS définir Content-Type manuellement - Axios va ajouter les boundaries correctement
-            const response = await apiClient.post(`/plats/${platId}/upload-image`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data', // Remplace le header par défaut json
-                },
-                timeout: 30000 // 30 secondes timeout
-            });
+            const response = await apiClient.post(`/plats/${platId}/upload-image`, formData);
             
-            // Mettre à jour le plat avec la nouvelle URL d'image
+            // Mettre à jour le plat avec la référence d'image locale
             if (response.data && response.data.photoUrl) {
                 setPlatForm(prev => ({
                     ...prev,
                     photoUrl: response.data.photoUrl
                 }));
+                // Mettre à jour la liste des plats
+                setPlats(prev => prev.map(p => 
+                    p.id === platId ? { ...p, photoUrl: response.data.photoUrl } : p
+                ));
             }
             
-            toast.success('Image uploadée avec succès');
+            toast.success('Image uploadée et affichée');
         } catch (error) {
-            const errorMsg = error?.response?.data || error?.message || 'Erreur lors de l\'upload de l\'image';
+            const errorMsg = error?.response?.data?.message || error?.message || 'Erreur lors de l\'upload de l\'image';
             
             // Retry pour erreurs temporaires (500, 503, timeout)
             if (retryCount < MAX_RETRIES && (error?.response?.status >= 500 || error.code === 'ECONNABORTED')) {
                 console.warn(`Retry ${retryCount + 1}/${MAX_RETRIES} pour l'upload d'image...`);
-                toast.info(`Nouvelle tentative d'upload... (${retryCount + 1}/${MAX_RETRIES})`);
-                await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Délai progressif
+                toast.info(`Nouvelle tentative... (${retryCount + 1}/${MAX_RETRIES})`);
+                await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
                 return handleImageUploadForPlat(file, platId, retryCount + 1);
             }
             
-            toast.error(`Erreur upload: ${typeof errorMsg === 'string' ? errorMsg : errorMsg.message || 'Erreur serveur'}`);
+            toast.error(`Erreur upload: ${errorMsg}`);
             console.error('Image upload error:', error);
         } finally {
             setUploadingImage(false);
@@ -143,6 +142,15 @@ const MenuManagement = () => {
             toast.error(errors[0]);
             return;
         }
+        // Créer une preview locale avec FileReader
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            setPlatForm(prev => ({
+                ...prev,
+                photoUrl: e.target.result // Stocker la data URL pour l'affichage
+            }));
+        };
+        reader.readAsDataURL(file);
         setPendingImageFile(file);
     };
 
@@ -179,7 +187,7 @@ const MenuManagement = () => {
             nom: plat.nom,
             description: plat.description || '',
             prix: plat.prix.toString(),
-            category: plat.category?.id || '',
+            category: plat.category?.id?.toString() || '',
             disponibilite: plat.disponibilite,
             photoUrl: plat.photoUrl || ''
         });
@@ -289,7 +297,7 @@ const MenuManagement = () => {
                             <div className="relative h-48 overflow-hidden rounded-[24px] bg-slate-100">
                                 {plat.photoUrl ? (
                                     <img 
-                                        src={getImageUrl(plat.photoUrl)}
+                                        src={getImageDisplayUrl(plat.photoUrl)}
                                         alt={plat.nom} 
                                         className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
                                         onError={createImageErrorHandler()}

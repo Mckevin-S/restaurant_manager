@@ -21,6 +21,14 @@ apiClient.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+
+        // Gérer FormData correctement - ne pas définir Content-Type manuellement
+        // Le navigateur le fera avec les bonnes boundaries
+        if (config.data instanceof FormData) {
+            delete config.headers['Content-Type'];
+            console.log('[API] FormData detected, Content-Type header deleted for proper multipart boundary generation');
+        }
+
         return config;
     },
     (error) => {
