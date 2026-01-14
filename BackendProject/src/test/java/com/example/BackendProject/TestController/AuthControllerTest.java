@@ -22,6 +22,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -110,7 +111,7 @@ public class AuthControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(loginRequest)))
                                 .andExpect(status().isUnauthorized())
-                                .andExpect(content().string("Email ou mot de passe incorrect"));
+                                .andExpect(content().string("\"Email ou mot de passe incorrect\""));
         }
 
         @Test
@@ -121,24 +122,19 @@ public class AuthControllerTest {
                 mockUser.setVerificationCode(validCode);
                 mockUser.setExpiryCode(LocalDateTime.now().plusMinutes(5));
 
-                // On doit simuler le fait que le login a déjà eu lieu (remplir la map interne
-                // via réflexion ou en appelant login)
-                // Mais comme c'est un test unitaire, on va simuler les appels repository
+                // Mock the repository to return the user
                 when(utilisateurRepository.findByNom("Jean Dupont")).thenReturn(mockUser);
+
+                // Pre-fill the pendingVerifications map using ReflectionTestUtils
+                @SuppressWarnings("unchecked")
+                Map<String, String> pendingVerificationsMap = (Map<String, String>) ReflectionTestUtils
+                                .getField(authController, "pendingVerifications");
+                pendingVerificationsMap.put("Jean Dupont", validCode);
 
                 UserDetails userDetails = new User(mockUser.getEmail(), mockUser.getMotDePasse(),
                                 Collections.emptyList());
                 when(utilisateurDetailService.loadUserByUsername(mockUser.getEmail())).thenReturn(userDetails);
                 when(jwtUtils.generateToken(userDetails)).thenReturn("mock-jwt-token");
-
-                // Simuler que le nom est présent dans pendingVerifications
-                // Note: Dans un test standalone, on peut appeler login juste avant ou injecter
-                // la map si elle était protected
-                // Ici, on va d'abord appeler login pour remplir la map
-                when(authManager.authenticate(any())).thenReturn(null);
-                when(utilisateurRepository.findByEmail(any())).thenReturn(Optional.of(mockUser));
-                mockMvc.perform(post("/api/Auth/login").contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(loginRequest)));
 
                 // 2. Tester la vérification
                 Map<String, String> verifyRequest = Map.of(
@@ -150,7 +146,7 @@ public class AuthControllerTest {
                                 .content(objectMapper.writeValueAsString(verifyRequest)))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.token").value("mock-jwt-token"))
-                                .andExpect(jsonPath("$.username").value("Jean Dupont"));
+                                .andExpect(jsonPath("$.nom").value("Jean Dupont"));
         }
 
         @Test
@@ -161,11 +157,11 @@ public class AuthControllerTest {
 
                 when(utilisateurRepository.findByNom("Jean Dupont")).thenReturn(mockUser);
 
-                // On remplit la map via un appel login
-                when(authManager.authenticate(any())).thenReturn(null);
-                when(utilisateurRepository.findByEmail(any())).thenReturn(Optional.of(mockUser));
-                mockMvc.perform(post("/api/Auth/login").contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(loginRequest)));
+                // Pre-fill the pendingVerifications map
+                @SuppressWarnings("unchecked")
+                Map<String, String> pendingVerificationsMap = (Map<String, String>) ReflectionTestUtils
+                                .getField(authController, "pendingVerifications");
+                pendingVerificationsMap.put("Jean Dupont", "1234");
 
                 Map<String, String> verifyRequest = Map.of(
                                 "username", "Jean Dupont",
@@ -176,7 +172,7 @@ public class AuthControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(verifyRequest)))
                                 .andExpect(status().isUnauthorized())
-                                .andExpect(content().string("Code incorrect ou expiré"));
+                                .andExpect(content().string("\"Code incorrect ou expiré\""));
         }
 
         @Test

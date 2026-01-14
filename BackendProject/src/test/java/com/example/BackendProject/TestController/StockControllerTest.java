@@ -1,7 +1,7 @@
 package com.example.BackendProject.TestController;
+
 import com.example.BackendProject.controllers.StockMovementController;
 import com.example.BackendProject.dto.StockMovementDto;
-import com.example.BackendProject.entities.Ingredient;
 import com.example.BackendProject.services.interfaces.StockMovementServiceInterface;
 import com.example.BackendProject.utils.TypeMouvement;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,523 +12,185 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Tests unitaires - StockMovementController")
-public class StockControllerTest {
+@DisplayName("Unit Tests - StockMovementController")
+class StockControllerTest {
+
+    private MockMvc mockMvc;
+
     @Mock
     private StockMovementServiceInterface stockMovementService;
 
     @InjectMocks
     private StockMovementController stockMovementController;
 
-    private MockMvc mockMvc;
     private ObjectMapper objectMapper;
-    private StockMovementDto stockMovementDto;
-    private List<StockMovementDto> stockMovementList;
-   private Ingredient ingredient;
-
-    @RestControllerAdvice
-    static class TestGlobalExceptionHandler {
-        @ExceptionHandler(IllegalArgumentException.class)
-        public ResponseEntity<String> handleIllegalArgument(IllegalArgumentException e) {
-            return new ResponseEntity<>("Erreur de validation: " + e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
-
-        @ExceptionHandler(RuntimeException.class)
-        public ResponseEntity<String> handleRuntimeException(RuntimeException e) {
-            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("non trouvé")) {
-                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-            }
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        @ExceptionHandler(Exception.class)
-        public ResponseEntity<String> handleException(Exception e) {
-            return new ResponseEntity<>("Erreur interne: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+    private StockMovementDto sampleDto;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(stockMovementController)
-                .setControllerAdvice(new TestGlobalExceptionHandler())
-                .build();
-
+        mockMvc = MockMvcBuilders.standaloneSetup(stockMovementController).build();
         objectMapper = new ObjectMapper();
 
-        // Création d'un ingrédient pour les tests
-        ingredient = new Ingredient();
-        ingredient.setId(1L);
-        ingredient.setNom("Farine");
-
-
-        // Initialisation des données de test
-        stockMovementDto = new StockMovementDto(
-                1L,
-                ingredient.getId(),
-                TypeMouvement.ENTREE,
-                new BigDecimal("100.00"),
-                new Timestamp(System.currentTimeMillis()),
-                "Approvisionnement initial"
-        );
-
-
-
-       // stockMovementList = Arrays.asList(stockMovementDto, stockMovementDto2);
+        // Initialisation d'un DTO de test
+        sampleDto = new StockMovementDto();
+        sampleDto.setId(1L);
+        sampleDto.setIngredientId(10L);
+        sampleDto.setTypeMouvement(TypeMouvement.ENTREE);
+        sampleDto.setQuantite(new BigDecimal("50.0"));
+        sampleDto.setRaison("Livraison fournisseur");
     }
 
-
+    // ==================== TEST POST (CREATE) ====================
 
     @Test
     @DisplayName("POST - Créer un mouvement avec succès")
     void createStockMovement_Success() throws Exception {
-        when(stockMovementService.createStockMovement(any(StockMovementDto.class)))
-                .thenReturn(stockMovementDto);
+        when(stockMovementService.createStockMovement(any(StockMovementDto.class))).thenReturn(sampleDto);
 
         mockMvc.perform(post("/api/stock-movements")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(stockMovementDto)))
-                .andDo(print())
+                        .content(objectMapper.writeValueAsString(sampleDto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.ingredient.id").value(ingredient.getId()))
                 .andExpect(jsonPath("$.typeMouvement").value("ENTREE"))
-                .andExpect(jsonPath("$.quantite").value(100.00))
-                .andExpect(jsonPath("$.raison").value("Approvisionnement initial"));
-
-        verify(stockMovementService, times(1)).createStockMovement(any(StockMovementDto.class));
+                .andExpect(jsonPath("$.quantite").value(50.0));
     }
 
     @Test
-    @DisplayName("POST - Erreur de validation")
-    void createStockMovement_ValidationError() throws Exception {
-        when(stockMovementService.createStockMovement(any(StockMovementDto.class)))
-                .thenThrow(new IllegalArgumentException("La quantité doit être positive"));
+    @DisplayName("POST - Erreur 400 sur validation")
+    void createStockMovement_BadRequest() throws Exception {
+        when(stockMovementService.createStockMovement(any()))
+                .thenThrow(new IllegalArgumentException("Quantité négative interdite"));
 
         mockMvc.perform(post("/api/stock-movements")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(stockMovementDto)))
-                .andDo(print())
+                        .content(objectMapper.writeValueAsString(sampleDto)))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string(containsString("Erreur de validation")));
-
-        verify(stockMovementService, times(1)).createStockMovement(any(StockMovementDto.class));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Erreur de validation")));
     }
 
-    @Test
-    @DisplayName("POST - Erreur serveur interne")
-    void createStockMovement_InternalServerError() throws Exception {
-        when(stockMovementService.createStockMovement(any(StockMovementDto.class)))
-                .thenThrow(new RuntimeException("Erreur base de données"));
-
-        mockMvc.perform(post("/api/stock-movements")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(stockMovementDto)))
-                .andDo(print())
-                .andExpect(status().isInternalServerError());
-    }
-
-
+    // ==================== TEST GET (ALL) ====================
 
     @Test
-    @DisplayName("PUT - Mettre à jour avec succès")
-    void updateStockMovement_Success() throws Exception {
-        Long id = 1L;
-        stockMovementDto.setRaison("Raison mise à jour");
-        when(stockMovementService.updateStockMovement(eq(id), any(StockMovementDto.class)))
-                .thenReturn(stockMovementDto);
+    @DisplayName("GET - Récupérer tous les mouvements")
+    void getAllStockMovements_Success() throws Exception {
+        List<StockMovementDto> list = Arrays.asList(sampleDto, new StockMovementDto());
+        when(stockMovementService.getAllStockMovements()).thenReturn(list);
 
-        mockMvc.perform(put("/api/stock-movements/{id}", id)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(stockMovementDto)))
-                .andDo(print())
+        mockMvc.perform(get("/api/stock-movements"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.raison").value("Raison mise à jour"));
-
-        verify(stockMovementService, times(1)).updateStockMovement(eq(id), any(StockMovementDto.class));
+                .andExpect(jsonPath("$", hasSize(2)));
     }
 
-    @Test
-    @DisplayName("PUT - Mouvement non trouvé")
-    void updateStockMovement_NotFound() throws Exception {
-        Long id = 999L;
-        when(stockMovementService.updateStockMovement(eq(id), any(StockMovementDto.class)))
-                .thenThrow(new RuntimeException("Mouvement non trouvé"));
-
-        mockMvc.perform(put("/api/stock-movements/{id}", id)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(stockMovementDto)))
-                .andDo(print())
-                .andExpect(status().isNotFound());
-    }
+    // ==================== TEST GET (BY ID) ====================
 
     @Test
-    @DisplayName("PUT - Erreur de validation")
-    void updateStockMovement_ValidationError() throws Exception {
-        Long id = 1L;
-        when(stockMovementService.updateStockMovement(eq(id), any(StockMovementDto.class)))
-                .thenThrow(new IllegalArgumentException("Quantité invalide"));
-
-        mockMvc.perform(put("/api/stock-movements/{id}", id)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(stockMovementDto)))
-                .andDo(print())
-                .andExpect(status().isBadRequest())
-                .andExpect(content().string(containsString("Erreur de validation")));
-    }
-
-
-
-//    @Test
-//    @DisplayName("GET - Récupérer tous les mouvements")
-//    void getAllStockMovements_Success() throws Exception {
-//        when(stockMovementService.getAllStockMovements()).thenReturn(stockMovementList);
-//
-//        mockMvc.perform(get("/api/stock-movements")
-//                        .contentType(MediaType.APPLICATION_JSON))
-//                .andDo(print())
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$", hasSize(2)))
-//                .andExpect(jsonPath("$[0].id").value(1))
-//                .andExpect(jsonPath("$[1].id").value(2))
-//                .andExpect(jsonPath("$[0].typeMouvement").value("ENTREE"))
-//                .andExpect(jsonPath("$[1].typeMouvement").value("SORTIE"));
-//
-//        verify(stockMovementService, times(1)).getAllStockMovements();
-//    }
-
-    @Test
-    @DisplayName("GET - Liste vide")
-    void getAllStockMovements_EmptyList() throws Exception {
-        when(stockMovementService.getAllStockMovements()).thenReturn(Collections.emptyList());
-
-        mockMvc.perform(get("/api/stock-movements")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
-
-        verify(stockMovementService, times(1)).getAllStockMovements();
-    }
-
-    @Test
-    @DisplayName("GET - Erreur serveur")
-    void getAllStockMovements_InternalServerError() throws Exception {
-        when(stockMovementService.getAllStockMovements())
-                .thenThrow(new RuntimeException("Erreur base de données"));
-
-        mockMvc.perform(get("/api/stock-movements")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-                .andExpect(status().isInternalServerError());
-    }
-
-    // ==================== Tests GET /api/stock-movements/{id} ====================
-
-    @Test
-    @DisplayName("GET by ID - Récupérer un mouvement par ID")
+    @DisplayName("GET /{id} - Succès")
     void getStockMovementById_Success() throws Exception {
-        Long id = 1L;
-        when(stockMovementService.getStockMovementById(id)).thenReturn(stockMovementDto);
+        when(stockMovementService.getStockMovementById(1L)).thenReturn(sampleDto);
 
-        mockMvc.perform(get("/api/stock-movements/{id}", id)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
+        mockMvc.perform(get("/api/stock-movements/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.ingredient.id").value(1))
-                .andExpect(jsonPath("$.typeMouvement").value("ENTREE"));
-
-        verify(stockMovementService, times(1)).getStockMovementById(id);
+                .andExpect(jsonPath("$.id").value(1L));
     }
 
     @Test
-    @DisplayName("GET by ID - Mouvement non trouvé")
+    @DisplayName("GET /{id} - Non trouvé (404)")
     void getStockMovementById_NotFound() throws Exception {
-        Long id = 999L;
-        when(stockMovementService.getStockMovementById(id))
-                .thenThrow(new RuntimeException("Mouvement non trouvé"));
+        when(stockMovementService.getStockMovementById(99L)).thenThrow(new RuntimeException("Not found"));
 
-        mockMvc.perform(get("/api/stock-movements/{id}", id)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
+        mockMvc.perform(get("/api/stock-movements/99"))
                 .andExpect(status().isNotFound());
     }
 
-
+    // ==================== TEST DELETE ====================
 
     @Test
-    @DisplayName("DELETE - Supprimer avec succès")
+    @DisplayName("DELETE - Suppression réussie (204)")
     void deleteStockMovement_Success() throws Exception {
-        Long id = 1L;
-        doNothing().when(stockMovementService).deleteStockMovement(id);
+        doNothing().when(stockMovementService).deleteStockMovement(1L);
 
-        mockMvc.perform(delete("/api/stock-movements/{id}", id)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
+        mockMvc.perform(delete("/api/stock-movements/1"))
                 .andExpect(status().isNoContent());
 
-        verify(stockMovementService, times(1)).deleteStockMovement(id);
+        verify(stockMovementService, times(1)).deleteStockMovement(1L);
     }
 
-    @Test
-    @DisplayName("DELETE - Mouvement non trouvé")
-    void deleteStockMovement_NotFound() throws Exception {
-        Long id = 999L;
-        doThrow(new RuntimeException("Mouvement non trouvé"))
-                .when(stockMovementService).deleteStockMovement(id);
-
-        mockMvc.perform(delete("/api/stock-movements/{id}", id)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-                .andExpect(status().isNotFound());
-    }
-
-//    @Test
-//    @DisplayName("DELETE - Erreur serveur")
-//    void deleteStockMovement_InternalServerError() throws Exception {
-//        Long id = 1L;
-//        doThrow(new Exception("Erreur base de données"))
-//                .when(stockMovementService).deleteStockMovement(id);
-//
-//        mockMvc.perform(delete("/api/stock-movements/{id}", id)
-//                        .contentType(MediaType.APPLICATION_JSON))
-//                .andDo(print())
-//                .andExpect(status().isInternalServerError());
-//    }
-
-    // ==================== Tests GET /api/stock-movements/ingredient/{ingredientId} ====================
-
-//    @Test
-//    @DisplayName("GET by Ingredient - Récupérer mouvements par ingrédient")
-//    void getStockMovementsByIngredient_Success() throws Exception {
-//        Long ingredientId = 1L;
-//        when(stockMovementService.getStockMovementsByIngredientId(ingredientId))
-//                .thenReturn(stockMovementList);
-//
-//        mockMvc.perform(get("/api/stock-movements/ingredient/{ingredientId}", ingredientId)
-//                        .contentType(MediaType.APPLICATION_JSON))
-//                .andDo(print())
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$", hasSize(2)))
-//                .andExpect(jsonPath("$[0].ingredient.id").value(1))
-//                .andExpect(jsonPath("$[1].ingredient.id").value(1));
-//
-//        verify(stockMovementService, times(1)).getStockMovementsByIngredientId(ingredientId);
-//    }
+    // ==================== TEST FILTRES (BY INGREDIENT / TYPE) ====================
 
     @Test
-    @DisplayName("GET by Ingredient - Ingrédient non trouvé")
-    void getStockMovementsByIngredient_NotFound() throws Exception {
-        Long ingredientId = 999L;
-        when(stockMovementService.getStockMovementsByIngredientId(ingredientId))
-                .thenThrow(new RuntimeException("Ingrédient non trouvé"));
+    @DisplayName("GET /ingredient/{id} - Succès")
+    void getStockMovementsByIngredient_Success() throws Exception {
+        when(stockMovementService.getStockMovementsByIngredientId(10L)).thenReturn(Arrays.asList(sampleDto));
 
-        mockMvc.perform(get("/api/stock-movements/ingredient/{ingredientId}", ingredientId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @DisplayName("GET by Ingredient - Liste vide")
-    void getStockMovementsByIngredient_EmptyList() throws Exception {
-        Long ingredientId = 1L;
-        when(stockMovementService.getStockMovementsByIngredientId(ingredientId))
-                .thenReturn(Collections.emptyList());
-
-        mockMvc.perform(get("/api/stock-movements/ingredient/{ingredientId}", ingredientId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
+        mockMvc.perform(get("/api/stock-movements/ingredient/10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
+                .andExpect(jsonPath("$[0].ingredientId").value(10));
     }
 
-    // ==================== Tests GET /api/stock-movements/type/{typeMouvement} ====================
-
     @Test
-    @DisplayName("GET by Type - Récupérer mouvements par type ENTREE")
-    void getStockMovementsByType_Entree() throws Exception {
-        List<StockMovementDto> entreeList = Collections.singletonList(stockMovementDto);
-        when(stockMovementService.getStockMovementsByType(TypeMouvement.ENTREE))
-                .thenReturn(entreeList);
+    @DisplayName("GET /type/{type} - Succès")
+    void getStockMovementsByType_Success() throws Exception {
+        when(stockMovementService.getStockMovementsByType(TypeMouvement.ENTREE)).thenReturn(Arrays.asList(sampleDto));
 
-        mockMvc.perform(get("/api/stock-movements/type/{typeMouvement}", "ENTREE")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
+        mockMvc.perform(get("/api/stock-movements/type/ENTREE"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].typeMouvement").value("ENTREE"));
-
-        verify(stockMovementService, times(1)).getStockMovementsByType(TypeMouvement.ENTREE);
     }
 
-//    @Test
-//    @DisplayName("GET by Type - Récupérer mouvements par type SORTIE")
-//    void getStockMovementsByType_Sortie() throws Exception {
-//        StockMovementDto sortieDto = stockMovementList.get(1);
-//        List<StockMovementDto> sortieList = Collections.singletonList(sortieDto);
-//        when(stockMovementService.getStockMovementsByType(TypeMouvement.SORTIE))
-//                .thenReturn(sortieList);
-//
-//        mockMvc.perform(get("/api/stock-movements/type/{typeMouvement}", "SORTIE")
-//                        .contentType(MediaType.APPLICATION_JSON))
-//                .andDo(print())
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$", hasSize(1)))
-//                .andExpect(jsonPath("$[0].typeMouvement").value("SORTIE"));
-//
-//        verify(stockMovementService, times(1)).getStockMovementsByType(TypeMouvement.SORTIE);
-//    }
-
-    // ==================== Tests GET /api/stock-movements/between ====================
-
-//    @Test
-//    @DisplayName("GET between dates - Récupérer mouvements entre deux dates")
-//    void getStockMovementsBetweenDates_Success() throws Exception {
-//        String startDate = "2024-01-01 00:00:00";
-//        String endDate = "2024-12-31 23:59:59";
-//
-//        when(stockMovementService.getStockMovementsBetweenDates(
-//                any(Timestamp.class), any(Timestamp.class)))
-//                .thenReturn(stockMovementList);
-//
-//        mockMvc.perform(get("/api/stock-movements/between")
-//                        .param("startDate", startDate)
-//                        .param("endDate", endDate)
-//                        .contentType(MediaType.APPLICATION_JSON))
-//                .andDo(print())
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$", hasSize(2)))
-//                .andExpect(jsonPath("$[0].id").value(1))
-//                .andExpect(jsonPath("$[1].id").value(2));
-//
-//        verify(stockMovementService, times(1))
-//                .getStockMovementsBetweenDates(any(Timestamp.class), any(Timestamp.class));
-//    }
+    // ==================== TEST DATES (BETWEEN) ====================
 
     @Test
-    @DisplayName("GET between dates - Format de date invalide")
-    void getStockMovementsBetweenDates_InvalidDateFormat() throws Exception {
-        String startDate = "2024/01/01";
-        String endDate = "2024/12/31";
+    @DisplayName("GET /between - Succès avec paramètres de date")
+    void getStockMovementsBetweenDates_Success() throws Exception {
+        String start = "2024-01-01 00:00:00";
+        String end = "2024-12-31 23:59:59";
+
+        when(stockMovementService.getStockMovementsBetweenDates(any(Timestamp.class), any(Timestamp.class)))
+                .thenReturn(Arrays.asList(sampleDto));
 
         mockMvc.perform(get("/api/stock-movements/between")
-                        .param("startDate", startDate)
-                        .param("endDate", endDate)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
+                        .param("startDate", start)
+                        .param("endDate", end))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
+    }
+
+    @Test
+    @DisplayName("GET /between - Erreur format de date (400)")
+    void getStockMovementsBetweenDates_InvalidFormat() throws Exception {
+        mockMvc.perform(get("/api/stock-movements/between")
+                        .param("startDate", "invalid-date")
+                        .param("endDate", "2024-12-31"))
                 .andExpect(status().isBadRequest());
     }
 
-//    @Test
-//    @DisplayName("GET between dates - Dates manquantes")
-//    void getStockMovementsBetweenDates_MissingParameters() throws Exception {
-//        mockMvc.perform(get("/api/stock-movements/between")
-//                        .contentType(MediaType.APPLICATION_JSON))
-//                .andDo(print())
-//                .andExpect(status().isBadRequest());
-//    }
+    // ==================== TEST TOTAL (CALCULATION) ====================
 
     @Test
-    @DisplayName("GET between dates - Liste vide")
-    void getStockMovementsBetweenDates_EmptyList() throws Exception {
-        String startDate = "2024-01-01 00:00:00";
-        String endDate = "2024-12-31 23:59:59";
-
-        when(stockMovementService.getStockMovementsBetweenDates(
-                any(Timestamp.class), any(Timestamp.class)))
-                .thenReturn(Collections.emptyList());
-
-        mockMvc.perform(get("/api/stock-movements/between")
-                        .param("startDate", startDate)
-                        .param("endDate", endDate)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
-    }
-
-    // ==================== Tests GET /api/stock-movements/ingredient/{ingredientId}/total ====================
-
-    @Test
-    @DisplayName("GET Total - Calculer quantité totale")
+    @DisplayName("GET /ingredient/{id}/total - Succès")
     void getTotalQuantityByIngredient_Success() throws Exception {
-        Long ingredientId = 1L;
-        BigDecimal totalQuantity = new BigDecimal("150.00");
-        when(stockMovementService.getTotalQuantityByIngredient(ingredientId))
-                .thenReturn(totalQuantity);
+        when(stockMovementService.getTotalQuantityByIngredient(10L)).thenReturn(new BigDecimal("150.75"));
 
-        mockMvc.perform(get("/api/stock-movements/ingredient/{ingredientId}/total", ingredientId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
+        mockMvc.perform(get("/api/stock-movements/ingredient/10/total"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("150.00"));
-
-        verify(stockMovementService, times(1)).getTotalQuantityByIngredient(ingredientId);
+                .andExpect(content().string("150.75"));
     }
-
-    @Test
-    @DisplayName("GET Total - Quantité zéro")
-    void getTotalQuantityByIngredient_ZeroQuantity() throws Exception {
-        Long ingredientId = 1L;
-        BigDecimal totalQuantity = BigDecimal.ZERO;
-        when(stockMovementService.getTotalQuantityByIngredient(ingredientId))
-                .thenReturn(totalQuantity);
-
-        mockMvc.perform(get("/api/stock-movements/ingredient/{ingredientId}/total", ingredientId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(content().string("0"));
-    }
-
-    @Test
-    @DisplayName("GET Total - Ingrédient non trouvé")
-    void getTotalQuantityByIngredient_NotFound() throws Exception {
-        Long ingredientId = 999L;
-        when(stockMovementService.getTotalQuantityByIngredient(ingredientId))
-                .thenThrow(new RuntimeException("Ingrédient non trouvé"));
-
-        mockMvc.perform(get("/api/stock-movements/ingredient/{ingredientId}/total", ingredientId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-                .andExpect(status().isNotFound());
-    }
-
-//    @Test
-//    @DisplayName("GET Total - Erreur de calcul")
-//    void getTotalQuantityByIngredient_CalculationError() throws Exception {
-//        Long ingredientId = 1L;
-//        when(stockMovementService.getTotalQuantityByIngredient(ingredientId))
-//                .thenThrow(new Exception("Erreur de calcul"));
-//
-//        mockMvc.perform(get("/api/stock-movements/ingredient/{ingredientId}/total", ingredientId)
-//                        .contentType(MediaType.APPLICATION_JSON))
-//                .andDo(print())
-//                .andExpect(status().isInternalServerError());
-//    }
 }

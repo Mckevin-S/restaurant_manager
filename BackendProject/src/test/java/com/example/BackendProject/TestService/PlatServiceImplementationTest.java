@@ -16,7 +16,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -69,8 +68,8 @@ class PlatServiceImplementationTest {
         platDto.setNom("Salade César");
         platDto.setCategory(1L);
 
-        // Injecter le dossier temporaire dans la constante UPLOAD_DIR via Reflection
-        ReflectionTestUtils.setField(platService, "UPLOAD_DIR", tempDir.toString() + "/");
+        // Note: UPLOAD_DIR is now a method getUploadDir() - no need to inject for unit tests
+        // Real file operations are tested in integration tests, not here
     }
 
     // ==================== TESTS CRUD ====================

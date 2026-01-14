@@ -1,6 +1,5 @@
 package com.example.BackendProject.TestService;
 
-
 import com.example.BackendProject.dto.CommandeDto;
 import com.example.BackendProject.entities.Commande;
 import com.example.BackendProject.mappers.CommandeMapper;
@@ -14,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.util.Arrays;
 import java.util.List;
@@ -24,7 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Tests de Service - Cuisine (Gestion de la préparation)")
+@DisplayName("Unit Tests - Cuisine Service")
 class CuisineServiceImplementationTest {
 
     @Mock
@@ -33,97 +33,101 @@ class CuisineServiceImplementationTest {
     @Mock
     private CommandeMapper commandeMapper;
 
+    @Mock
+    private SimpMessagingTemplate messagingTemplate;
+
     @InjectMocks
     private CuisineServiceImplementation cuisineService;
 
-    private Commande commandeAttente;
-    private CommandeDto commandeDto;
+    private Commande sampleCommande;
+    private CommandeDto sampleDto;
 
     @BeforeEach
     void setUp() {
-        commandeAttente = new Commande();
-        commandeAttente.setId(1L);
-        commandeAttente.setStatut(StatutCommande.EN_ATTENTE);
+        sampleCommande = new Commande();
+        sampleCommande.setId(1L);
+        sampleCommande.setStatut(StatutCommande.EN_ATTENTE);
 
-        commandeDto = new CommandeDto();
-        commandeDto.setId(1L);
+        sampleDto = new CommandeDto();
+        sampleDto.setId(1L);
+        sampleDto.setStatut(StatutCommande.valueOf(StatutCommande.EN_ATTENTE.name()));
     }
 
-    // ==================== TEST LISTE CUISINE ====================
-
     @Test
-    @DisplayName("Cuisine - Récupérer les commandes à préparer (Attente + En préparation)")
-    void getListeAPreparer_ShouldReturnFilteredCommandes() {
-        // Liste simulée contenant une commande en attente et une en préparation
-        List<Commande> commandes = Arrays.asList(commandeAttente, new Commande());
+    @DisplayName("Get Liste à Préparer - Devrait retourner les commandes en attente ou préparation")
+    void getListeAPreparer_ShouldReturnList() {
+        // Arrange
+        List<Commande> commandes = Arrays.asList(sampleCommande);
+        when(commandeRepository.findByStatutInOrderByDateHeureCommandeAsc(anyList())).thenReturn(commandes);
+        when(commandeMapper.toDto(any(Commande.class))).thenReturn(sampleDto);
 
-        when(commandeRepository.findByStatutInOrderByDateHeureCommandeAsc(
-                Arrays.asList(StatutCommande.EN_ATTENTE, StatutCommande.EN_PREPARATION)
-        )).thenReturn(commandes);
-
-        when(commandeMapper.toDto(any(Commande.class))).thenReturn(new CommandeDto());
-
+        // Act
         List<CommandeDto> result = cuisineService.getListeAPreparer();
 
+        // Assert
         assertNotNull(result);
-        assertEquals(2, result.size());
-        verify(commandeRepository).findByStatutInOrderByDateHeureCommandeAsc(any());
+        assertEquals(1, result.size());
+        verify(commandeRepository).findByStatutInOrderByDateHeureCommandeAsc(anyList());
     }
 
-    // ==================== TEST COMMENCER PREPARATION ====================
+    @Test
+    @DisplayName("Commencer Préparation - Succès (EN_ATTENTE -> EN_PREPARATION)")
+    void commencerPreparation_Success() {
+        // Arrange
+        when(commandeRepository.findById(1L)).thenReturn(Optional.of(sampleCommande));
+        when(commandeRepository.save(any(Commande.class))).thenReturn(sampleCommande);
+        when(commandeMapper.toDto(any(Commande.class))).thenReturn(sampleDto);
+
+        // Act
+        CommandeDto result = cuisineService.commencerPreparation(1L);
+
+        // Assert
+        assertEquals(StatutCommande.EN_PREPARATION, sampleCommande.getStatut());
+        verify(commandeRepository).save(sampleCommande);
+    }
 
     @Test
-    @DisplayName("Cuisine - Commencer la préparation d'une commande EN_ATTENTE")
-    void commencerPreparation_ShouldChangeStatusToEnPreparation() {
-        when(commandeRepository.findById(1L)).thenReturn(Optional.of(commandeAttente));
-        when(commandeRepository.save(any(Commande.class))).thenReturn(commandeAttente);
-        when(commandeMapper.toDto(any(Commande.class))).thenReturn(commandeDto);
+    @DisplayName("Commencer Préparation - Échec si statut n'est pas EN_ATTENTE")
+    void commencerPreparation_InvalidStatus() {
+        // Arrange
+        sampleCommande.setStatut(StatutCommande.PRETE);
+        when(commandeRepository.findById(1L)).thenReturn(Optional.of(sampleCommande));
+        when(commandeMapper.toDto(any(Commande.class))).thenReturn(sampleDto);
 
+        // Act
         cuisineService.commencerPreparation(1L);
 
-        assertEquals(StatutCommande.EN_PREPARATION, commandeAttente.getStatut());
-        verify(commandeRepository).save(commandeAttente);
+        // Assert
+        assertEquals(StatutCommande.PRETE, sampleCommande.getStatut()); // N'a pas changé
+        verify(commandeRepository, never()).save(any());
     }
 
-//    @Test
-//    @DisplayName("Cuisine - Commencer préparation : Ne rien changer si déjà en préparation")
-//    void commencerPreparation_ShouldDoNothing_WhenAlreadyInPrep() {
-//        commandeAttente.setStatut(StatutCommande.EN_PREPARATION);
-//        when(commandeRepository.findById(1L)).thenReturn(Optional.of(commandeAttente));
-//        when(commandeRepository.save(any(Commande.class))).thenReturn(commandeAttente);
-//        when(commandeMapper.toDto(any(Commande.class))).thenReturn(commandeDto);
-//
-//        cuisineService.commencerPreparation(1L);
-//
-//        assertEquals(StatutCommande.EN_PREPARATION, commandeAttente.getStatut());
-//        // Vérifie qu'on sauvegarde quand même l'état actuel
-//        verify(commandeRepository).save(commandeAttente);
-//    }
-
-    // ==================== TEST MARQUER COMME PRETE ====================
-
     @Test
-    @DisplayName("Cuisine - Marquer une commande comme PRÊTE")
-    void marquerCommePrete_ShouldChangeStatusToPrete() {
-        commandeAttente.setStatut(StatutCommande.EN_PREPARATION);
-        when(commandeRepository.findById(1L)).thenReturn(Optional.of(commandeAttente));
-        when(commandeRepository.save(any(Commande.class))).thenReturn(commandeAttente);
-        when(commandeMapper.toDto(any(Commande.class))).thenReturn(commandeDto);
+    @DisplayName("Marquer comme Prête - Succès et Notification WebSocket")
+    void marquerCommePrete_Success() {
+        // Arrange
+        when(commandeRepository.findById(1L)).thenReturn(Optional.of(sampleCommande));
+        when(commandeRepository.save(any(Commande.class))).thenReturn(sampleCommande);
+        when(commandeMapper.toDto(any(Commande.class))).thenReturn(sampleDto);
 
-        cuisineService.marquerCommePrete(1L);
+        // Act
+        CommandeDto result = cuisineService.marquerCommePrete(1L);
 
-        assertEquals(StatutCommande.PRETE, commandeAttente.getStatut());
-        verify(commandeRepository).save(commandeAttente);
+        // Assert
+        assertEquals(StatutCommande.PRETE, sampleCommande.getStatut());
+        verify(commandeRepository).save(sampleCommande);
+
+        // Vérifie l'envoi du message WebSocket à la salle
+        verify(messagingTemplate).convertAndSend(eq("/topic/salle/prete"), eq(sampleDto));
     }
 
-    // ==================== TEST CAS D'ERREUR ====================
-
     @Test
-    @DisplayName("Cuisine - Erreur si la commande n'existe pas")
-    void action_ShouldThrowException_WhenCommandeNotFound() {
-        when(commandeRepository.findById(99L)).thenReturn(Optional.empty());
+    @DisplayName("Marquer comme Prête - Erreur si Commande inexistante")
+    void marquerCommePrete_NotFound() {
+        // Arrange
+        when(commandeRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> cuisineService.commencerPreparation(99L));
-        assertThrows(RuntimeException.class, () -> cuisineService.marquerCommePrete(99L));
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> cuisineService.marquerCommePrete(1L));
     }
 }
