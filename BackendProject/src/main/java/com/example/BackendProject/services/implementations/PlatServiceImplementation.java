@@ -189,21 +189,35 @@ public class PlatServiceImplementation implements PlatServiceInterface {
         Path uploadPath = Paths.get(UPLOAD_DIR);
         if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
 
-        // Suppression de l'ancienne image si elle existe (pour économiser l'espace)
-        if (plat.getPhotoUrl() != null) {
-            Path oldPath = Paths.get(plat.getPhotoUrl().replace("/api/images/", UPLOAD_DIR));
-            Files.deleteIfExists(oldPath);
-        }
-
         // Génération nom unique et redimensionnement
         String fileName = UUID.randomUUID().toString() + ".jpg";
         Path filePath = uploadPath.resolve(fileName);
 
-        Thumbnails.of(file.getInputStream())
-                .size(800, 600)
-                .outputFormat("jpg")
-                .outputQuality(0.75) // Compression à 75%
-                .toFile(filePath.toFile());
+        try {
+            Thumbnails.of(file.getInputStream())
+                    .size(800, 600)
+                    .outputFormat("jpg")
+                    .outputQuality(0.75) // Compression à 75%
+                    .toFile(filePath.toFile());
+        } catch (IOException e) {
+            logger.error("{} Erreur lors du traitement de l'image: {}", context, e.getMessage(), e);
+            throw new IOException("Erreur lors du redimensionnement de l'image: " + e.getMessage(), e);
+        }
+
+        // Suppression de l'ancienne image si elle existe (pour économiser l'espace)
+        if (plat.getPhotoUrl() != null && !plat.getPhotoUrl().isEmpty()) {
+            try {
+                String oldFileName = plat.getPhotoUrl().substring(plat.getPhotoUrl().lastIndexOf("/") + 1);
+                Path oldPath = uploadPath.resolve(oldFileName);
+                if (Files.exists(oldPath)) {
+                    Files.delete(oldPath);
+                    logger.info("{} Ancienne image supprimée: {}", context, oldFileName);
+                }
+            } catch (IOException e) {
+                logger.warn("{} Impossible de supprimer l'ancienne image: {}", context, e.getMessage());
+                // Non bloquant - continue l'upload même si la suppression échoue
+            }
+        }
 
         plat.setPhotoUrl("/api/images/" + fileName);
         Plat savedPlat = platRepository.save(plat);

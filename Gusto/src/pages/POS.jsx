@@ -14,6 +14,8 @@ import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 
 import { getPlats, getCategories, getTables, createCommande } from '../services/api';
+import { formatStatut } from '../utils/formatters';
+import { getImageUrl, createImageErrorHandler } from '../utils/imageUtils';
 
 const CURRENCY = 'FCFA';
 
@@ -39,6 +41,7 @@ const PointOfSale = () => {
         setCategories(catRes.data || []);
         setPlats(platRes.data || []);
         setTables(tableRes.data || []);
+        if (tableRes.data?.length > 0) setSelectedTable(tableRes.data[0]);
         if (tableRes.data?.length > 0) setSelectedTable(tableRes.data[0]);
       } catch (error) {
         setNotification({ open: true, message: 'Erreur réseau lors du chargement', severity: 'error' });
@@ -116,7 +119,7 @@ const PointOfSale = () => {
         <Avatar sx={{ bgcolor: '#10b981', mb: 2 }}><RestaurantMenuIcon /></Avatar>
         {loading ? [1, 2, 3].map(i => <Skeleton key={i} variant="rectangular" width={50} height={50} sx={{ borderRadius: 2 }} />) :
           tables.map((t) => (
-            <IconButton
+              <IconButton
               key={t.id}
               onClick={() => setSelectedTable(t)}
               sx={{
@@ -204,7 +207,19 @@ const PointOfSale = () => {
                         '&:hover': { transform: 'translateY(-5px)', boxShadow: '0 10px 20px rgba(0,0,0,0.05)' }
                       }}
                     >
-                      <Box sx={{ height: 140, backgroundImage: `url(${item.photoUrl})`, backgroundSize: 'cover' }} />
+                      {item.photoUrl ? (
+                        <Box
+                          component="img"
+                          src={getImageUrl(item.photoUrl)}
+                          alt={item.nom}
+                          onError={createImageErrorHandler()}
+                          sx={{ height: 140, width: '100%', objectFit: 'cover', display: 'block' }}
+                        />
+                      ) : (
+                        <Box sx={{ height: 140, bgcolor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <RestaurantMenuIcon sx={{ fontSize: 40, color: '#cbd5e1' }} />
+                        </Box>
+                      )}
                       <Box sx={{ p: 2 }}>
                         <Typography fontWeight={800}>{item.nom}</Typography>
                         <Typography variant="h6" color="primary" fontWeight={900}>{item.prix.toLocaleString()} {CURRENCY}</Typography>

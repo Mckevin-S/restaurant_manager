@@ -5,8 +5,9 @@ import {
   List, ListItem, ListItemText, ListItemAvatar, Avatar, CircularProgress, Stack, Fade, Chip,
   Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
-import { getCommandesServies, updateStatut } from '../services/api';
+import { getCommandesServies, updateStatut, effectuerPaiement, getCommandeById, downloadTicket, getRestaurantSettings } from '../services/api';
 import { toast } from 'react-hot-toast';
+import { getImageUrl, createImageErrorHandler } from '../utils/imageUtils';
 import PaymentsIcon from '@mui/icons-material/Payments';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import SmartphoneIcon from '@mui/icons-material/Smartphone';
@@ -30,6 +31,7 @@ const PaymentInterface = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [lastPaidCommande, setLastPaidCommande] = useState(null);
+  const [restaurantInfo, setRestaurantInfo] = useState(null);
 
   // Client Info Modal State
   const [clientModalOpen, setClientModalOpen] = useState(false);
@@ -37,7 +39,17 @@ const PaymentInterface = () => {
 
   useEffect(() => {
     fetchCommandes();
+    fetchRestaurantInfo();
   }, []);
+
+  const fetchRestaurantInfo = async () => {
+    try {
+      const resp = await getRestaurantSettings();
+      setRestaurantInfo(resp.data);
+    } catch (e) {
+      console.warn('Impossible de récupérer les infos du restaurant pour l\'impression', e);
+    }
+  };
 
   const fetchCommandes = async () => {
     setLoading(true);
@@ -56,12 +68,37 @@ const PaymentInterface = () => {
 
     setIsProcessing(true);
     try {
-      await updateStatut(selectedCommande.id, 'PAYEE');
+      // Créer le paiement côté backend (qui mettra automatiquement la commande à PAYEE)
+      const montant = receivedAmount && receivedAmount !== '' ? receivedAmount : selectedCommande.totalTtc;
+      const typeMap = { cash: 'Espèces', card: 'Carte', momo: 'Mobile_Money' };
+      const typePaiement = typeMap[method] || 'Espèces';
+
+      const paiementResp = await effectuerPaiement(selectedCommande.id, montant, typePaiement);
+
+      // Récupérer la commande mise à jour depuis le backend (avec lignes détail)
+      const commandeResp = await getCommandeById(selectedCommande.id);
+      const commandeComplete = commandeResp.data;
+
+      // Télécharger automatiquement le ticket PDF depuis le backend
+      try {
+        const pdfResp = await downloadTicket(selectedCommande.id);
+        const url = window.URL.createObjectURL(new Blob([pdfResp.data], { type: 'application/pdf' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `ticket_${selectedCommande.id}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (e) {
+        console.error('Impossible de télécharger le PDF:', e);
+      }
 
       toast.success(`Encaissement validé pour la Table ${selectedCommande.table?.numero || 'N/A'}`);
-      setLastPaidCommande(selectedCommande);
+      setLastPaidCommande(commandeComplete);
       setPaymentSuccess(true);
-      setSelectedCommande(null);
+      // Conserver la commande sélectionnée (affiche l'aperçu / bouton imprimer)
+      setSelectedCommande(commandeComplete);
       setReceivedAmount('');
       fetchCommandes();
     } catch (error) {
@@ -499,10 +536,14 @@ const PaymentInterface = () => {
       {/* ZONE D'IMPRESSION (80mm) */}
       <Box className="displayPrint-container" sx={{ display: 'none', displayPrint: 'block', width: '80mm', p: 0, color: 'black', fontFamily: "'Courier New', Courier, monospace" }}>
         <Box sx={{ textAlign: 'center', mb: 2, pb: 2, borderBottom: '2px dashed black' }}>
-          <Typography variant="h5" fontWeight={900} sx={{ textTransform: 'uppercase', fontSize: '1.4rem' }}>GUSTO RESTAURANT</Typography>
-          <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>Cocody Riviera, Abidjan</Typography>
-          <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>Tel: +225 07 07 07 07 07</Typography>
-          <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>RC: 123456789 • CC: 987654321</Typography>
+          <Typography variant="h5" fontWeight={900} sx={{ textTransform: 'uppercase', fontSize: '1.4rem' }}>{restaurantInfo?.nom || 'GUSTO RESTAURANT'}</Typography>
+          <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>{restaurantInfo?.adresse || 'Cocody Riviera, Abidjan'}</Typography>
+          <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>{restaurantInfo?.telephone ? `Tel: ${restaurantInfo.telephone}` : 'Tel: +225 07 07 07 07 07'}</Typography>
+          {restaurantInfo?.email ? (
+            <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>{restaurantInfo.email}</Typography>
+          ) : (
+            <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>RC: 123456789 • CC: 987654321</Typography>
+          )}
         </Box>
 
         {lastPaidCommande && (

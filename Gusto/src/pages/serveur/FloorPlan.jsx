@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { formatStatut } from '../../utils/formatters';
 import { Users, Clock, ChefHat, CheckCircle, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -35,7 +36,7 @@ const FloorPlan = () => {
     };
 
     const handleTableClick = (table) => {
-        if (table.statut === 'LIBRE') {
+        if (table.statut?.toString().toUpperCase() === 'LIBRE') {
             // Démarrer une nouvelle commande
             navigate(`/serveur/pos?tableId=${table.id}`);
         } else {
@@ -77,16 +78,16 @@ const FloorPlan = () => {
                 {/* Légende */}
                 <div className="flex gap-4 text-sm bg-white p-3 rounded-lg shadow-sm">
                     <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-green-500"></div> Libre
+                        <div className="w-3 h-3 rounded-full bg-green-500"></div> {formatStatut('LIBRE')}
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-red-500"></div> Occupée
+                        <div className="w-3 h-3 rounded-full bg-red-500"></div> {formatStatut('OCCUPEE')}
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-blue-500"></div> Réservée
+                        <div className="w-3 h-3 rounded-full bg-blue-500"></div> {formatStatut('RESERVEE')}
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-yellow-500"></div> À nettoyer
+                        <div className="w-3 h-3 rounded-full bg-yellow-500"></div> {formatStatut('A_NETTOYER')}
                     </div>
                 </div>
             </div>
@@ -142,7 +143,7 @@ const FloorPlan = () => {
                             </div>
 
                             {/* Indicateur si commande en cours (simulé ici, à connecter au backend) */}
-                            {table.statut === 'OCCUPEE' && (
+                            {table.statut?.toString().toUpperCase() === 'OCCUPEE' && (
                                 <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1">
                                     <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" title="En attente cuisine"></div>
                                 </div>

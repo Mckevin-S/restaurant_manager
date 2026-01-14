@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Box, Typography, Button, Paper, Stack, IconButton,
   Dialog, DialogTitle, DialogContent, DialogActions,
@@ -14,6 +14,7 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import BadgeIcon from '@mui/icons-material/Badge';
 import SideBar from '../widget/SideBar';
 import apiClient from '../services/apiClient';
+import RestaurantContext from '../context/RestaurantContext';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -30,6 +31,8 @@ const Users = () => {
   const [formData, setFormData] = useState({
     nom: '', prenom: '', email: '', motDePasse: '', role: 'SERVEUR', telephone: ''
   });
+
+  const { restaurantInfo } = useContext(RestaurantContext);
 
   useEffect(() => { fetchUsers(); }, []);
 
@@ -97,9 +100,9 @@ const Users = () => {
         {/* HEADER */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4, alignItems: 'flex-start' }}>
           <Box>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: '#1A1C1E' }}>Équipe Gusto</Typography>
-            <Typography variant="body2" color="text.secondary">Gérez les membres de votre personnel et leurs permissions</Typography>
-          </Box>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: '#1A1C1E' }}>{`Équipe ${ restaurantInfo?.nom || 'du Restaurant'}`}</Typography>
+              <Typography variant="body2" color="text.secondary">Gérez les membres de votre personnel et leurs permissions</Typography>
+            </Box>
           <Button
             variant="contained"
             startIcon={<AddIcon />}

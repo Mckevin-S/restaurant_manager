@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../services/apiClient';
 import { toast } from 'react-hot-toast';
 import PageHeader from '../../widget/PageHeader';
+import ImageUploader from '../../components/ImageUploader';
+import { getImageUrl, createImageErrorHandler, validateImageFile } from '../../utils/imageUtils';
 
 const MenuManagement = () => {
     const [plats, setPlats] = useState([]);
@@ -17,7 +19,8 @@ const MenuManagement = () => {
     const [showCategoryForm, setShowCategoryForm] = useState(false);
     const [editingPlat, setEditingPlat] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [imagePreview, setImagePreview] = useState(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
+    const [pendingImageFile, setPendingImageFile] = useState(null);
 
     const [platForm, setPlatForm] = useState({
         nom: '',
@@ -55,42 +58,92 @@ const MenuManagement = () => {
 
     const handleCreatePlat = async (e) => {
         e.preventDefault();
+        if (!platForm.category) {
+            toast.error('Veuillez sélectionner une catégorie');
+            return;
+        }
+
         try {
             const data = {
                 ...platForm,
-                prix: parseFloat(platForm.prix)
+                prix: parseFloat(platForm.prix),
+                category: platForm.category ? parseInt(platForm.category, 10) : null,
+                photoUrl: '' // Clear URL as we'll upload image separately
             };
 
+            let platId = editingPlat?.id;
             if (editingPlat) {
                 await apiClient.put(`/plats/${editingPlat.id}`, data);
                 toast.success('Plat modifié');
             } else {
-                await apiClient.post('/plats', data);
+                const res = await apiClient.post('/plats', data);
+                platId = res.data.id;
                 toast.success('Plat créé');
             }
+
+            // Upload image if pending
+            if (pendingImageFile && platId) {
+                await handleImageUploadForPlat(pendingImageFile, platId);
+            }
+
             loadData();
             resetPlatForm();
         } catch (error) {
-            toast.error('Erreur lors de la sauvegarde');
+            const serverMessage = error?.response?.data?.message || error?.message || 'Erreur lors de la sauvegarde';
+            toast.error(`[API Error] ${serverMessage}`);
         }
     };
 
-    const handleImageUpload = async (e, platId) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const formData = new FormData();
-        formData.append('file', file);
-
+    const handleImageUploadForPlat = async (file, platId, retryCount = 0) => {
+        setUploadingImage(true);
+        const MAX_RETRIES = 2;
         try {
-            await apiClient.post(`/plats/${platId}/upload-image`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // NE PAS définir Content-Type manuellement - Axios va ajouter les boundaries correctement
+            const response = await apiClient.post(`/plats/${platId}/upload-image`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data', // Remplace le header par défaut json
+                },
+                timeout: 30000 // 30 secondes timeout
             });
-            toast.success('Image uploadée');
-            loadData();
+            
+            // Mettre à jour le plat avec la nouvelle URL d'image
+            if (response.data && response.data.photoUrl) {
+                setPlatForm(prev => ({
+                    ...prev,
+                    photoUrl: response.data.photoUrl
+                }));
+            }
+            
+            toast.success('Image uploadée avec succès');
         } catch (error) {
-            toast.error('Erreur upload');
+            const errorMsg = error?.response?.data || error?.message || 'Erreur lors de l\'upload de l\'image';
+            
+            // Retry pour erreurs temporaires (500, 503, timeout)
+            if (retryCount < MAX_RETRIES && (error?.response?.status >= 500 || error.code === 'ECONNABORTED')) {
+                console.warn(`Retry ${retryCount + 1}/${MAX_RETRIES} pour l'upload d'image...`);
+                toast.info(`Nouvelle tentative d'upload... (${retryCount + 1}/${MAX_RETRIES})`);
+                await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Délai progressif
+                return handleImageUploadForPlat(file, platId, retryCount + 1);
+            }
+            
+            toast.error(`Erreur upload: ${typeof errorMsg === 'string' ? errorMsg : errorMsg.message || 'Erreur serveur'}`);
+            console.error('Image upload error:', error);
+        } finally {
+            setUploadingImage(false);
+            setPendingImageFile(null);
         }
+    };
+
+    const handleImageSelected = async (file) => {
+        const errors = validateImageFile(file, 5);
+        if (errors.length > 0) {
+            toast.error(errors[0]);
+            return;
+        }
+        setPendingImageFile(file);
     };
 
     const handleDeletePlat = async (id) => {
@@ -118,7 +171,7 @@ const MenuManagement = () => {
         setPlatForm({ nom: '', description: '', prix: '', category: '', disponibilite: true, photoUrl: '' });
         setEditingPlat(null);
         setShowPlatForm(false);
-        setImagePreview(null);
+        setPendingImageFile(null);
     };
 
     const editPlat = (plat) => {
@@ -131,7 +184,6 @@ const MenuManagement = () => {
             photoUrl: plat.photoUrl || ''
         });
         setEditingPlat(plat);
-        setImagePreview(plat.photoUrl);
         setShowPlatForm(true);
     };
 
@@ -236,7 +288,12 @@ const MenuManagement = () => {
                             {/* Image Container */}
                             <div className="relative h-48 overflow-hidden rounded-[24px] bg-slate-100">
                                 {plat.photoUrl ? (
-                                    <img src={plat.photoUrl} alt={plat.nom} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
+                                    <img 
+                                        src={getImageUrl(plat.photoUrl)}
+                                        alt={plat.nom} 
+                                        className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+                                        onError={createImageErrorHandler()}
+                                    />
                                 ) : (
                                     <div className="flex h-full w-full items-center justify-center text-slate-300">
                                         <Utensils size={48} />
@@ -252,12 +309,6 @@ const MenuManagement = () => {
                                         {plat.disponibilite ? 'En Stock' : 'Épuisé'}
                                     </button>
                                 </div>
-
-                                {/* Upload Toggle */}
-                                <label className="absolute bottom-3 right-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-xl backdrop-blur-sm transition hover:bg-white hover:text-indigo-600">
-                                    <Upload size={18} />
-                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, plat.id)} />
-                                </label>
                             </div>
 
                             {/* Content */}
@@ -359,10 +410,24 @@ const MenuManagement = () => {
                                     rows="3" value={platForm.description} onChange={(e) => setPlatForm({ ...platForm, description: e.target.value })}
                                 />
                             </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-2">Photo du Plat</label>
+                                <ImageUploader 
+                                    onUpload={handleImageSelected}
+                                    currentImage={platForm.photoUrl}
+                                    isLoading={uploadingImage}
+                                    maxSizeMB={5}
+                                />
+                                {pendingImageFile && (
+                                    <p className="text-xs text-slate-600 ml-2">
+                                        📷 Image en attente: {pendingImageFile.name}
+                                    </p>
+                                )}
+                            </div>
                             <div className="flex gap-4 pt-4">
-                                <button type="button" onClick={resetPlatForm} className="flex-1 rounded-2xl py-5 font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition">Annuler</button>
-                                <button type="submit" className="flex-1 rounded-[24px] bg-indigo-600 py-5 font-black uppercase tracking-widest text-white shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition active:scale-95">
-                                    {editingPlat ? 'Mettre à jour' : 'Confirmer'}
+                                <button type="button" onClick={resetPlatForm} disabled={uploadingImage} className="flex-1 rounded-2xl py-5 font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition disabled:opacity-50">Annuler</button>
+                                <button type="submit" disabled={uploadingImage} className="flex-1 rounded-[24px] bg-indigo-600 py-5 font-black uppercase tracking-widest text-white shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    {uploadingImage ? '⏳ Upload en cours...' : (editingPlat ? 'Mettre à jour' : 'Confirmer')}
                                 </button>
                             </div>
                         </form>

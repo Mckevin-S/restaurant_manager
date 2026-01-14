@@ -6,13 +6,20 @@ import com.example.BackendProject.mappers.RestaurantMapper;
 import com.example.BackendProject.repository.RestaurantRepository;
 import com.example.BackendProject.services.interfaces.RestaurantServiceInterface;
 import com.example.BackendProject.utils.LoggingUtils;
+import net.coobird.thumbnailator.Thumbnails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,6 +28,7 @@ public class RestaurantServiceImplementation implements RestaurantServiceInterfa
     private static final Logger logger = LoggerFactory.getLogger(RestaurantServiceImplementation.class);
     private final RestaurantRepository restaurantRepository;
     private final RestaurantMapper restaurantMapper;
+    private final String UPLOAD_DIR = Paths.get(System.getProperty("user.dir"), "uploads", "restaurant").toString() + "/";
 
     public RestaurantServiceImplementation(RestaurantRepository restaurantRepository, RestaurantMapper restaurantMapper) {
         this.restaurantRepository = restaurantRepository;
@@ -153,5 +161,61 @@ public class RestaurantServiceImplementation implements RestaurantServiceInterfa
                 .collect(Collectors.toList());
         logger.info("{} {} restaurants récupérés avec succès", context, restaurants.size());
         return restaurants;
+    }
+
+    @Override
+    public RestaurantDto uploadLogo(MultipartFile file) throws IOException {
+        String context = LoggingUtils.getLogContext();
+        logger.info("{} Tentative d'upload de logo - Nom du fichier: {}", context, file.getOriginalFilename());
+        
+        // Récupérer les paramètres du restaurant (on assume qu'il y a un seul restaurant ou le premier)
+        Restaurant restaurant = restaurantRepository.findAll().stream().findFirst()
+                .orElseThrow(() -> {
+                    logger.error("{} Aucun restaurant trouvé pour l'upload du logo", context);
+                    return new RuntimeException("Aucun restaurant configuré");
+                });
+
+        if (file.isEmpty()) {
+            logger.error("{} Fichier vide pour l'upload du logo", context);
+            throw new RuntimeException("Le fichier est vide");
+        }
+
+        // Création du dossier si inexistant
+        Path uploadPath = Paths.get(UPLOAD_DIR);
+        if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+
+        // Suppression de l'ancien logo si il existe
+        if (restaurant.getLogo() != null && !restaurant.getLogo().isEmpty()) {
+            try {
+                String oldFileName = restaurant.getLogo().substring(restaurant.getLogo().lastIndexOf("/") + 1);
+                Path oldPath = uploadPath.resolve(oldFileName);
+                if (Files.exists(oldPath)) {
+                    Files.delete(oldPath);
+                    logger.info("{} Ancien logo supprimé: {}", context, oldFileName);
+                }
+            } catch (IOException e) {
+                logger.warn("{} Impossible de supprimer l'ancien logo: {}", context, e.getMessage());
+            }
+        }
+
+        // Génération nom unique et redimensionnement
+        String fileName = UUID.randomUUID().toString() + ".png";
+        Path filePath = uploadPath.resolve(fileName);
+
+        try {
+            Thumbnails.of(file.getInputStream())
+                    .size(300, 300)
+                    .outputFormat("png")
+                    .outputQuality(0.85)
+                    .toFile(filePath.toFile());
+        } catch (IOException e) {
+            logger.error("{} Erreur lors du traitement du logo: {}", context, e.getMessage(), e);
+            throw new IOException("Erreur lors du redimensionnement du logo: " + e.getMessage(), e);
+        }
+
+        restaurant.setLogo("/api/images/" + fileName);
+        Restaurant savedRestaurant = restaurantRepository.save(restaurant);
+        logger.info("{} Logo uploadé avec succès - URL: {}", context, savedRestaurant.getLogo());
+        return restaurantMapper.toDto(savedRestaurant);
     }
 }

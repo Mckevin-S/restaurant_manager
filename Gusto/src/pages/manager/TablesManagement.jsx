@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatStatut, normalizeStatutKey } from '../../utils/formatters';
 import { Plus, Edit2, Trash2, Users, MapPin, Layout, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../services/apiClient';
@@ -17,6 +18,10 @@ const TablesManagement = () => {
 
   const [tableForm, setTableForm] = useState({ numero: '', capacite: 2, zoneId: '', statut: 'LIBRE' });
   const [zoneForm, setZoneForm] = useState({ nom: '', description: '' });
+
+  // Pagination for zones
+  const [zonePage, setZonePage] = useState(0);
+  const zonesPerPage = 6;
 
   useEffect(() => {
     Promise.all([fetchTables(), fetchZones()]).finally(() => setLoading(false));
@@ -85,11 +90,16 @@ const TablesManagement = () => {
     return styles[statut] || styles.LIBRE;
   };
 
+  
+
   if (loading) return (
     <div className="flex h-screen w-full items-center justify-center bg-gray-50">
       <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
     </div>
   );
+
+  const totalZonePages = Math.max(1, Math.ceil(zones.length / zonesPerPage));
+  const pagedZones = zones.slice(zonePage * zonesPerPage, (zonePage + 1) * zonesPerPage);
 
   return (
     <div className="min-h-screen bg-[#f8fafc] animate-in fade-in duration-500 pb-12">
@@ -119,8 +129,8 @@ const TablesManagement = () => {
       <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
           { label: 'Total', val: tables.length, color: 'text-slate-600', bg: 'bg-slate-100', icon: <Layout size={20} /> },
-          { label: 'Libres', val: tables.filter(t => t.statut === 'Libre').length, color: 'text-emerald-600', bg: 'bg-emerald-100', icon: <CheckCircle size={20} /> },
-          { label: 'Occupées', val: tables.filter(t => t.statut === 'Occupée').length, color: 'text-rose-600', bg: 'bg-rose-100', icon: <Users size={20} /> },
+          { label: 'Libres', val: tables.filter(t => normalizeStatutKey(t.statut) === 'LIBRE').length, color: 'text-emerald-600', bg: 'bg-emerald-100', icon: <CheckCircle size={20} /> },
+          { label: 'Occupées', val: tables.filter(t => normalizeStatutKey(t.statut) === 'OCCUPEE').length, color: 'text-rose-600', bg: 'bg-rose-100', icon: <Users size={20} /> },
           { label: 'Zones', val: zones.length, color: 'text-indigo-600', bg: 'bg-indigo-100', icon: <MapPin size={20} /> },
         ].map((s, i) => (
           <div key={i} className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm border border-slate-100">
@@ -134,28 +144,37 @@ const TablesManagement = () => {
       </div>
 
       {/* FILTERS */}
-      <div className="mb-8 flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-        <button
-          onClick={() => setSelectedZone('all')}
-          className={`whitespace-nowrap rounded-full px-6 py-2 text-sm font-bold transition ${selectedZone === 'all' ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
-        >
-          Toutes les zones
-        </button>
-        {zones.map(z => (
+      <div className="mb-4">
+        <div className="mb-2 flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
           <button
-            key={z.id}
-            onClick={() => setSelectedZone(z.id.toString())}
-            className={`whitespace-nowrap rounded-full px-6 py-2 text-sm font-bold transition ${selectedZone === z.id.toString() ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+            onClick={() => { setSelectedZone('all'); setZonePage(0); }}
+            className={`whitespace-nowrap rounded-full px-6 py-2 text-sm font-bold transition ${selectedZone === 'all' ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
           >
-            {z.nom}
+            Toutes les zones
           </button>
-        ))}
+          {zones.slice(zonePage * zonesPerPage, (zonePage + 1) * zonesPerPage).map(z => (
+            <button
+              key={z.id}
+              onClick={() => setSelectedZone(z.id.toString())}
+              className={`whitespace-nowrap rounded-full px-6 py-2 text-sm font-bold transition ${selectedZone === z.id.toString() ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+            >
+              {z.nom}
+            </button>
+          ))}
+        </div>
+
+        {/* Pagination controls for zones */}
+        <div className="flex items-center gap-2 justify-end">
+          <button onClick={() => setZonePage(Math.max(0, zonePage - 1))} disabled={zonePage === 0} className="px-3 py-1 rounded-md bg-white border">Préc.</button>
+          <div className="text-sm text-slate-600">Page {zonePage + 1} / {totalZonePages}</div>
+          <button onClick={() => setZonePage(Math.min(totalZonePages - 1, zonePage + 1))} disabled={zonePage >= totalZonePages - 1} className="px-3 py-1 rounded-md bg-white border">Suiv.</button>
+        </div>
       </div>
 
       {/* ZONES & TABLES GRID */}
       <div className="space-y-10">
-        {zones.filter(z => selectedZone === 'all' || z.id.toString() === selectedZone).map(zone => {
-          const zoneTables = tables.filter(t => t.zone?.id === zone.id);
+        {pagedZones.filter(z => selectedZone === 'all' || z.id.toString() === selectedZone).map(zone => {
+          const zoneTables = tables.filter(t => String(((t.zone && t.zone.id) || t.zoneId)) === String(zone.id));
           return (
             <section key={zone.id}>
               <div className="mb-5 flex items-center gap-3">
@@ -191,7 +210,7 @@ const TablesManagement = () => {
 
                         <span className={`text-3xl font-black ${style.text}`}>{table.numero}</span>
                         <span className={`mt-1 text-[10px] font-black uppercase tracking-widest ${style.text} opacity-70`}>
-                          {table.statut.replace('_', ' ')}
+                          {formatStatut(table.statut)}
                         </span>
 
                         {/* Quick Actions Overlay */}

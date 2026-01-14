@@ -3,6 +3,7 @@ import { Settings, Save, Upload, Clock, Phone, Mail, MapPin, Globe, Percent, Coi
 import apiClient from '../../services/apiClient';
 import { toast } from 'react-hot-toast';
 import PageHeader from '../../widget/PageHeader';
+import { getImageUrl, createImageErrorHandler } from '../../utils/imageUtils';
 
 const RestaurantSettings = () => {
     const [settings, setSettings] = useState({
@@ -86,13 +87,12 @@ const RestaurantSettings = () => {
         formData.append('file', file);
 
         try {
-            const response = await apiClient.post('/restaurant/upload-logo', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            setSettings({ ...settings, logo: response.data.url });
+            const response = await apiClient.post('/restaurant/upload-logo', formData);
+            setSettings({ ...settings, logo: response.data.logo });
             toast.success('Logo mis à jour');
         } catch (error) {
-            toast.error('Erreur lors de l\'upload');
+            const errorMsg = error?.response?.data || error?.message || 'Erreur lors de l\'upload';
+            toast.error(typeof errorMsg === 'string' ? errorMsg : errorMsg.message || 'Erreur lors de l\'upload');
         }
     };
 
@@ -213,7 +213,12 @@ const RestaurantSettings = () => {
                             <div className="pt-4 flex items-center gap-6">
                                 <div className="h-24 w-24 rounded-[24px] bg-slate-100 border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden">
                                     {settings.logo ? (
-                                        <img src={settings.logo} alt="Logo" className="h-full w-full object-contain" />
+                                        <img 
+                                            src={getImageUrl(settings.logo)} 
+                                            alt="Logo" 
+                                            onError={createImageErrorHandler()}
+                                            className="h-full w-full object-contain" 
+                                        />
                                     ) : (
                                         <Upload className="text-slate-300" size={32} />
                                     )}

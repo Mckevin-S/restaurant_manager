@@ -6,9 +6,10 @@ import {
 } from 'recharts';
 import { TrendingUp, DollarSign, Users, Download, Calendar, Pizza, ShoppingBag } from 'lucide-react';
 import apiClient from '../../services/apiClient';
+import { getRestaurantSettings } from '../../services/api';
 import { toast } from 'react-hot-toast';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import PageHeader from '../../widget/PageHeader';
 import StatCard from '../../widget/StatCard';
 
@@ -17,6 +18,7 @@ const Reports = () => {
     const [topPlats, setTopPlats] = useState([]);
     const [period, setPeriod] = useState('month');
     const [loading, setLoading] = useState(true);
+    const [restaurantInfo, setRestaurantInfo] = useState(null);
 
     useEffect(() => {
         const loadData = async () => {
@@ -24,11 +26,21 @@ const Reports = () => {
             await Promise.all([
                 fetchStats(),
                 fetchTopPlats()
+                , fetchRestaurant()
             ]);
             setLoading(false);
         };
         loadData();
     }, [period]);
+
+    const fetchRestaurant = async () => {
+        try {
+            const resp = await getRestaurantSettings();
+            setRestaurantInfo(resp.data);
+        } catch (e) {
+            console.warn('Impossible de récupérer infos restaurant', e);
+        }
+    };
 
     const fetchStats = async () => {
         try {
@@ -56,37 +68,63 @@ const Reports = () => {
     };
 
     const exportPDF = () => {
-        const doc = new jsPDF();
-        doc.setFontSize(20);
-        doc.text('Rapport Restaurant Gusto', 14, 22);
-        doc.setFontSize(11);
-        doc.text(`Période: ${period === 'day' ? 'Aujourd\'hui' : period === 'week' ? 'Cette semaine' : period === 'month' ? 'Ce mois' : 'Cette année'}`, 14, 30);
+        try {
+            const doc = new jsPDF();
+            
+            // Titre et période
+            doc.setFontSize(20);
+            doc.text(`Rapport ${restaurantInfo?.nom || 'Restaurant'}`, 14, 22);
+            doc.setFontSize(11);
+            doc.text(`Période: ${period === 'day' ? 'Aujourd\'hui' : period === 'week' ? 'Cette semaine' : period === 'month' ? 'Ce mois' : 'Cette année'}`, 14, 30);
 
-        doc.autoTable({
-            startY: 40,
-            head: [['Métrique', 'Valeur']],
-            body: [
-                ['Chiffre d\'affaires', `${(stats?.ca || 0).toLocaleString()} FCFA`],
-                ['Nombre de commandes', stats?.nbCommandes || 0],
-                ['Ticket moyen', `${(stats?.ticketMoyen || 0).toLocaleString()} FCFA`],
-                ['Clients servis', stats?.nbClients || 0],
-            ],
-            theme: 'grid',
-            headStyles: { fillColor: [79, 70, 229] }
-        });
-
-        if (topPlats.length > 0) {
-            doc.autoTable({
-                startY: doc.lastAutoTable.finalY + 10,
-                head: [['Plat', 'Quantité vendue', 'CA Généré']],
-                body: topPlats.map(p => [p.nom, p.quantite, `${(p.ca || 0).toLocaleString()} FCFA`]),
+            // Première table - Statistiques
+            autoTable(doc, {
+                startY: 40,
+                head: [['Métrique', 'Valeur']],
+                body: [
+                    ['Chiffre d\'affaires', `${(stats?.ca || 0).toLocaleString()} FCFA`],
+                    ['Nombre de commandes', stats?.nbCommandes || 0],
+                    ['Ticket moyen', `${(stats?.ticketMoyen || 0).toLocaleString()} FCFA`],
+                    ['Clients servis', stats?.nbClients || 0],
+                ],
                 theme: 'grid',
-                headStyles: { fillColor: [79, 70, 229] }
+                headStyles: { fillColor: [79, 70, 229], textColor: 255 },
+                styles: { fontSize: 10 }
             });
-        }
 
-        doc.save(`rapport-${period}-${new Date().toISOString().split('T')[0]}.pdf`);
-        toast.success('Rapport exporté avec succès');
+            // Deuxième table - Top plats
+            if (topPlats && topPlats.length > 0) {
+                const lastY = doc.lastAutoTable?.finalY || 60;
+                autoTable(doc, {
+                    startY: lastY + 10,
+                    head: [['Plat', 'Quantité vendue', 'CA Généré']],
+                    body: topPlats.slice(0, 10).map(p => [
+                        p.nom || 'N/A',
+                        p.quantite || 0,
+                        `${(p.ca || 0).toLocaleString()} FCFA`
+                    ]),
+                    theme: 'grid',
+                    headStyles: { fillColor: [79, 70, 229], textColor: 255 },
+                    styles: { fontSize: 10 }
+                });
+            }
+
+            doc.save(`rapport-${period}-${new Date().toISOString().split('T')[0]}.pdf`);
+            toast.success('Rapport exporté avec succès');
+        } catch (error) {
+            console.error('Erreur export PDF:', error);
+            toast.error('Erreur lors de l\'export du PDF: ' + error.message);
+        }
+    };
+
+    const computeTrend = (series = []) => {
+        if (!Array.isArray(series) || series.length < 2) return { label: '', value: '' };
+        const last = series[series.length - 1]?.ca ?? series[series.length - 1];
+        const prev = series[series.length - 2]?.ca ?? series[series.length - 2];
+        if (prev === 0 || prev === undefined) return { label: '', value: '' };
+        const pct = ((last - prev) / Math.abs(prev)) * 100;
+        const sign = pct >= 0 ? '+' : '';
+        return { label: `${sign}${Math.round(pct)}%`, value: pct >= 0 };
     };
 
     const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
@@ -137,38 +175,48 @@ const Reports = () => {
             <div className="px-4">
                 {/* KPIs */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <StatCard
-                        icon={<DollarSign size={24} />}
-                        label="Chiffre d'Affaires"
-                        value={`${(stats?.ca || 0).toLocaleString()} FCFA`}
-                        trend="+12%"
-                        trendUp={true}
-                        color="indigo"
-                    />
-                    <StatCard
-                        icon={<ShoppingBag size={24} />}
-                        label="Commandes"
-                        value={(stats?.nbCommandes || 0).toString()}
-                        trend="+8%"
-                        trendUp={true}
-                        color="emerald"
-                    />
-                    <StatCard
-                        icon={<TrendingUp size={24} />}
-                        label="Ticket Moyen"
-                        value={`${(stats?.ticketMoyen || 0).toLocaleString()} FCFA`}
-                        trend="+5%"
-                        trendUp={true}
-                        color="amber"
-                    />
-                    <StatCard
-                        icon={<Users size={24} />}
-                        label="Clients Servis"
-                        value={(stats?.nbClients || 0).toString()}
-                        trend="+15%"
-                        trendUp={true}
-                        color="rose"
-                    />
+                        {(() => {
+                            const trendCA = computeTrend(stats?.evolutionCA);
+                            const trendCmd = computeTrend(stats?.evolutionCA);
+                            const trendTicket = computeTrend(stats?.evolutionCA);
+                            const trendClients = computeTrend(stats?.evolutionCA);
+                            return (
+                                <>
+                                    <StatCard
+                                        icon={<DollarSign size={24} />}
+                                        label="Chiffre d'Affaires"
+                                        value={`${(stats?.ca || 0).toLocaleString()} FCFA`}
+                                        trend={trendCA.label}
+                                        trendUp={trendCA.value}
+                                        color="indigo"
+                                    />
+                                    <StatCard
+                                        icon={<ShoppingBag size={24} />}
+                                        label="Commandes"
+                                        value={(stats?.nbCommandes || 0).toString()}
+                                        trend={trendCmd.label}
+                                        trendUp={trendCmd.value}
+                                        color="emerald"
+                                    />
+                                    <StatCard
+                                        icon={<TrendingUp size={24} />}
+                                        label="Ticket Moyen"
+                                        value={`${(stats?.ticketMoyen || 0).toLocaleString()} FCFA`}
+                                        trend={trendTicket.label}
+                                        trendUp={trendTicket.value}
+                                        color="amber"
+                                    />
+                                    <StatCard
+                                        icon={<Users size={24} />}
+                                        label="Clients Servis"
+                                        value={(stats?.nbClients || 0).toString()}
+                                        trend={trendClients.label}
+                                        trendUp={trendClients.value}
+                                        color="rose"
+                                    />
+                                </>
+                            );
+                        })()}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">

@@ -45,6 +45,24 @@ export const getCommandesServies = () => apiClient.get('/commandes/statut/SERVIE
 /** Retourne l'URL du ticket pour une commande donnée */
 export const getTicketUrl = (id) => `${apiClient.defaults.baseURL}/commandes/${id}/ticket`;
 
+/** Récupérer une commande par ID */
+export const getCommandeById = (id) => apiClient.get(`/commandes/${id}`);
+
+/** Effectuer un paiement simplifié pour une commande */
+export const effectuerPaiement = (commandeId, montant, typePaiement) =>
+    apiClient.post('/paiements/effectuer', null, { params: { commandeId, montant, typePaiement } });
+
+// /** Télécharger le ticket PDF pour une commande (blob) */
+// export const downloadTicket = (id) =>
+//     apiClient.get(`/commandes/${id}/ticket`, { responseType: 'blob' });
+
+/** Télécharger le ticket PDF pour une commande (blob) */
+export const downloadTicket = (id) =>
+    apiClient.get(`/commandes/${id}/ticket`, { responseType: 'blob' });
+
+/** Récupérer les paramètres/infos du restaurant (pour l'impression) */
+export const getRestaurantSettings = () => apiClient.get('/restaurants/settings');
+
 // --- PROMOTIONS ---
 
 /** Récupère les promotions actives */

@@ -71,8 +71,10 @@ public class SecurityConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        String uploadDir = System.getProperty("user.dir") + "/uploads/";
         registry.addResourceHandler("/api/images/**")
-                .addResourceLocations("file:uploads/plats/");
+                .addResourceLocations("file:" + uploadDir)
+                .setCachePeriod(31536000); // Cache 1 year
     }
 
     @Bean

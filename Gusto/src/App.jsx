@@ -1,4 +1,5 @@
 import { Route, Routes, Navigate } from 'react-router-dom';
+import { RestaurantProvider } from './context/RestaurantContext';
 import Login from './pages/Auth/Login';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
@@ -36,7 +37,8 @@ import ManagerLayout from './widget/ManagerLayout';
 
 function App() {
   return (
-    <Routes>
+    <RestaurantProvider>
+      <Routes>
       {/* Routes publiques */}
       <Route path='/login' element={<Login />} />
       <Route path='/confirmation' element={<Confirmation />} />
@@ -87,7 +89,8 @@ function App() {
 
       {/* Fallback */}
       <Route path='*' element={<NotFound />} />
-    </Routes>
+      </Routes>
+    </RestaurantProvider>
   );
 }
 

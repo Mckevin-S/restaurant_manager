@@ -14,9 +14,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -131,6 +134,27 @@ public class RestaurantController {
         } catch (Exception e) {
             logger.error("{} Erreur lors de la suppression du restaurant ID: {} - {}", context, id, e.getMessage(), e);
             throw e;
+        }
+    }
+
+    @PostMapping(value = "/upload-logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Uploader et redimensionner le logo du restaurant")
+    public ResponseEntity<?> uploadLogo(
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest request) {
+        String context = LoggingUtils.getLogContext(request);
+        logger.info("{} Tentative d'upload de logo - Nom du fichier: {}", context, file.getOriginalFilename());
+        try {
+            RestaurantDto updatedRestaurant = restaurantService.uploadLogo(file);
+            logger.info("{} Logo uploadé avec succès - URL: {}", context, updatedRestaurant.getLogo());
+            return ResponseEntity.ok(updatedRestaurant);
+        } catch (IOException e) {
+            logger.error("{} Erreur IO lors de l'upload du logo - {}", context, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur lors du traitement du logo : " + e.getMessage());
+        } catch (RuntimeException e) {
+            logger.error("{} Erreur lors de l'upload du logo - {}", context, e.getMessage(), e);
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }

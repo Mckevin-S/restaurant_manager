@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   LayoutDashboard, TrendingUp, Users, DollarSign, Clock,
   ArrowUpRight, ArrowDownRight, Package, AlertCircle,
@@ -7,6 +7,7 @@ import {
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import apiClient from '../services/apiClient';
 import RecentTransactions from '../widget/RecentTransaction';
+import RestaurantContext from '../context/RestaurantContext';
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -19,6 +20,8 @@ const Dashboard = () => {
     categoryBreakdown: [],
     lowStockAlerts: []
   });
+
+  const { restaurantInfo } = useContext(RestaurantContext);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -227,7 +230,7 @@ const Dashboard = () => {
           {/* Quick Access Card */}
           <div className="rounded-[32px] bg-slate-900 p-8 shadow-xl text-white overflow-hidden relative">
             <div className="relative z-10">
-              <h2 className="text-2xl font-black mb-2 leading-tight">Gusto Premium Dashboard</h2>
+              <h2 className="text-2xl font-black mb-2 leading-tight">{restaurantInfo?.nom || 'Gusto Premium Dashboard'}</h2>
               <p className="text-slate-400 text-sm font-medium mb-6">Optimisez la gestion de votre point de vente en temps réel.</p>
               <button className="w-full rounded-2xl bg-indigo-600 py-4 font-bold text-white hover:bg-indigo-700 transition active:scale-95">
                 Accéder au POS

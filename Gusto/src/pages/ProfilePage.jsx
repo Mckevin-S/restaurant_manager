@@ -12,6 +12,7 @@ import apiClient from '../services/apiClient';
 import { toast } from 'react-hot-toast';
 import PageHeader from '../widget/PageHeader';
 import { motion } from 'framer-motion';
+import { getImageUrl, createImageErrorHandler } from '../utils/imageUtils';
 
 const ProfilePage = () => {
   const [loading, setLoading] = useState(true);

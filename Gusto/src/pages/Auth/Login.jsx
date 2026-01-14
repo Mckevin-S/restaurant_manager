@@ -182,7 +182,7 @@ useEffect(() => {
 
           <Box sx={{ mt: 'auto', pt: 4, textAlign: 'center' }}>
             <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 500 }}>
-              © 2026 Gusto System — Développé par Moko Yvan
+              © 2026 Gusto System
             </Typography>
           </Box>
           
