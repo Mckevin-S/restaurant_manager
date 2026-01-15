@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -20,29 +20,18 @@ const Reports = () => {
     const [loading, setLoading] = useState(true);
     const [restaurantInfo, setRestaurantInfo] = useState(null);
 
-    useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
-            await Promise.all([
-                fetchStats(),
-                fetchTopPlats()
-                , fetchRestaurant()
-            ]);
-            setLoading(false);
-        };
-        loadData();
-    }, [period]);
+    // --- FONCTIONS DE RÉCUPÉRATION (Déplacées ici pour le Hoisting) ---
 
-    const fetchRestaurant = async () => {
+    const fetchRestaurant = useCallback(async () => {
         try {
             const resp = await getRestaurantSettings();
             setRestaurantInfo(resp.data);
         } catch (e) {
             console.warn('Impossible de récupérer infos restaurant', e);
         }
-    };
+    }, []);
 
-    const fetchStats = async () => {
+    const fetchStats = useCallback(async () => {
         try {
             const response = await apiClient.get(`/rapports/statistiques?period=${period}`);
             setStats(response.data);
@@ -56,21 +45,38 @@ const Reports = () => {
                 evolutionCA: []
             });
         }
-    };
+    }, [period]);
 
-    const fetchTopPlats = async () => {
+    const fetchTopPlats = useCallback(async () => {
         try {
             const response = await apiClient.get('/plats/plus-vendus');
             setTopPlats(response.data || []);
         } catch (error) {
             console.error('Erreur top plats:', error);
         }
-    };
+    }, []);
+
+    // --- EFFETS ---
+
+    useEffect(() => {
+        const loadData = async () => {
+            setLoading(true);
+            await Promise.all([
+                fetchStats(),
+                fetchTopPlats(),
+                fetchRestaurant()
+            ]);
+            setLoading(false);
+        };
+        loadData();
+    }, [period, fetchStats, fetchTopPlats, fetchRestaurant]);
+
+    // --- AUTRES LOGIQUES ---
 
     const exportPDF = () => {
         try {
             const doc = new jsPDF();
-            
+
             // Titre et période
             doc.setFontSize(20);
             doc.text(`Rapport ${restaurantInfo?.nom || 'Restaurant'}`, 14, 22);
@@ -173,54 +179,52 @@ const Reports = () => {
             />
 
             <div className="px-4">
-                {/* KPIs */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        {(() => {
-                            const trendCA = computeTrend(stats?.evolutionCA);
-                            const trendCmd = computeTrend(stats?.evolutionCA);
-                            const trendTicket = computeTrend(stats?.evolutionCA);
-                            const trendClients = computeTrend(stats?.evolutionCA);
-                            return (
-                                <>
-                                    <StatCard
-                                        icon={<DollarSign size={24} />}
-                                        label="Chiffre d'Affaires"
-                                        value={`${(stats?.ca || 0).toLocaleString()} FCFA`}
-                                        trend={trendCA.label}
-                                        trendUp={trendCA.value}
-                                        color="indigo"
-                                    />
-                                    <StatCard
-                                        icon={<ShoppingBag size={24} />}
-                                        label="Commandes"
-                                        value={(stats?.nbCommandes || 0).toString()}
-                                        trend={trendCmd.label}
-                                        trendUp={trendCmd.value}
-                                        color="emerald"
-                                    />
-                                    <StatCard
-                                        icon={<TrendingUp size={24} />}
-                                        label="Ticket Moyen"
-                                        value={`${(stats?.ticketMoyen || 0).toLocaleString()} FCFA`}
-                                        trend={trendTicket.label}
-                                        trendUp={trendTicket.value}
-                                        color="amber"
-                                    />
-                                    <StatCard
-                                        icon={<Users size={24} />}
-                                        label="Clients Servis"
-                                        value={(stats?.nbClients || 0).toString()}
-                                        trend={trendClients.label}
-                                        trendUp={trendClients.value}
-                                        color="rose"
-                                    />
-                                </>
-                            );
-                        })()}
+                    {(() => {
+                        const trendCA = computeTrend(stats?.evolutionCA);
+                        const trendCmd = computeTrend(stats?.evolutionCA);
+                        const trendTicket = computeTrend(stats?.evolutionCA);
+                        const trendClients = computeTrend(stats?.evolutionCA);
+                        return (
+                            <>
+                                <StatCard
+                                    icon={<DollarSign size={24} />}
+                                    label="Chiffre d'Affaires"
+                                    value={`${(stats?.ca || 0).toLocaleString()} FCFA`}
+                                    trend={trendCA.label}
+                                    trendUp={trendCA.value}
+                                    color="indigo"
+                                />
+                                <StatCard
+                                    icon={<ShoppingBag size={24} />}
+                                    label="Commandes"
+                                    value={(stats?.nbCommandes || 0).toString()}
+                                    trend={trendCmd.label}
+                                    trendUp={trendCmd.value}
+                                    color="emerald"
+                                />
+                                <StatCard
+                                    icon={<TrendingUp size={24} />}
+                                    label="Ticket Moyen"
+                                    value={`${(stats?.ticketMoyen || 0).toLocaleString()} FCFA`}
+                                    trend={trendTicket.label}
+                                    trendUp={trendTicket.value}
+                                    color="amber"
+                                />
+                                <StatCard
+                                    icon={<Users size={24} />}
+                                    label="Clients Servis"
+                                    value={(stats?.nbClients || 0).toString()}
+                                    trend={trendClients.label}
+                                    trendUp={trendClients.value}
+                                    color="rose"
+                                />
+                            </>
+                        );
+                    })()}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
-                    {/* Evolution CA Chart */}
                     <div className="lg:col-span-8 rounded-[32px] bg-white p-8 shadow-sm border border-slate-100 overflow-hidden">
                         <div className="mb-8 flex items-center justify-between">
                             <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight italic">Évolution du Chiffre d'Affaires</h2>
@@ -270,7 +274,6 @@ const Reports = () => {
                         </div>
                     </div>
 
-                    {/* Top Plats - Pie Chart */}
                     <div className="lg:col-span-4 rounded-[32px] bg-white p-8 shadow-sm border border-slate-100">
                         <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight italic mb-8">Performance Plats</h2>
                         <div className="h-[300px] w-full">
@@ -310,7 +313,6 @@ const Reports = () => {
                     </div>
                 </div>
 
-                {/* Detailed Table */}
                 <div className="rounded-[32px] bg-white shadow-sm border border-slate-100 overflow-hidden">
                     <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
                         <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight italic">Analyse Détaillée par Produit</h2>
@@ -321,46 +323,46 @@ const Reports = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
-                                <tr className="bg-white">
-                                    <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Produit</th>
-                                    <th className="px-8 py-5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Volume</th>
-                                    <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Revenu Généré</th>
-                                    <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Contribution</th>
-                                </tr>
+                            <tr className="bg-white">
+                                <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Produit</th>
+                                <th className="px-8 py-5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Volume</th>
+                                <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Revenu Généré</th>
+                                <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Contribution</th>
+                            </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
-                                {topPlats.length > 0 ? topPlats.map((plat, idx) => (
-                                    <tr key={idx} className="hover:bg-indigo-50/30 transition-colors group">
-                                        <td className="px-8 py-6 whitespace-nowrap">
-                                            <span className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition">{plat.nom}</span>
-                                        </td>
-                                        <td className="px-8 py-6 text-center">
+                            {topPlats.length > 0 ? topPlats.map((plat, idx) => (
+                                <tr key={idx} className="hover:bg-indigo-50/30 transition-colors group">
+                                    <td className="px-8 py-6 whitespace-nowrap">
+                                        <span className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition">{plat.nom}</span>
+                                    </td>
+                                    <td className="px-8 py-6 text-center">
                                             <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-tight">
                                                 {plat.quantite}
                                             </span>
-                                        </td>
-                                        <td className="px-8 py-6 text-right font-black text-slate-900 text-sm">
-                                            {(plat.ca || 0).toLocaleString()} <span className="text-[10px] ml-1 text-slate-400 italic">FCFA</span>
-                                        </td>
-                                        <td className="px-8 py-6 text-right">
-                                            <div className="flex items-center justify-end gap-3">
-                                                <div className="w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                                                    <div
-                                                        className="bg-indigo-600 h-full rounded-full transition-all duration-1000"
-                                                        style={{ width: `${plat.pourcentage}%` }}
-                                                    ></div>
-                                                </div>
-                                                <span className="text-xs font-black text-indigo-600 min-w-[40px]">{plat.pourcentage}%</span>
+                                    </td>
+                                    <td className="px-8 py-6 text-right font-black text-slate-900 text-sm">
+                                        {(plat.ca || 0).toLocaleString()} <span className="text-[10px] ml-1 text-slate-400 italic">FCFA</span>
+                                    </td>
+                                    <td className="px-8 py-6 text-right">
+                                        <div className="flex items-center justify-end gap-3">
+                                            <div className="w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                                <div
+                                                    className="bg-indigo-600 h-full rounded-full transition-all duration-1000"
+                                                    style={{ width: `${plat.pourcentage}%` }}
+                                                ></div>
                                             </div>
-                                        </td>
-                                    </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan="4" className="py-20 text-center opacity-20 italic font-black uppercase tracking-widest">
-                                            Aucune donnée disponible
-                                        </td>
-                                    </tr>
-                                )}
+                                            <span className="text-xs font-black text-indigo-600 min-w-[40px]">{plat.pourcentage}%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )) : (
+                                <tr>
+                                    <td colSpan="4" className="py-20 text-center opacity-20 italic font-black uppercase tracking-widest">
+                                        Aucune donnée disponible
+                                    </td>
+                                </tr>
+                            )}
                             </tbody>
                         </table>
                     </div>

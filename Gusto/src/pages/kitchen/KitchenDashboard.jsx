@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchKitchenOrders, updateKitchenStatus } from '../../features/KitchenDashboardSlice';
 import websocketService from '../../services/websocketService';
@@ -13,22 +13,22 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 
-// --- SOUS-COMPOSANTS (Définis en premier pour éviter les ReferenceError) ---
+// --- SOUS-COMPOSANTS ---
 
 const StatCard = ({ label, value, color }) => (
-  <Paper sx={{ flex: 1, px: 3, py: 1.5, bgcolor: '#1e293b', borderRadius: 4, textAlign: 'center', minWidth: 100 }}>
-    <Typography variant="caption" sx={{ color, fontWeight: 800, fontSize: '0.65rem' }}>{label}</Typography>
-    <Typography variant="h5" sx={{ color: 'white', fontWeight: 900 }}>{value}</Typography>
-  </Paper>
+    <Paper sx={{ flex: 1, px: 3, py: 1.5, bgcolor: '#1e293b', borderRadius: 4, textAlign: 'center', minWidth: 100 }}>
+      <Typography variant="caption" sx={{ color, fontWeight: 800, fontSize: '0.65rem' }}>{label}</Typography>
+      <Typography variant="h5" sx={{ color: 'white', fontWeight: 900 }}>{value}</Typography>
+    </Paper>
 );
 
 const SectionHeader = ({ label, count, color }) => (
-  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3, ml: 1 }}>
-    <Typography variant="overline" sx={{ color, fontWeight: 900, fontSize: '0.75rem', letterSpacing: 1 }}>
-      {label}
-    </Typography>
-    <Chip label={count} size="small" sx={{ bgcolor: color, color: '#1e293b', fontWeight: 900, height: 20 }} />
-  </Stack>
+    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3, ml: 1 }}>
+      <Typography variant="overline" sx={{ color, fontWeight: 900, fontSize: '0.75rem', letterSpacing: 1 }}>
+        {label}
+      </Typography>
+      <Chip label={count} size="small" sx={{ bgcolor: color, color: '#1e293b', fontWeight: 900, height: 20 }} />
+    </Stack>
 );
 
 // --- COMPOSANT PRINCIPAL ---
@@ -36,30 +36,29 @@ const SectionHeader = ({ label, count, color }) => (
 const KitchenDashboard = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
-
   const dispatch = useDispatch();
-  // Sécurité sur le useSelector
-  const { orders = [], loading = false, error = null } = useSelector((state) => state.kitchen || {});
+
+  const { orders = [], loading = false } = useSelector((state) => state.kitchen || {});
+
+  // 1. État pour gérer le temps de manière "pure"
+  const [currentTime, setCurrentTime] = useState(Date.now());
 
   useEffect(() => {
-    // Initial fetch
+    // Met à jour l'horloge interne toutes les minutes pour rafraîchir les badges "M AGO"
+    const timer = setInterval(() => setCurrentTime(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     dispatch(fetchKitchenOrders());
 
-    // WebSocket Connection
     websocketService.connect(
-      () => {
-        // Subscribe to kitchen updates
-        websocketService.subscribe('/topic/cuisine/commandes', (newOrder) => {
-          // Dispatch action to add/update order in Redux
-          // Si c'est une nouvelle commande ou une mise à jour, on recharge tout pour l'instant
-          // pour garantir la cohérence (ou on pourrait faire une action addOrder)
-          dispatch(fetchKitchenOrders());
-
-          // Optionnel : Jouer un son ou afficher une notif
-        });
-      },
-      (error) => console.error("WS Error", error)
+        () => {
+          websocketService.subscribe('/topic/cuisine/commandes', () => {
+            dispatch(fetchKitchenOrders());
+          });
+        },
+        (err) => console.error("WS Error", err)
     );
 
     return () => {
@@ -77,121 +76,121 @@ const KitchenDashboard = () => {
     }
   };
 
-  const getMinutesAgo = (timeString) => {
-    const diff = Math.floor((Date.now() - new Date(timeString).getTime()) / 60000);
+  // 2. Utilise currentTime passé en paramètre ou via le scope de l'état
+  const getMinutesAgo = useCallback((timeString) => {
+    const diff = Math.floor((currentTime - new Date(timeString).getTime()) / 60000);
     return diff > 0 ? `${diff}M AGO` : 'JUST NOW';
-  };
+  }, [currentTime]);
 
   const renderOrderCard = (order) => (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      key={order.id}
-    >
-      <Paper elevation={0} sx={{
-        p: 2.5, mb: 2, borderRadius: 4, bgcolor: '#1e293b',
-        border: '1px solid',
-        borderColor: order.statut === 'EN_PREPARATION' ? '#f59e0b' : 'rgba(255,255,255,0.05)',
-      }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
-          <Box>
-            <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 700 }}>
-              ID: #{order.id}
-            </Typography>
-            <Typography variant="h5" sx={{ color: 'white', fontWeight: 900 }}>
-              Table {order.table?.numero || '?'}
-            </Typography>
+      <motion.div
+          layout
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          key={order.id}
+      >
+        <Paper elevation={0} sx={{
+          p: 2.5, mb: 2, borderRadius: 4, bgcolor: '#1e293b',
+          border: '1px solid',
+          borderColor: order.statut === 'EN_PREPARATION' ? '#f59e0b' : 'rgba(255,255,255,0.05)',
+        }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
+            <Box>
+              <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 700 }}>
+                ID: #{order.id}
+              </Typography>
+              <Typography variant="h5" sx={{ color: 'white', fontWeight: 900 }}>
+                Table {order.table?.numero || '?'}
+              </Typography>
+            </Box>
+            <Chip
+                icon={<AccessTimeIcon sx={{ fontSize: '14px !important', color: '#6366f1 !important' }} />}
+                label={getMinutesAgo(order.dateHeureCommande)}
+                sx={{ bgcolor: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', fontWeight: 800 }}
+            />
+          </Stack>
+
+          <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)', mb: 2 }} />
+
+          <Box sx={{ minHeight: 60, mb: 3 }}>
+            {order.lignesCommande?.map((ligne, idx) => (
+                <Stack key={idx} direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
+                  <Box sx={{ width: 24, height: 24, borderRadius: 1, bgcolor: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Typography variant="caption" sx={{ color: 'white', fontWeight: 700 }}>{ligne.quantite}</Typography>
+                  </Box>
+                  <Typography sx={{ color: '#cbd5e1', fontWeight: 600 }}>{ligne.platNom}</Typography>
+                </Stack>
+            ))}
           </Box>
-          <Chip
-            icon={<AccessTimeIcon sx={{ fontSize: '14px !important', color: '#6366f1 !important' }} />}
-            label={getMinutesAgo(order.dateHeureCommande)}
-            sx={{ bgcolor: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', fontWeight: 800 }}
-          />
-        </Stack>
 
-        <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)', mb: 2 }} />
-
-        <Box sx={{ minHeight: 60, mb: 3 }}>
-          {order.lignesCommande?.map((ligne, idx) => (
-            <Stack key={idx} direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
-              <Box sx={{ width: 24, height: 24, borderRadius: 1, bgcolor: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Typography variant="caption" sx={{ color: 'white', fontWeight: 700 }}>{ligne.quantite}</Typography>
-              </Box>
-              <Typography sx={{ color: '#cbd5e1', fontWeight: 600 }}>{ligne.platNom}</Typography>
-            </Stack>
-          ))}
-        </Box>
-
-        <Button
-          fullWidth variant="contained"
-          startIcon={order.statut === 'EN_ATTENTE' ? <LocalFireDepartmentIcon /> : <CheckCircleOutlineIcon />}
-          onClick={() => handleStatusChange(order.id, order.statut)}
-          sx={{
-            bgcolor: order.statut === 'EN_ATTENTE' ? '#f59e0b' : '#10b981',
-            borderRadius: 3, fontWeight: 800, py: 1.5,
-            '&:hover': { bgcolor: order.statut === 'EN_ATTENTE' ? '#d97706' : '#059669' }
-          }}
-        >
-          {order.statut === 'EN_ATTENTE' ? 'Commencer' : 'Terminer'}
-        </Button>
-      </Paper>
-    </motion.div>
+          <Button
+              fullWidth variant="contained"
+              startIcon={order.statut === 'EN_ATTENTE' ? <LocalFireDepartmentIcon /> : <CheckCircleOutlineIcon />}
+              onClick={() => handleStatusChange(order.id, order.statut)}
+              sx={{
+                bgcolor: order.statut === 'EN_ATTENTE' ? '#f59e0b' : '#10b981',
+                borderRadius: 3, fontWeight: 800, py: 1.5,
+                '&:hover': { bgcolor: order.statut === 'EN_ATTENTE' ? '#d97706' : '#059669' }
+              }}
+          >
+            {order.statut === 'EN_ATTENTE' ? 'Commencer' : 'Terminer'}
+          </Button>
+        </Paper>
+      </motion.div>
   );
 
   if (loading && orders.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-        <CircularProgress color="success" />
-      </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+          <CircularProgress color="success" />
+        </Box>
     );
   }
 
   return (
-    <Box>
-      {/* Header */}
-      <Stack direction={isMobile ? "column" : "row"} justifyContent="space-between" spacing={3} sx={{ mb: 6 }}>
-        <Box>
-          <Typography variant={isMobile ? "h4" : "h3"} sx={{ color: 'white', fontWeight: 900 }}>
-            Kitchen <span style={{ color: '#4caf50' }}>Ops</span>
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#94a3b8' }}>Suivi des préparations en temps réel</Typography>
-        </Box>
+      <Box>
+        <Stack direction={isMobile ? "column" : "row"} justifyContent="space-between" spacing={3} sx={{ mb: 6 }}>
+          <Box>
+            <Typography variant={isMobile ? "h4" : "h3"} sx={{ color: 'white', fontWeight: 900 }}>
+              Kitchen <span style={{ color: '#4caf50' }}>Ops</span>
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#94a3b8' }}>Suivi des préparations en temps réel</Typography>
+          </Box>
 
-        <Stack direction="row" spacing={2}>
-          <StatCard label="EN ATTENTE" value={orders.filter(o => o.statut === 'EN_ATTENTE').length} color="#94a3b8" />
-          <StatCard label="EN CUISSON" value={orders.filter(o => o.statut === 'EN_PREPARATION').length} color="#f59e0b" />
+          <Stack direction="row" spacing={2}>
+            <StatCard label="EN ATTENTE" value={orders.filter(o => o.statut === 'EN_ATTENTE').length} color="#94a3b8" />
+            <StatCard label="EN CUISSON" value={orders.filter(o => o.statut === 'EN_PREPARATION').length} color="#f59e0b" />
+          </Stack>
         </Stack>
-      </Stack>
 
-      <Grid container spacing={4}>
-        <Grid item xs={12} sm={6} md={4}>
-          <SectionHeader label="QUEUE" count={orders.filter(o => o.statut === 'EN_ATTENTE').length} color="#94a3b8" />
-          <AnimatePresence>{orders.filter(o => o.statut === 'EN_ATTENTE').map(renderOrderCard)}</AnimatePresence>
-        </Grid>
+        <Grid container spacing={4}>
+          <Grid item xs={12} sm={6} md={4}>
+            <SectionHeader label="QUEUE" count={orders.filter(o => o.statut === 'EN_ATTENTE').length} color="#94a3b8" />
+            <AnimatePresence>{orders.filter(o => o.statut === 'EN_ATTENTE').map(renderOrderCard)}</AnimatePresence>
+          </Grid>
 
-        <Grid item xs={12} sm={6} md={4}>
-          <SectionHeader label="PRÉPARATION" count={orders.filter(o => o.statut === 'EN_PREPARATION').length} color="#f59e0b" />
-          <AnimatePresence>{orders.filter(o => o.statut === 'EN_PREPARATION').map(renderOrderCard)}</AnimatePresence>
-        </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <SectionHeader label="PRÉPARATION" count={orders.filter(o => o.statut === 'EN_PREPARATION').length} color="#f59e0b" />
+            <AnimatePresence>{orders.filter(o => o.statut === 'EN_PREPARATION').map(renderOrderCard)}</AnimatePresence>
+          </Grid>
 
-        <Grid item xs={12} md={4}>
-          <SectionHeader label="TERMINÉ" count={orders.filter(o => o.statut === 'PRETE').length} color="#10b981" />
-          <AnimatePresence>
-            {orders.filter(o => o.statut === 'PRETE').map(order => (
-              <motion.div key={order.id} initial={{ opacity: 0 }} animate={{ opacity: 0.6 }}>
-                <Paper sx={{ p: 2, mb: 2, bgcolor: 'rgba(16, 185, 129, 0.05)', border: '1px dashed #10b981' }}>
-                  <Typography variant="subtitle2" sx={{ color: '#10b981', fontWeight: 800 }}>
-                    #{order.id} • Table {order.table?.numero}
-                  </Typography>
-                </Paper>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+          <Grid item xs={12} md={4}>
+            <SectionHeader label="TERMINÉ" count={orders.filter(o => o.statut === 'PRETE').length} color="#10b981" />
+            <AnimatePresence>
+              {orders.filter(o => o.statut === 'PRETE').map(order => (
+                  <motion.div key={order.id} initial={{ opacity: 0 }} animate={{ opacity: 0.6 }}>
+                    <Paper sx={{ p: 2, mb: 2, bgcolor: 'rgba(16, 185, 129, 0.05)', border: '1px dashed #10b981' }}>
+                      <Typography variant="subtitle2" sx={{ color: '#10b981', fontWeight: 800 }}>
+                        #{order.id} • Table {order.table?.numero}
+                      </Typography>
+                    </Paper>
+                  </motion.div>
+              ))}
+            </AnimatePresence>
+          </Grid>
         </Grid>
-      </Grid>
-    </Box>
+      </Box>
   );
 };
 
