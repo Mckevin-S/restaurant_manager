@@ -17,7 +17,7 @@ const OrderHistory = () => {
 
     useEffect(() => {
         filterCommandes();
-    }, [searchTerm, statusFilter, dateFilter, commandes]);
+    }, [searchTerm, statusFilter, dateFilter, commandes, filterCommandes]);
 
     const fetchCommandes = async () => {
         try {
@@ -26,7 +26,7 @@ const OrderHistory = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCommandes(response.data);
-        } catch (error) {
+        } catch {
             toast.error('Erreur lors du chargement');
         } finally {
             setLoading(false);
@@ -57,9 +57,10 @@ const OrderHistory = () => {
                 switch (dateFilter) {
                     case 'today':
                         return commandeDate.toDateString() === now.toDateString();
-                    case 'week':
+                    case 'week': {
                         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
                         return commandeDate >= weekAgo;
+                    }
                     case 'month':
                         return commandeDate.getMonth() === now.getMonth();
                     default:

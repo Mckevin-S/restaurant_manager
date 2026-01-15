@@ -13,7 +13,7 @@ class WebSocketService {
         this.stompClient = Stomp.over(socket);
         this.stompClient.debug = null; // Désactiver les logs console
 
-        this.stompClient.connect({}, (frame) => {
+        this.stompClient.connect({}, () => {
             console.log('Connecté au WebSocket');
             if (onConnected) onConnected();
         }, (error) => {

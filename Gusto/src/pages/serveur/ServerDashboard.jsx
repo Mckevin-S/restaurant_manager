@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchCommandes, updateStatutCommande } from '../../features/ServeurDashboardSlice';
 import websocketService from '../../services/websocketService';
 import { Box, Typography, Paper, Button, Divider, Chip, Stack, CircularProgress, Grid, Avatar } from '@mui/material';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 
 // Icônes
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
@@ -13,7 +13,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
 const ServeurDashboard = () => {
   const dispatch = useDispatch();
-  const { commandes = [], loading } = useSelector((state) => state.serveur);
+  const { commandes = [] } = useSelector((state) => state.serveur);
 
   useEffect(() => {
     // 1. Premier chargement
@@ -23,7 +23,7 @@ const ServeurDashboard = () => {
     websocketService.connect(
       () => {
         // Écouter si un plat est prêt (Notif Cuisine -> Salle)
-        websocketService.subscribe('/topic/salle/prete', (commande) => {
+        websocketService.subscribe('/topic/salle/prete', () => {
           // Rafraîchir la liste ou mettre à jour l'état local
           dispatch(fetchCommandes());
           // Toast ou son ici
