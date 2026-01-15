@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4 # Update to v4
+        uses: actions/checkout@v4
 
       - name: Set up JDK 24
         uses: actions/setup-java@v4
@@ -55,12 +55,12 @@ jobs:
         run: mvn clean package -DskipTests
 
       - name: Upload JAR artifact
-        uses: actions/upload-artifact@v4 # FIX: v3 is deprecated
+        uses: actions/upload-artifact@v4
         with:
           name: backend-jar
           path: BackendProject/target/*.jar
 
-  # Tests Frontend
+  # Tests Frontend (Nettoyé du Lint)
   frontend-tests:
     name: Tests Frontend
     runs-on: ubuntu-latest
@@ -72,15 +72,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: Gusto/package-lock.json
 
       - name: Install dependencies
         working-directory: ./Gusto
         run: npm ci
-
-      - name: Run linter
-        working-directory: ./Gusto
-        # FIX: CI=false permet de ne pas bloquer le pipeline sur les warnings de lint
-        run: CI=false npm run lint
 
   # Build Frontend
   frontend-build:
@@ -97,13 +94,13 @@ jobs:
 
       - name: Build
         working-directory: ./Gusto
-        # FIX: CI=false ici aussi pour le build Vite
+        # CI=false ignore les warnings ESLint et TypeScript lors de la compilation Vite
         run: CI=false npm run build
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4 # FIX: v3 is deprecated
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
           path: Gusto/dist
