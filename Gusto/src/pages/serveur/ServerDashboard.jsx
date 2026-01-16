@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchCommandes, updateStatutCommande } from '../../features/ServeurDashboardSlice';
 import websocketService from '../../services/websocketService';
 import { Box, Typography, Paper, Button, Divider, Chip, Stack, CircularProgress, Grid, Avatar } from '@mui/material';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence ,motion } from 'framer-motion';
 
 // Icônes
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';

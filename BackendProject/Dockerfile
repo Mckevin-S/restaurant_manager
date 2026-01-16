@@ -5,11 +5,11 @@ COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
 RUN chmod +x ./mvnw
 # Télécharger les dépendances une fois pour les mettre en cache
-RUN ./mvnw dependency:go-offline -B
+#RUN ./mvnw dependency:go-offline -B
 COPY src ./src
 # Construire l'application
-RUN ./mvnw package
-#RUN ./mvnw package -DskipTests
+#RUN ./mvnw package
+RUN ./mvnw package -DskipTests
 
 # Stage 2: Create the final Docker image
 FROM eclipse-temurin:24-jre
