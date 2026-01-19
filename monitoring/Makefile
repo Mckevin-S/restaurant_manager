@@ -32,7 +32,7 @@ monitoring-info:
 
 # Lancer l'analyse SonarQube
 sonar-analyze:
-	@echo "🔍 Lancement de l'analyse SonarQube..."
+	@echo " Lancement de l'analyse SonarQube..."
 	@bash analyze.sh
 
 # Voir les logs SonarQube
