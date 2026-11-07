@@ -3,7 +3,6 @@
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://www.oracle.com/java/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![React](https://img.shields.io/badge/React-19.2.0-blue.svg)](https://reactjs.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Application complète de gestion de restaurant avec backend Spring Boot et frontend React, incluant authentification 2FA, gestion des commandes, suivi des stocks et tableau de bord analytique.
 
@@ -289,7 +288,7 @@ mvn test -Dtest=*IntegrationTest
 open target/site/jacoco/index.html
 ```
 
-### Frontend
+### Frontend (react)
 
 ```bash
 cd Gusto
@@ -395,10 +394,6 @@ Nous utilisons [Conventional Commits](https://www.conventionalcommits.org/) :
 
 ---
 
-## 📝 License
-
-Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
-
 ---
 
 ## 👥 Auteurs
@@ -407,22 +402,14 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 
 ---
 
-## 🙏 Remerciements
-
-- Spring Boot Team
-- React Community
-- Tous les contributeurs
-
----
 
 ## 📞 Support
 
 Pour toute question ou problème :
 
-- 📧 Email : support@restaurant-manager.com
+- 📧 Email : kamguemmckevin@gmail.com
 - 🐛 Issues : [GitHub Issues](https://github.com/Mckevin-S/restaurant_manager/issues)
 - 📖 Wiki : [Documentation complète](https://github.com/Mckevin-S/restaurant_manager/wiki)
 
 ---
 
-**Fait avec ❤️ pour la communauté des restaurateurs**
